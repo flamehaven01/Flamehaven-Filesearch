@@ -8,7 +8,6 @@ version = "1.0.0"
 description = "Lightweight file search for MVPs - Google File Search level convenience with quality guarantees"
 readme = "README.md"
 requires-python = ">=3.8"
-license = {file = "LICENSE"}
 authors = [
     {name = "SovDef Team", email = "dev@sovdef.ai"},
 ]
