@@ -1,6 +1,8 @@
-# 🔥 FLAMEHAVEN File Search Tool
+# 🔥 SovDef FileSearch Lite
 
-## SovDef FileSearch Lite - Open Source Semantic Document Search
+### The FLAMEHAVEN File Search Tool
+
+**Open Source Semantic Document Search**
 
 [![CI/CD](https://github.com/flamehaven01/SovDef-FileSearch-Lite/actions/workflows/ci.yml/badge.svg)](https://github.com/flamehaven01/SovDef-FileSearch-Lite/actions)
 [![PyPI version](https://badge.fury.io/py/sovdef-filesearch-lite.svg)](https://badge.fury.io/py/sovdef-filesearch-lite)
@@ -10,11 +12,11 @@
 
 ---
 
-## 🎯 What is FLAMEHAVEN File Search Tool?
+## 🎯 What is SovDef FileSearch Lite?
 
-**The FLAMEHAVEN File Search Tool** is a practical, developer-friendly **RAG (Retrieval Augmented Generation)** solution for modern semantic document search. It empowers rapid deployment, customization, and experimentation for startups, researchers, and SaaS builders.
+**SovDef FileSearch Lite** (the FLAMEHAVEN File Search Tool) is a practical, developer-friendly **RAG (Retrieval Augmented Generation)** solution for modern semantic document search. It empowers rapid deployment, customization, and experimentation for startups, researchers, and SaaS builders.
 
-**SovDef FileSearch Lite** is proof that powerful AI search can be **fast, simple, and open**. Solo builders now have the tools to run advanced semantic file search in minutes—no corporate barriers, with full transparency and flexibility.
+This project is proof that powerful AI search can be **fast, simple, and open**. Solo builders now have the tools to run advanced semantic file search in minutes—no corporate barriers, with full transparency and flexibility.
 
 ---
 
@@ -46,7 +48,7 @@ Built for rapid prototyping and true **community-driven growth**. MIT licensed.
 
 ## 🆚 How Does It Differ from Google Gemini API File Search Tool?
 
-| Feature | Google Gemini File Search | FLAMEHAVEN/SovDef Lite |
+| Feature | Google Gemini File Search | SovDef FileSearch Lite |
 |---------|--------------------------|------------------------|
 | **Infrastructure** | Fully managed, enterprise-grade | Self-hosted, lightweight |
 | **Scaling** | Unlimited, automated | MVP-focused (50MB cap) |
@@ -740,7 +742,7 @@ in the Software without restriction...
 
 ---
 
-## 🌟 Why Choose FLAMEHAVEN File Search Tool?
+## 🌟 Why Choose SovDef FileSearch Lite?
 
 ### For Solo Developers
 ✅ **No corporate barriers** - Get started in minutes

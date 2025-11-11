@@ -2,13 +2,13 @@
 
 **Release Date:** November 11, 2025
 
-**FLAME HAVEN File Search Tool - Now Open Source!**
+**The FLAMEHAVEN File Search Tool - Now Open Source!**
 
 ---
 
 ## 🎉 Major Announcement
 
-We're excited to announce the **official release of SovDef FileSearch Lite v1.0.0** - the FLAMEHAVEN File Search Tool is now open source!
+We're excited to announce the **official release of SovDef FileSearch Lite v1.0.0** (the FLAMEHAVEN File Search Tool) - now open source!
 
 This is a practical, developer-friendly **RAG (Retrieval Augmented Generation)** solution for modern semantic document search, empowering rapid deployment, customization, and experimentation for **startups, researchers, and SaaS builders**.
 
@@ -165,7 +165,7 @@ uvicorn sovdef_filesearch_lite.api:app --reload
 
 ## 🆚 vs Google Gemini API File Search
 
-| Feature | Google Gemini | FLAMEHAVEN/SovDef Lite |
+| Feature | Google Gemini | SovDef FileSearch Lite |
 |---------|--------------|------------------------|
 | **Infrastructure** | Fully managed | Self-hosted |
 | **Control** | Black box | **Full transparency** |
