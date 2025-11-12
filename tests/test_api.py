@@ -6,7 +6,16 @@ import os
 from io import BytesIO
 
 import pytest
-from fastapi.testclient import TestClient
+
+try:
+    from fastapi.testclient import TestClient
+except ModuleNotFoundError:  # pragma: no cover - optional dependency
+    pytest.skip("fastapi not installed", allow_module_level=True)
+
+try:
+    import python_multipart  # type: ignore  # noqa: F401
+except ModuleNotFoundError:  # pragma: no cover - optional dependency
+    pytest.skip("python-multipart not installed", allow_module_level=True)
 
 from flamehaven_filesearch.api import app
 
