@@ -41,7 +41,10 @@ class FlamehavenFileSearch:
         self.client = genai.Client(api_key=self.config.api_key)
         self.stores = {}  # Simple in-memory cache
 
-        logger.info("FLAMEHAVEN FileSearch initialized with model: %s", self.config.default_model)
+        logger.info(
+            "FLAMEHAVEN FileSearch initialized with model: %s",
+            self.config.default_model,
+        )
 
     def create_store(self, name: str = "default") -> str:
         """
