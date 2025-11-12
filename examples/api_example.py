@@ -5,9 +5,10 @@ This example demonstrates how to interact with the FLAMEHAVEN FileSearch API ser
 using Python requests library.
 """
 
-import requests
 import json
 from pathlib import Path
+
+import requests
 
 
 class FlamehavenAPIClient:

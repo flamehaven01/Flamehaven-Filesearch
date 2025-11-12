@@ -8,9 +8,10 @@ This example demonstrates:
 4. Handling results
 """
 
-import os
-from flamehaven_filesearch import FlamehavenFileSearch, Config
 import json
+import os
+
+from flamehaven_filesearch import Config, FlamehavenFileSearch
 
 
 def main():

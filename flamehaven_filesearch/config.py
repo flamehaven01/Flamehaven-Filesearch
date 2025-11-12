@@ -3,8 +3,8 @@ Configuration management for SovDef FileSearch Lite
 """
 
 import os
-from typing import Optional, Dict, Any
 from dataclasses import dataclass, field
+from typing import Any, Dict, Optional
 
 
 @dataclass

@@ -4,20 +4,21 @@ FastAPI server for FLAMEHAVEN FileSearch
 Production-ready API with file upload, search, and management endpoints.
 """
 
-from fastapi import FastAPI, File, UploadFile, HTTPException, Query, Form
-from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
-from typing import Optional, List
+import logging
+import os
 import shutil
 import tempfile
-import os
-import logging
-from pathlib import Path
 import time
+from pathlib import Path
+from typing import List, Optional
 
-from .core import FlamehavenFileSearch
+from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
+
 from .config import Config
+from .core import FlamehavenFileSearch
 
 # Configure logging
 logging.basicConfig(
@@ -410,6 +411,7 @@ async def general_exception_handler(request, exc):
 def main():
     """Main entry point for CLI"""
     import sys
+
     import uvicorn
 
     # Parse simple arguments

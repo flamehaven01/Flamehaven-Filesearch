@@ -3,13 +3,14 @@ FLAMEHAVEN FileSearch - Open Source Semantic Document Search
 Fast, simple, and transparent file search powered by Google Gemini
 """
 
+import logging
+import os
+import time
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
 from google import genai
 from google.genai import types
-import time
-import os
-from typing import Optional, List, Dict, Any
-import logging
-from pathlib import Path
 
 from .config import Config
 

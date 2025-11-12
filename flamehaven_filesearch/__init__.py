@@ -10,7 +10,7 @@ __version__ = "1.0.0"
 __author__ = "FLAMEHAVEN"
 __license__ = "MIT"
 
-from .core import FlamehavenFileSearch
 from .config import Config
+from .core import FlamehavenFileSearch
 
 __all__ = ["FlamehavenFileSearch", "Config"]

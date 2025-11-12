@@ -2,10 +2,12 @@
 Tests for FLAMEHAVEN FileSearch core functionality
 """
 
-import pytest
 import os
 from pathlib import Path
-from flamehaven_filesearch import FlamehavenFileSearch, Config
+
+import pytest
+
+from flamehaven_filesearch import Config, FlamehavenFileSearch
 
 
 class TestConfig:

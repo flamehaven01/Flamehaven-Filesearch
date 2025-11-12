@@ -2,11 +2,13 @@
 Tests for FLAMEHAVEN FileSearch API
 """
 
-import pytest
-from fastapi.testclient import TestClient
-from flamehaven_filesearch.api import app
 import os
 from io import BytesIO
+
+import pytest
+from fastapi.testclient import TestClient
+
+from flamehaven_filesearch.api import app
 
 
 @pytest.fixture
