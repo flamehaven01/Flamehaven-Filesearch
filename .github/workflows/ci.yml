@@ -121,6 +121,7 @@ jobs:
           user: __token__
           password: ${{ secrets.TEST_PYPI_API_TOKEN }}
           repository-url: https://test.pypi.org/legacy/
+          method: password
           skip-existing: true
 
   publish-pypi:
@@ -145,6 +146,7 @@ jobs:
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
+          method: password
 
   docker:
     name: Build Docker Image
