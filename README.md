@@ -1,6 +1,11 @@
 # 🔥 FLAMEHAVEN FileSearch
 
-**Open-source semantic document search you can self-host in minutes.**
+<div align="center">
+
+<strong>Open-source semantic document search you can self-host in minutes.</strong><br/>
+<span>The lightweight RAG stack that makes your documents searchable in minutes.</span>
+
+</div>
 
 [![CI/CD](https://github.com/flamehaven01/Flamehaven-Filesearch/actions/workflows/ci.yml/badge.svg)](https://github.com/flamehaven01/Flamehaven-Filesearch/actions)
 [![PyPI](https://img.shields.io/pypi/v/flamehaven-filesearch.svg)](https://pypi.org/project/flamehaven-filesearch/)
@@ -8,8 +13,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 <div align="center">
-
-**The lightweight RAG stack that makes your documents searchable in minutes**
 
 [Quick Start](#-quick-start) • [Features](#-features) • [Documentation](docs/wiki/README.md) • [API Reference](#-api-reference) • [Examples](examples/)
 
@@ -483,9 +486,7 @@ flamehaven-api
 - v1.1.0: Production-ready with caching, rate limiting, Prometheus metrics
 - v1.0.0: Initial release with core file search capabilities
 
-→ [Full changelog](CHANGELOG.md) • [Roadmap & voting](docs/wiki/Roadmap.md)
-
-Need more detail? The [roadmap wiki page](docs/wiki/Roadmap.md) includes the latest milestone poll, backlog status, and guidance on claiming good-first issues.
+→ [Full changelog](CHANGELOG.md) • [Roadmap & voting](#-roadmap)
 
 ---
 
@@ -500,7 +501,7 @@ We welcome contributions!
 4. Add tests & commit changes
 5. Open Pull Request
 
-→ [Contributing guidelines](CONTRIBUTING.md) • [Good first issues](https://github.com/flamehaven01/Flamehaven-Filesearch/labels/good%20first%20issue) • [Roadmap & voting handbook](docs/wiki/Roadmap.md#3-good-first-issues)
+→ [Contributing guidelines](CONTRIBUTING.md) • [Good first issues](https://github.com/flamehaven01/Flamehaven-Filesearch/labels/good%20first%20issue)
 
 ---
 
@@ -542,5 +543,3 @@ Made with ❤️ by the Flamehaven Team
 [⬆️ Back to Top](#-flamehaven-filesearch)
 
 </div>
-
-
