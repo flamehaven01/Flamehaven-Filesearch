@@ -5,14 +5,13 @@
 <strong>Open-source semantic document search you can self-host in minutes.</strong><br/>
 <span>The lightweight RAG stack that makes your documents searchable in minutes.</span>
 
-</div>
+
 
 [![CI/CD](https://github.com/flamehaven01/Flamehaven-Filesearch/actions/workflows/ci.yml/badge.svg)](https://github.com/flamehaven01/Flamehaven-Filesearch/actions)
 [![PyPI](https://img.shields.io/pypi/v/flamehaven-filesearch.svg)](https://pypi.org/project/flamehaven-filesearch/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/flamehaven-filesearch.svg)](https://pypi.org/project/flamehaven-filesearch/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-<div align="center">
 
 [Quick Start](#-quick-start) • [Features](#-features) • [Documentation](docs/wiki/README.md) • [API Reference](#-api-reference) • [Examples](examples/)
 
