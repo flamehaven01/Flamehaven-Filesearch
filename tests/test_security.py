@@ -225,7 +225,7 @@ class TestAPIKeyHandling:
         """Test that valid API key is accepted"""
         from flamehaven_filesearch.config import Config
 
-        config = Config(api_key="test-api-key-12345")
+        config = Config(api_key="dummy-key")
 
         # Should not raise error
         assert config.validate(require_api_key=True) is True
