@@ -51,9 +51,9 @@ class TestPathTraversalProtection:
                 result = response.json()
                 # The saved filename should be just the basename
                 basename = os.path.basename(malicious_filename)
-                assert basename in result.get("filename", ""), (
-                    f"Filename not properly sanitized: {malicious_filename}"
-                )
+                assert basename in result.get(
+                    "filename", ""
+                ), f"Filename not properly sanitized: {malicious_filename}"
 
     def test_path_traversal_multiple_upload(self, client):
         """Test path traversal protection in multiple file upload"""
@@ -96,9 +96,9 @@ class TestPathTraversalProtection:
             )
 
             # Should reject hidden files
-            assert response.status_code == 400, (
-                f"Hidden file not rejected: {hidden_file}"
-            )
+            assert (
+                response.status_code == 400
+            ), f"Hidden file not rejected: {hidden_file}"
             assert "Invalid filename" in response.json().get("detail", "")
 
     def test_empty_filename_rejection(self, client):

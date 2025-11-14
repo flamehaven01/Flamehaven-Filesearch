@@ -230,9 +230,9 @@ class TestScalability:
         if len(response_times) >= 2:
             degradation = response_times[-1] / response_times[0]
             print(f"Performance degradation factor: {degradation:.2f}x")
-            assert degradation < 3.0, (
-                f"Performance degraded {degradation:.2f}x under load"
-            )
+            assert (
+                degradation < 3.0
+            ), f"Performance degraded {degradation:.2f}x under load"
 
     @pytest.mark.slow
     def test_file_size_scaling(self, client):
