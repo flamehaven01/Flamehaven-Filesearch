@@ -141,6 +141,11 @@ async def dashboard(request: Request):
     else:
         keys_html = '<tr><td colspan="7" class="empty">No API keys found</td></tr>'
 
+    # Inline styles for cards
+    small_gray = "font-size: 12px; color: #999;"
+    stat_18 = "font-size: 18px;"
+    stat_16_break = "font-size: 16px; word-break: break-all;"
+
     html = f"""
     <!DOCTYPE html>
     <html>
@@ -151,7 +156,8 @@ async def dashboard(request: Request):
         <style>
             * {{ margin: 0; padding: 0; box-sizing: border-box; }}
             body {{
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                font-family: -apple-system, BlinkMacSystemFont,
+                    "Segoe UI", Roboto, sans-serif;
                 background: #f5f7fa;
                 color: #333;
             }}
@@ -165,15 +171,29 @@ async def dashboard(request: Request):
             }}
             header h1 {{ font-size: 28px; margin-bottom: 5px; }}
             header p {{ opacity: 0.9; }}
-            .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }}
+            .grid {{
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 20px;
+                margin-bottom: 30px;
+            }}
             .card {{
                 background: white;
                 border-radius: 8px;
                 padding: 20px;
                 box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             }}
-            .stat-value {{ font-size: 36px; font-weight: bold; color: #667eea; margin: 10px 0; }}
-            .stat-label {{ font-size: 14px; color: #666; text-transform: uppercase; }}
+            .stat-value {{
+                font-size: 36px;
+                font-weight: bold;
+                color: #667eea;
+                margin: 10px 0;
+            }}
+            .stat-label {{
+                font-size: 14px;
+                color: #666;
+                text-transform: uppercase;
+            }}
             .section {{
                 background: white;
                 border-radius: 8px;
@@ -255,8 +275,17 @@ async def dashboard(request: Request):
                 transition: width 0.3s ease;
             }}
             .endpoint-name {{ min-width: 150px; font-weight: 500; }}
-            .endpoint-count {{ min-width: 50px; text-align: right; font-weight: 600; }}
-            .empty {{ color: #666; font-style: italic; text-align: center; padding: 20px; }}
+            .endpoint-count {{
+                min-width: 50px;
+                text-align: right;
+                font-weight: 600;
+            }}
+            .empty {{
+                color: #666;
+                font-style: italic;
+                text-align: center;
+                padding: 20px;
+            }}
             footer {{
                 text-align: center;
                 padding: 20px;
@@ -278,21 +307,31 @@ async def dashboard(request: Request):
                 <div class="card">
                     <div class="stat-label">Total Requests</div>
                     <div class="stat-value">{total_requests:,}</div>
-                    <div class="stat-label" style="font-size: 12px; color: #999;">Last 7 days</div>
+                    <div class="stat-label" style="{small_gray}">
+                        Last 7 days
+                    </div>
                 </div>
                 <div class="card">
                     <div class="stat-label">Active Keys</div>
                     <div class="stat-value">{sum(1 for k in keys if k.is_active)}</div>
-                    <div class="stat-label" style="font-size: 12px; color: #999;">Total: {len(keys)}</div>
+                    <div class="stat-label" style="{small_gray}">
+                        Total: {len(keys)}
+                    </div>
                 </div>
                 <div class="card">
                     <div class="stat-label">Top Endpoint</div>
-                    <div class="stat-value" style="font-size: 18px;">{top_endpoints[0][0] if top_endpoints else 'N/A'}</div>
-                    <div class="stat-label" style="font-size: 12px; color: #999;">{top_endpoints[0][1] if top_endpoints else 0} requests</div>
+                    <div class="stat-value" style="{stat_18}">
+                        {top_endpoints[0][0] if top_endpoints else 'N/A'}
+                    </div>
+                    <div class="stat-label" style="{small_gray}">
+                        {top_endpoints[0][1] if top_endpoints else 0} requests
+                    </div>
                 </div>
                 <div class="card">
                     <div class="stat-label">User ID</div>
-                    <div class="stat-value" style="font-size: 16px; word-break: break-all;">{user_id[:20]}</div>
+                    <div class="stat-value" style="{stat_16_break}">
+                        {user_id[:20]}
+                    </div>
                 </div>
             </div>
 
