@@ -22,7 +22,7 @@ from datetime import datetime
 from typing import List, Optional
 
 import psutil
-from fastapi import FastAPI, File, Form, HTTPException, Query, Request, UploadFile
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.exception_handlers import (
     request_validation_exception_handler as fastapi_validation_handler,
 )
@@ -51,6 +51,8 @@ from .middlewares import (
     get_request_id,
 )
 from .validators import validate_search_request, validate_upload_file
+from .security import get_current_api_key, get_request_context, optional_api_key
+from .auth import APIKeyInfo, get_key_manager
 
 # Configure structured JSON logging for production
 # Use ENVIRONMENT=development for human-readable logs
@@ -80,9 +82,9 @@ limiter = Limiter(key_func=rate_limit_key)
 app = FastAPI(
     title="FLAMEHAVEN FileSearch API",
     description=(
-        "Open source semantic document search powered by Google Gemini " "- v1.1.0"
+        "Open source semantic document search powered by Google Gemini " "- v1.2.0"
     ),
-    version="1.1.0",
+    version="1.2.0",
     docs_url="/docs",
     redoc_url="/redoc",
 )
@@ -108,6 +110,14 @@ app.add_middleware(RequestLoggingMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RequestIDMiddleware)
 app.add_middleware(CORSHeadersMiddleware)
+
+# Include admin routes (API key management)
+from .admin_routes import router as admin_router
+from .dashboard import router as dashboard_router
+from .batch_routes import router as batch_router
+app.include_router(admin_router)
+app.include_router(dashboard_router)
+app.include_router(batch_router)
 
 # Global instances
 searcher: Optional[FlamehavenFileSearch] = None
@@ -328,6 +338,7 @@ async def upload_single_file(
     request: Request,
     file: UploadFile = File(..., description="File to upload"),
     store: str = Form(default="default", description="Store name"),
+    api_key: APIKeyInfo = Depends(get_current_api_key),
 ):
     """
     Upload a single file to a store (Rate limited: 10/min)
@@ -433,6 +444,7 @@ async def upload_multiple_files(
     request: Request,
     files: List[UploadFile] = File(..., description="Files to upload"),
     store: str = Form(default="default", description="Store name"),
+    api_key: APIKeyInfo = Depends(get_current_api_key),
 ):
     """
     Upload multiple files to a store (Rate limited: 5/min)
@@ -546,7 +558,11 @@ async def upload_multiple_files_legacy(
 # Search endpoints
 @app.post("/api/search", response_model=SearchResponse, tags=["Search"])
 @limiter.limit("100/minute")
-async def search(request: Request, search_request: SearchRequest):
+async def search(
+    request: Request,
+    search_request: SearchRequest,
+    api_key: APIKeyInfo = Depends(get_current_api_key),
+):
     """
     Search files and get AI-generated answers (Rate limited: 100/min)
 
@@ -691,6 +707,7 @@ async def search_get(
     q: str = Query(..., description="Search query", min_length=1),
     store: str = Query(default="default", description="Store name"),
     model: Optional[str] = Query(None, description="Model to use"),
+    api_key: APIKeyInfo = Depends(get_current_api_key),
 ):
     """
     Search files - GET method for simple queries (Rate limited: 100/min)
@@ -729,7 +746,11 @@ async def search_get_legacy(
 # Store management endpoints
 @app.post("/api/stores", tags=["Stores"])
 @limiter.limit("20/minute")
-async def create_store(request: Request, store_request: StoreRequest):
+async def create_store(
+    request: Request,
+    store_request: StoreRequest,
+    api_key: APIKeyInfo = Depends(get_current_api_key),
+):
     """
     Create a new file search store (Rate limited: 20/min)
 
@@ -766,7 +787,7 @@ async def create_store_legacy(request: Request, store_request: StoreRequest):
 
 @app.get("/api/stores", tags=["Stores"])
 @limiter.limit("100/minute")
-async def list_stores(request: Request):
+async def list_stores(request: Request, api_key: APIKeyInfo = Depends(get_current_api_key)):
     """
     List all created stores (Rate limited: 100/min)
 
@@ -796,7 +817,11 @@ async def list_stores_legacy(request: Request):
 
 @app.delete("/api/stores/{store_name}", tags=["Stores"])
 @limiter.limit("20/minute")
-async def delete_store(request: Request, store_name: str):
+async def delete_store(
+    request: Request,
+    store_name: str,
+    api_key: APIKeyInfo = Depends(get_current_api_key),
+):
     """
     Delete a store (Rate limited: 20/min)
 

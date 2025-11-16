@@ -135,6 +135,25 @@ system_disk_usage_percent = Gauge(
 # Store metrics
 stores_total = Gauge("stores_total", "Total number of stores", registry=registry)
 
+# Batch search metrics (v1.2.0)
+batch_searches_total = Counter(
+    "batch_searches_total", "Total batch search requests", registry=registry
+)
+
+batch_search_duration_seconds = Histogram(
+    "batch_search_duration_seconds",
+    "Batch search duration in seconds",
+    buckets=(0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0),
+    registry=registry,
+)
+
+batch_search_queries = Histogram(
+    "batch_search_queries",
+    "Number of queries in batch search",
+    buckets=(1, 5, 10, 25, 50, 100),
+    registry=registry,
+)
+
 # Gauge for active requests
 active_requests = Gauge(
     "active_requests",
@@ -258,6 +277,20 @@ class MetricsCollector:
     def update_stores_count(count: int):
         """Update total stores count"""
         stores_total.set(count)
+
+    @staticmethod
+    def record_batch_search(query_count: int, successful: int, duration: float):
+        """
+        Record batch search metrics
+
+        Args:
+            query_count: Number of queries in batch
+            successful: Number of successful queries
+            duration: Total duration in seconds
+        """
+        batch_searches_total.inc()
+        batch_search_queries.observe(query_count)
+        batch_search_duration_seconds.observe(duration)
 
 
 class RequestMetricsContext:

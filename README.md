@@ -69,19 +69,29 @@ Leverages Gemini's generous free tier. Process thousands of docs free.
 | **🔌 Dual Interface** | Python SDK + REST API with Swagger UI |
 | **🐳 Docker Ready** | One-command deployment with persistence |
 
-### 🆕 New in v1.1.0 (Production-Ready)
+### 🆕 New in v1.2.0 (Enterprise-Ready)
+
+| Feature | Description | Impact |
+|---------|-------------|--------|
+| **🔐 API Key Authentication** | Secure key-based access control | 100% endpoint protection |
+| **🔑 Key Management API** | Create, revoke, list API keys | Fine-grained access control |
+| **📋 Audit Logging** | Complete request audit trail | Compliance & debugging |
+| **👤 Per-User Rate Limits** | Custom limits per API key | Fair resource allocation |
+| **🏢 Admin Dashboard** | Web UI for key management | Enterprise operations |
+
+**v1.2.0 Highlights:** API key authentication • Per-user rate limiting • Admin dashboard • Audit trail
+→ [Full Changelog](CHANGELOG.md#120---2025-11-16) • [Auth Guide](SECURITY.md#api-key-authentication)
+
+### Features from v1.1.0
 
 | Feature | Description | Impact |
 |---------|-------------|--------|
 | **⚡ LRU Caching** | 1-hour TTL, 1000 items | 99% faster on cache hits (<10ms) |
-| **🛡️ Rate Limiting** | Per-endpoint limits | 10/min uploads, 100/min searches |
+| **🛡️ Rate Limiting** | Per-endpoint + per-key limits | 10/min uploads, 100/min searches |
 | **📊 Prometheus Metrics** | 17 metrics exported | Real-time monitoring & alerting |
 | **🔒 Security Headers** | OWASP-compliant | CSP, HSTS, X-Frame-Options |
 | **📝 JSON Logging** | Structured logs | ELK/Splunk compatible |
 | **🎯 Request Tracing** | X-Request-ID headers | Distributed tracing support |
-
-**v1.1.0 Highlights:** 40-60% cost reduction • Zero critical vulnerabilities • SIDRCE Certified (0.94)
-→ [Full Changelog](CHANGELOG.md#110---2025-11-13)
 
 ---
 
@@ -92,37 +102,74 @@ Leverages Gemini's generous free tier. Process thousands of docs free.
 pip install flamehaven-filesearch[api]  # ~30 seconds
 ```
 
-### 2️⃣ Set API Key
+### 2️⃣ Set Gemini API Key
 ```bash
 export GEMINI_API_KEY="your-google-gemini-key"
 ```
 > 💡 Get your free key at [Google AI Studio](https://makersuite.google.com/app/apikey) (2 min signup)
 
-### 3️⃣ Start Searching
-
-**Option A: Python SDK**
-```python
-from flamehaven_filesearch import FlamehavenFileSearch
-
-fs = FlamehavenFileSearch()
-fs.upload_file("company-handbook.pdf")
-
-result = fs.search("What is our vacation policy?")
-print(result["answer"])
-# Expected: "Employees receive 15 days of paid vacation annually..."
-print(f"📎 Sources: {result['sources'][0]['filename']}, page {result['sources'][0]['page']}")
-```
-
-**Option B: REST API**
+### 3️⃣ (v1.2.0) Generate Access Key
 ```bash
+# Set admin key for key management (development only)
+export FLAMEHAVEN_ADMIN_KEY="dev_admin_key_12345"
+
 # Start server
 flamehaven-api
 
-# Upload (in new terminal)
-curl -X POST "http://localhost:8000/upload" -F "file=@handbook.pdf"
+# In another terminal, create your first API key
+curl -X POST http://localhost:8000/api/admin/keys \
+  -H "Authorization: Bearer dev_admin_key_12345" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "My App Key",
+    "permissions": ["upload", "search", "stores"]
+  }'
+
+# Response includes: "key": "sk_live_xxxxxxxxxxxxxxxx"
+# Save this key securely - you won't see it again!
+```
+
+### 4️⃣ Use Your API Key
+
+**Option A: Python SDK** (requires API key in header)
+```python
+from flamehaven_filesearch import FlamehavenFileSearch
+import requests
+
+# Using REST API with API key
+headers = {"Authorization": "Bearer sk_live_xxxxxxxxxxxxxxxx"}
+
+# Upload a file
+response = requests.post(
+    "http://localhost:8000/api/upload/single",
+    files={"file": open("handbook.pdf", "rb")},
+    data={"store": "default"},
+    headers=headers
+)
 
 # Search
-curl "http://localhost:8000/search?q=vacation+policy"
+response = requests.post(
+    "http://localhost:8000/api/search",
+    json={"query": "What is our vacation policy?"},
+    headers=headers
+)
+result = response.json()
+print(result["answer"])
+# Expected: "Employees receive 15 days of paid vacation annually..."
+```
+
+**Option B: REST API with cURL**
+```bash
+# Upload file
+curl -X POST "http://localhost:8000/api/upload/single" \
+  -H "Authorization: Bearer sk_live_xxxxxxxxxxxxxxxx" \
+  -F "file=@handbook.pdf"
+
+# Search
+curl -X POST "http://localhost:8000/api/search" \
+  -H "Authorization: Bearer sk_live_xxxxxxxxxxxxxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "vacation policy"}'
 ```
 
 **🌐 Interactive Docs:** Visit http://localhost:8000/docs

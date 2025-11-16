@@ -22,9 +22,33 @@ from flamehaven_filesearch.api import (
 from flamehaven_filesearch.exceptions import ServiceUnavailableError
 
 
-@pytest.fixture(scope="module")
-def api_client():
-    return TestClient(app)
+class AuthenticatedTestClient(TestClient):
+    """Custom TestClient that automatically adds API key authentication"""
+
+    def __init__(self, app, api_key=None, **kwargs):
+        super().__init__(app, **kwargs)
+        self.api_key = api_key
+        self.public_endpoints = ["/", "/health", "/prometheus", "/docs", "/openapi.json", "/admin/dashboard"]
+
+    def request(self, method, url, **kwargs):
+        """Override request to add authentication header"""
+        if "headers" not in kwargs:
+            kwargs["headers"] = {}
+
+        # Add API key for protected endpoints
+        if self.api_key and url not in self.public_endpoints:
+            if "Authorization" not in kwargs["headers"]:
+                kwargs["headers"]["Authorization"] = f"Bearer {self.api_key}"
+
+        return super().request(method, url, **kwargs)
+
+
+@pytest.fixture
+def api_client(test_api_key, temp_db, monkeypatch, key_manager):
+    """FastAPI test client with authentication"""
+    monkeypatch.setenv("FLAMEHAVEN_API_KEYS_DB", temp_db)
+    monkeypatch.setenv("FLAMEHAVEN_ADMIN_KEY", "admin_test_key_12345")
+    return AuthenticatedTestClient(app, api_key=test_api_key)
 
 
 def _build_request():
