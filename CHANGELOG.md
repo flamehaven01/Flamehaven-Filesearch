@@ -99,7 +99,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 16 new tests for API key authentication
 - Batch search tests with sequential and parallel modes
 - Dashboard endpoint tests
-- 175 total tests passing, 91% coverage maintained
+- 227 total tests passing, 88% coverage maintained (excluding optional modules)
 
 ### Documentation
 - Admin dashboard user guide
@@ -109,15 +109,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Migration guide for v1.1.0 users
 
 ### Files Added
-- `flamehaven_filesearch/auth.py` - API key management (358 lines)
-- `flamehaven_filesearch/security.py` - FastAPI integration (154 lines)
-- `flamehaven_filesearch/admin_routes.py` - Admin endpoints (264 lines)
-- `flamehaven_filesearch/dashboard.py` - Web dashboard (280 lines)
-- `flamehaven_filesearch/cache_redis.py` - Redis backend (190 lines)
-- `flamehaven_filesearch/batch_routes.py` - Batch search (235 lines)
-- `tests/test_auth.py` - Auth tests (421 lines)
-- `PHASE6_AUTH_DESIGN.md` - Design document
-- `PHASE6_COMPLETION_SUMMARY.md` - Implementation summary
+- `flamehaven_filesearch/auth.py` - API key management (485 lines)
+- `flamehaven_filesearch/security.py` - FastAPI integration (179 lines)
+- `flamehaven_filesearch/admin_routes.py` - Admin endpoints (262 lines)
+- `flamehaven_filesearch/dashboard.py` - Web dashboard (476 lines)
+- `flamehaven_filesearch/cache_redis.py` - Redis backend (288 lines)
+- `flamehaven_filesearch/batch_routes.py` - Batch search (269 lines)
+- `tests/test_auth.py` - Auth tests (308 lines)
+- Design documentation in `docs/history/`
 
 ### Known Limitations
 - Admin authentication uses environment variable (improved in v1.2.1)

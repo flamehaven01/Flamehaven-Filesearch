@@ -13,7 +13,7 @@
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org/)
 [![MIT License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
-[Quick Start (3 min)](#-3-minute-quick-start) • [Documentation](DEPLOYMENT_GUIDE_v1.2.0.md) • [Roadmap](#-roadmap) • [Contributing](CONTRIBUTING.md)
+[Quick Start (3 min)](#-3-minute-quick-start) • [API Docs](http://localhost:8000/docs) • [Roadmap](#-roadmap) • [Contributing](CONTRIBUTING.md)
 
 </div>
 
@@ -234,7 +234,7 @@ docker-compose up -d
 
 ### Option 3: Kubernetes (For High Availability)
 
-See [DEPLOYMENT_GUIDE_v1.2.0.md](DEPLOYMENT_GUIDE_v1.2.0.md) for complete Kubernetes manifests with StatefulSets, ConfigMaps, and Secrets.
+See the [Kubernetes deployment example](#kubernetes-deployment) above for complete manifests with StatefulSets, ConfigMaps, and Secrets.
 
 ---
 
@@ -477,7 +477,7 @@ If issues occur, v1.1.0 remains available. No data loss on downgrade.
 
 ## Support & Community
 
-- **Documentation:** [Deployment Guide](DEPLOYMENT_GUIDE_v1.2.0.md) | [Release Notes](RELEASE_NOTES_v1.2.0.md)
+- **Documentation:** [CHANGELOG](CHANGELOG.md) | [Release Notes](RELEASE_NOTES.md)
 - **Issues & Bugs:** [GitHub Issues](https://github.com/flamehaven01/Flamehaven-Filesearch/issues)
 - **Discussions:** [GitHub Discussions](https://github.com/flamehaven01/Flamehaven-Filesearch/discussions)
 - **Security Issues:** security@flamehaven.space
