@@ -1,4 +1,4 @@
-name: Security Scanning
+name: Security & Secrets Scanning
 
 on:
   push:
@@ -11,6 +11,147 @@ on:
   workflow_dispatch:
 
 jobs:
+  # ==================== SECRETS DETECTION ====================
+
+  gitleaks:
+    name: Gitleaks Secret Detection
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Full history for comprehensive scan
+
+    - name: Run Gitleaks
+      uses: gitleaks/gitleaks-action@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+    - name: Upload Gitleaks report
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: gitleaks-report
+        path: gitleaks-report.json
+        retention-days: 30
+
+  trufflehog:
+    name: TruffleHog Secret Scan
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Run TruffleHog
+      uses: trufflesecurity/trufflehog@main
+      with:
+        path: ./
+        base: ${{ github.event.repository.default_branch }}
+        head: HEAD
+        extra_args: --debug --only-verified
+
+  custom-patterns:
+    name: Custom Pattern Detection
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Scan for API keys and tokens
+      run: |
+        echo "Scanning for potential secrets..."
+
+        # Create patterns file
+        cat > patterns.txt << 'EOL'
+        GEMINI_API_KEY\s*=\s*["']?[A-Za-z0-9_-]{30,}["']?
+        GOOGLE_API_KEY\s*=\s*["']?[A-Za-z0-9_-]{30,}["']?
+        api_key\s*=\s*["'][A-Za-z0-9_-]{20,}["']
+        password\s*=\s*["'][^"']{8,}["']
+        secret\s*=\s*["'][A-Za-z0-9_-]{20,}["']
+        token\s*=\s*["'][A-Za-z0-9._-]{20,}["']
+        EOL
+
+        # Scan files (exclude test fixtures)
+        FOUND=0
+        while IFS= read -r pattern; do
+          echo "Checking pattern: $pattern"
+          if grep -rE "$pattern" . \
+            --exclude-dir=.git \
+            --exclude-dir=.github \
+            --exclude-dir=node_modules \
+            --exclude-dir=venv \
+            --exclude-dir=__pycache__ \
+            --exclude="*.pyc" \
+            --exclude="patterns.txt" \
+            --exclude=".env.example" \
+            | grep -v "^\s*#"; then
+            echo "WARNING: Potential secret found matching pattern: $pattern"
+            FOUND=1
+          fi
+        done < patterns.txt
+
+        if [ $FOUND -eq 1 ]; then
+          echo "ERROR: Potential secrets detected in codebase!"
+          exit 1
+        else
+          echo "No secrets detected - scan passed!"
+        fi
+
+  env-validation:
+    name: Environment File Validation
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Validate .env files
+      run: |
+        echo "Validating environment files..."
+
+        # Check that .env.example has no real secrets
+        if [ -f .env.example ]; then
+          echo "Checking .env.example..."
+
+          # These patterns indicate placeholder values (good)
+          if grep -q "your-api-key-here" .env.example && \
+             ! grep -qE "[A-Za-z0-9_-]{32,}" .env.example | grep -v "your-api-key-here"; then
+            echo "✅ .env.example contains only placeholders"
+          else
+            echo "❌ .env.example may contain real API keys!"
+            cat .env.example
+            exit 1
+          fi
+        fi
+
+        # Ensure .env is gitignored
+        if [ -f .gitignore ]; then
+          if grep -q "^\.env$" .gitignore || grep -q "^\.env$" .gitignore; then
+            echo "✅ .env is properly gitignored"
+          else
+            echo "❌ .env is not in .gitignore!"
+            exit 1
+          fi
+        else
+          echo "WARNING: No .gitignore file found"
+        fi
+
+        # Check that .env does not exist in repo
+        if [ -f .env ]; then
+          echo "❌ ERROR: .env file should not be committed!"
+          exit 1
+        else
+          echo "✅ No .env file in repository"
+        fi
+
+  # ==================== CODE & DEPENDENCY SECURITY ====================
+
   bandit:
     name: Bandit SAST
     runs-on: ubuntu-latest
@@ -153,9 +294,17 @@ jobs:
         category: "/language:${{ matrix.language }}"
 
   security-summary:
-    name: Security Summary
+    name: Security & Secrets Summary
     runs-on: ubuntu-latest
-    needs: [bandit, safety, trivy, codeql]
+    needs:
+      - gitleaks
+      - trufflehog
+      - custom-patterns
+      - env-validation
+      - bandit
+      - safety
+      - trivy
+      - codeql
     if: always()
 
     steps:
@@ -164,20 +313,39 @@ jobs:
 
     - name: Generate security summary
       run: |
-        echo "# Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+        echo "# Security & Secrets Scan Summary" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "## Scan Results" >> $GITHUB_STEP_SUMMARY
+
+        echo "## Secrets Detection" >> $GITHUB_STEP_SUMMARY
+        echo "- Gitleaks: ${{ needs.gitleaks.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "- TruffleHog: ${{ needs.trufflehog.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Custom Patterns: ${{ needs.custom-patterns.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Environment Validation: ${{ needs.env-validation.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        echo "## Code & Dependency Security" >> $GITHUB_STEP_SUMMARY
         echo "- Bandit SAST: ${{ needs.bandit.result }}" >> $GITHUB_STEP_SUMMARY
         echo "- Safety Dependencies: ${{ needs.safety.result }}" >> $GITHUB_STEP_SUMMARY
         echo "- Trivy Container: ${{ needs.trivy.result }}" >> $GITHUB_STEP_SUMMARY
         echo "- CodeQL Analysis: ${{ needs.codeql.result }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
 
-        if [ "${{ needs.bandit.result }}" == "success" ] && \
+        # Check all results
+        if [ "${{ needs.gitleaks.result }}" == "success" ] && \
+           [ "${{ needs.trufflehog.result }}" == "success" ] && \
+           [ "${{ needs.custom-patterns.result }}" == "success" ] && \
+           [ "${{ needs.env-validation.result }}" == "success" ] && \
+           [ "${{ needs.bandit.result }}" == "success" ] && \
            [ "${{ needs.safety.result }}" == "success" ] && \
            [ "${{ needs.trivy.result }}" == "success" ] && \
            [ "${{ needs.codeql.result }}" == "success" ]; then
-          echo "✅ **All security scans passed!**" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **All security & secrets scans passed!**" >> $GITHUB_STEP_SUMMARY
         else
           echo "❌ **Security scans failed - review artifacts**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Remediation Steps" >> $GITHUB_STEP_SUMMARY
+          echo "1. Review failed scan artifacts above" >> $GITHUB_STEP_SUMMARY
+          echo "2. If secrets detected: Rotate credentials immediately" >> $GITHUB_STEP_SUMMARY
+          echo "3. If vulnerabilities found: Update dependencies or apply patches" >> $GITHUB_STEP_SUMMARY
+          echo "4. Rerun scans after fixes" >> $GITHUB_STEP_SUMMARY
         fi
