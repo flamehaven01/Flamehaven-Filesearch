@@ -45,6 +45,7 @@ from slowapi.util import get_remote_address
 # Import routers
 from .admin_routes import router as admin_router
 from .auth import APIKeyInfo
+from . import batch_routes
 from .batch_routes import router as batch_router
 from .cache import get_all_cache_stats
 from .config import Config
@@ -243,6 +244,8 @@ def initialize_services(force: bool = False) -> None:
     try:
         searcher = FlamehavenFileSearch(config=config, allow_offline=True)
         logger.info("FLAMEHAVEN FileSearch v1.1.0 initialized successfully")
+        # Set searcher for batch routes
+        batch_routes.set_searcher(searcher)
     except Exception as exc:  # pragma: no cover - defensive guard
         logger.warning(
             "Failed to initialize FLAMEHAVEN FileSearch (%s); running without searcher",

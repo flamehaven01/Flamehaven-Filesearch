@@ -12,7 +12,13 @@ import pytest
 from fastapi.testclient import TestClient
 
 from flamehaven_filesearch.api import app
-from flamehaven_filesearch.cache_redis import RedisCache
+
+# Try to import RedisCache, but it's optional
+try:
+    from flamehaven_filesearch.cache_redis import RedisCache, REDIS_AVAILABLE
+    HAS_REDIS_CACHE = REDIS_AVAILABLE
+except ImportError:
+    HAS_REDIS_CACHE = False
 
 # ============================================================================
 # API AUTHENTICATION TESTS
@@ -208,6 +214,7 @@ class TestBatchSearchAPI:
 class TestRedisCacheBackend:
     """Test Redis cache backend"""
 
+    @pytest.mark.skipif(not HAS_REDIS_CACHE, reason="redis package not installed")
     def test_redis_cache_basic_operations(self):
         """Test basic Redis cache operations"""
         cache = RedisCache(host="localhost", port=6379, password=None)
@@ -223,6 +230,7 @@ class TestRedisCacheBackend:
             # Redis not running is acceptable for this test
             pytest.skip("Redis not available")
 
+    @pytest.mark.skipif(not HAS_REDIS_CACHE, reason="redis package not installed")
     def test_redis_cache_has_namespace_isolation(self):
         """Test that Redis cache uses namespace isolation"""
         cache = RedisCache(host="localhost", port=6379, password=None)

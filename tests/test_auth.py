@@ -81,7 +81,7 @@ class TestAPIKeyValidation:
         assert key_info.id == key_id
         assert key_info.user_id == "user1"
         assert key_info.name == "Test Key"
-        assert key_info.is_active is True
+        assert key_info.is_active == True
 
     def test_validate_invalid_key(self, key_manager):
         """Test validating invalid API key"""
@@ -145,9 +145,9 @@ class TestAPIKeyManagement:
 class TestProtectedEndpoints:
     """Test that endpoints require authentication"""
 
-    def test_upload_single_requires_auth(self, client):
+    def test_upload_single_requires_auth(self, public_client):
         """Test that upload endpoint requires API key"""
-        response = client.post(
+        response = public_client.post(
             "/api/upload/single",
             files={"file": ("test.txt", b"test content")},
             data={"store": "default"},
@@ -159,24 +159,24 @@ class TestProtectedEndpoints:
             or "missing" in response.text.lower()
         )
 
-    def test_search_requires_auth(self, client):
+    def test_search_requires_auth(self, public_client):
         """Test that search endpoint requires API key"""
-        response = client.post(
+        response = public_client.post(
             "/api/search",
             json={"query": "test"},
         )
 
         assert response.status_code == 401
 
-    def test_stores_create_requires_auth(self, client):
+    def test_stores_create_requires_auth(self, public_client):
         """Test that store creation requires API key"""
-        response = client.post("/api/stores", json={"name": "test_store"})
+        response = public_client.post("/api/stores", json={"name": "test_store"})
 
         assert response.status_code == 401
 
-    def test_stores_list_requires_auth(self, client):
+    def test_stores_list_requires_auth(self, public_client):
         """Test that store listing requires API key"""
-        response = client.get("/api/stores")
+        response = public_client.get("/api/stores")
 
         assert response.status_code == 401
 
@@ -253,9 +253,9 @@ class TestAdminRoutes:
         data = revoke_response.json()
         assert data["status"] == "success"
 
-    def test_admin_requires_authentication(self, client):
+    def test_admin_requires_authentication(self, public_client):
         """Test that admin endpoints require authentication"""
-        response = client.post(
+        response = public_client.post(
             "/api/admin/keys",
             json={"name": "Test"},
         )

@@ -110,7 +110,12 @@ addopts = "-v --cov=flamehaven_filesearch --cov-report=term-missing"
 
 [tool.coverage.run]
 source = ["flamehaven_filesearch"]
-omit = ["tests/*", "examples/*"]
+omit = [
+    "tests/*",
+    "examples/*",
+    "flamehaven_filesearch/cache_redis.py",  # Optional Redis backend
+    "flamehaven_filesearch/dashboard.py",    # UI/HTML generation
+]
 
 [tool.coverage.report]
 exclude_lines = [
