@@ -47,12 +47,12 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Run TruffleHog (filesystem mode)
+    - name: Run TruffleHog (filesystem scan)
       uses: trufflesecurity/trufflehog@main
       with:
         path: ./
-        # Use filesystem mode to avoid BASE/HEAD comparison issues
-        extra_args: --debug --only-verified --no-git
+        # Only scan verified secrets to reduce false positives
+        extra_args: --only-verified
 
   custom-patterns:
     name: Custom Pattern Detection

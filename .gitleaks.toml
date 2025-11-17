@@ -48,10 +48,8 @@ paths = [
 ]
 
 # Specific file:line:rule combinations to ignore
-[[allowlist.commits]]
-# Commit that added documentation examples
-# If you know specific commit SHAs with false positives, add them here
-# Example: "25b0bb56391a5fabd04ae14535679308e6ca3ca8"
+# Commits with known false positives can be added here:
+# commits = ["commit_sha_here"]
 
 # Override specific rules for documentation
 [[rules]]

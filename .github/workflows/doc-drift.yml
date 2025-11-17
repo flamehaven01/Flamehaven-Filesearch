@@ -80,9 +80,11 @@ jobs:
               print(f"::warning::Documentation has {warnings} warnings (threshold: 20)")
 
           # Set output for next steps
-          print(f"readme_score={readme_score:.2%}" >> $GITHUB_OUTPUT)
-          print(f"coherence_score={coherence_score:.2%}" >> $GITHUB_OUTPUT)
-          print(f"failed={failed}" >> $GITHUB_OUTPUT)
+          import os
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write(f"readme_score={readme_score:.2%}\n")
+              f.write(f"coherence_score={coherence_score:.2%}\n")
+              f.write(f"failed={failed}\n")
 
           sys.exit(1 if failed else 0)
           EOF

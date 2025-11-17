@@ -16,6 +16,7 @@ from flamehaven_filesearch.api import app
 # Try to import RedisCache, but it's optional
 try:
     from flamehaven_filesearch.cache_redis import RedisCache, REDIS_AVAILABLE
+
     HAS_REDIS_CACHE = REDIS_AVAILABLE
 except ImportError:
     HAS_REDIS_CACHE = False
