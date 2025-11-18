@@ -42,10 +42,11 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
+from . import batch_routes
+
 # Import routers
 from .admin_routes import router as admin_router
 from .auth import APIKeyInfo
-from . import batch_routes
 from .batch_routes import router as batch_router
 from .cache import get_all_cache_stats
 from .config import Config
