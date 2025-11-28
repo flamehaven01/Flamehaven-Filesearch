@@ -1,6 +1,6 @@
-# Upgrading to v1.1.0
+# Upgrading to v1.2.1
 
-This guide covers the upgrade process from **v1.0.0 → v1.1.0**.
+This guide covers the upgrade process from **v1.1.x → v1.2.1**.
 
 ---
 
@@ -18,30 +18,24 @@ pip install -U flamehaven-filesearch[api]
 flamehaven-api
 ```
 
-**Breaking Changes**: ✅ None - fully backward compatible
+**Breaking Changes**: ⚠️ Admin routes now require `admin` permission on API keys (or `FLAMEHAVEN_ADMIN_KEY`). Set `FLAMEHAVEN_ENC_KEY` for encrypted metadata. Optional OIDC admin validation supported.
 
 ---
 
-## What's New in v1.1.0
+## What's New in v1.2.1
 
-### Performance
-- ⚡ 99% faster search responses on cache hits (<10ms vs 2-3s)
-- 💰 40-60% reduction in Gemini API costs
-- 📦 LRU caching with 1-hour TTL (1000 items)
+### Security / Admin
+- Admin API 키는 `admin` 퍼미션이 필요(기존 키에 퍼미션 없으면 403). 새 키 기본 퍼미션에 admin 포함.
+- OIDC 기반 admin 검증 훅 추가(`FLAMEHAVEN_IAM_PROVIDER=oidc`, `FLAMEHAVEN_OIDC_*`).
+- 민감 메타데이터 암호화를 위한 `FLAMEHAVEN_ENC_KEY`(32-byte base64, AES-256-GCM).
 
-### Security
-- 🔒 Path traversal vulnerability fixed (CRITICAL)
-- 🛡️ Rate limiting per endpoint
-- 🔐 OWASP security headers
-- ✅ Zero critical CVEs (patched CVE-2024-47874, CVE-2025-54121)
-
-### Monitoring
-- 📊 Prometheus metrics (17 metrics)
-- 📝 Structured JSON logging
-- 🎯 Request ID tracing
+### Caching / Metrics
+- Admin 캐시 관리: `/api/admin/cache/stats`, `/api/admin/cache/flush`.
+- `/metrics`에 캐시/헬스 및 최근 60s/300s 요청/에러 요약 포함.
+- 프런트 대시보드(cache/metrics/upload/admin) 연결.
 
 ### Full Details
-See [CHANGELOG.md](CHANGELOG.md#110---2025-11-13) for complete release notes.
+See [CHANGELOG.md](CHANGELOG.md) for complete release notes.
 
 ---
 
@@ -51,11 +45,8 @@ See [CHANGELOG.md](CHANGELOG.md#110---2025-11-13) for complete release notes.
 
 #### Backup Your Data (Recommended)
 ```bash
-# Backup data directory
+# Backup data directory (if you store API key DB locally)
 tar -czf flamehaven_data_backup_$(date +%Y%m%d).tar.gz ./data
-
-# Or simple copy
-cp -r ./data ./data_backup_v1.0.0
 ```
 
 #### Check Current Version

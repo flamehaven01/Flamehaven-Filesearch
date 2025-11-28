@@ -48,6 +48,7 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
+/RELEASE_NOTES_v1.2.1.md
 
 # Translations
 *.mo

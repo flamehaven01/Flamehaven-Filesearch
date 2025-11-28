@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Metrics payload now includes `cache`, `health_status`, `prometheus` placeholders for dashboard use.
 - Frontend cache/metrics pages wired to backend endpoints; upload/admin pages wired with token inputs.
 - Tests: `tests/test_admin_cache.py` for cache stats/flush admin routes.
+- Frontend dashboard pages added/updated: landing, search, upload, admin (keys), cache, metrics (wired to backend APIs with token inputs).
 
 ### Changed
 - Default new API keys include `admin` in permissions.
