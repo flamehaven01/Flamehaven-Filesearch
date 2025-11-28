@@ -1,244 +1,117 @@
 <!DOCTYPE html>
-
 <html class="dark" lang="en"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Filesearch Ops Dashboard</title>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com" rel="preconnect"/>
-<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
-<script>
-      tailwind.config = {
-        darkMode: "class",
-        theme: {
-          extend: {
-            colors: {
-              "primary": "#137fec",
-              "background-light": "#f6f7f8",
-              "background-dark": "#101922",
-              "surface-dark": "#182431",
-              "border-dark": "#233648",
-              "text-primary-dark": "#EAEAEA",
-              "text-secondary-dark": "#92adc9",
-              "success": "#28A745",
-              "error": "#DC3545",
-            },
-            fontFamily: {
-              "display": ["Inter", "sans-serif"]
-            },
-            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Filesearch Ops - Dashboard</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#137fec",
+            "background-light": "#f6f7f8",
+            "background-dark": "#101922",
+            "surface-dark": "#1d2833",
+            "border-dark": "#324d67",
+            "text-main-dark": "#e1eaf2",
+            "text-secondary-dark": "#92adc9",
+            "success": "#38A169",
+            "error": "#E53E3E"
+          },
+          fontFamily: {
+            "display": ["Inter", "sans-serif"]
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
           },
         },
-      }
-    </script>
-<style>
-      .material-symbols-outlined {
-        font-variation-settings:
-        'FILL' 0,
-        'wght' 400,
-        'GRAD' 0,
-        'opsz' 24
-      }
-    </style>
+      },
+    }
+  </script>
 </head>
-<body class="font-display bg-background-light dark:bg-background-dark">
-<div class="relative flex h-auto min-h-screen w-full flex-col">
-<div class="flex h-full min-h-screen w-full">
-<!-- SideNavBar -->
-<aside class="flex h-full min-h-screen flex-col justify-between bg-background-light dark:bg-surface-dark p-4 border-r border-transparent dark:border-border-dark w-64">
-<div class="flex flex-col gap-8">
-<div class="flex items-center gap-3 px-3">
-<span class="material-symbols-outlined text-primary text-3xl">hub</span>
-<h1 class="text-text-primary-dark text-xl font-bold leading-normal">Filesearch</h1>
-</div>
-<nav class="flex flex-col gap-2">
-<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/20 text-primary" href="landing.html">
-<span class="material-symbols-outlined">dashboard</span>
-<p class="text-sm font-medium leading-normal">Dashboard</p>
-</a>
-<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-primary-dark hover:bg-primary/10 transition-colors" href="search.html">
-<span class="material-symbols-outlined">search</span>
-<p class="text-sm font-medium leading-normal">File Search</p>
-</a>
-<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-primary-dark hover:bg-primary/10 transition-colors" href="upload.html">
-<span class="material-symbols-outlined">upload_file</span>
-<p class="text-sm font-medium leading-normal">Upload</p>
-</a>
-<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-primary-dark hover:bg-primary/10 transition-colors" href="admin.html">
-<span class="material-symbols-outlined">shield_person</span>
-<p class="text-sm font-medium leading-normal">Admin Panel</p>
-</a>
-<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-primary-dark hover:bg-primary/10 transition-colors" href="metrics.html">
-<span class="material-symbols-outlined">settings</span>
-<p class="text-sm font-medium leading-normal">Settings</p>
-</a>
-</nav>
-</div>
-<button class="flex w-full items-center justify-center gap-2 rounded-lg border border-border-dark px-3 py-2 text-text-secondary-dark hover:bg-primary/10 transition-colors">
-<span class="material-symbols-outlined text-xl">arrow_back_ios_new</span>
-<span class="text-sm font-medium">Collapse</span>
-</button>
-</aside>
-<div class="flex flex-1 flex-col">
-<!-- TopNavBar -->
-<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-transparent dark:border-border-dark px-10 py-3 bg-background-light dark:bg-surface-dark">
-<div class="flex flex-1 items-center gap-8">
-<label class="flex flex-col min-w-40 !h-10 w-full max-w-lg">
-<div class="flex w-full flex-1 items-stretch rounded-lg h-full">
-<div class="text-text-secondary-dark flex bg-background-light dark:bg-background-dark items-center justify-center pl-4 rounded-l-lg border-y border-l border-transparent dark:border-border-dark">
-<span class="material-symbols-outlined text-2xl">search</span>
-</div>
-<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-r-lg text-text-primary-dark focus:outline-0 focus:ring-1 focus:ring-primary bg-background-light dark:bg-background-dark h-full placeholder:text-text-secondary-dark px-4 text-base font-normal leading-normal border-y border-r border-transparent dark:border-border-dark" placeholder="Search files..." value=""/>
-</div>
-</label>
-</div>
-<div class="flex flex-1 justify-end gap-4">
-<div class="flex gap-2">
-<button class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 w-10 bg-background-light dark:bg-background-dark border border-transparent dark:border-border-dark text-text-secondary-dark hover:text-text-primary-dark transition-colors">
-<span class="material-symbols-outlined text-2xl">notifications</span>
-</button>
-<button class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 w-10 bg-background-light dark:bg-background-dark border border-transparent dark:border-border-dark text-text-secondary-dark hover:text-text-primary-dark transition-colors">
-<span class="material-symbols-outlined text-2xl">help</span>
-</button>
-</div>
-<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="User avatar image" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAWiszRRIHlamZ9kyrNF7rTeJJay1XtWHOO0qu7bybwzYKOIWpxilrxZHxQArH1BH4sCyRsp1ZSRDSRdvyW7teoIZgEJqIaI5LiWm-9ElwrqtsBguG8Fz7MbdMYzBUM4CfDMc7pq0xYRDTg6tPtZAjVtXv8TK2YRpfr45nDhle0D4m393eXswPRKWu08L6IG3FS5DeTOMJFcRDTKS4MhIIoAd5EPzxOANyjpV374jHGJaKmWocim5GPneYEtpIN0I7IsWCq-xJCZ8M");'></div>
-</div>
-</header>
-<!-- Main Content -->
-<main class="flex-1 overflow-y-auto p-10">
-<div class="flex flex-col gap-8">
-<!-- PageHeading -->
-<div class="flex flex-wrap justify-between gap-3">
-<p class="text-text-primary-dark text-4xl font-black leading-tight tracking-[-0.033em] min-w-72">Dashboard</p>
-</div>
-<!-- Stats -->
-<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-<div class="flex flex-col gap-4 rounded-xl p-6 bg-background-light dark:bg-surface-dark border border-transparent dark:border-border-dark">
-<div class="flex items-center gap-4">
-<div class="flex items-center justify-center size-10 rounded-lg bg-primary/20 text-primary">
-<span class="material-symbols-outlined">tag</span>
-</div>
-<p class="text-text-primary-dark text-base font-medium leading-normal">System Version</p>
-</div>
-<p class="text-text-primary-dark tracking-light text-3xl font-bold leading-tight">v2.1.0</p>
-</div>
-<div class="flex flex-col gap-4 rounded-xl p-6 bg-background-light dark:bg-surface-dark border border-transparent dark:border-border-dark">
-<div class="flex items-center gap-4">
-<div class="flex items-center justify-center size-10 rounded-lg bg-success/20 text-success">
-<span class="material-symbols-outlined">timer</span>
-</div>
-<p class="text-text-primary-dark text-base font-medium leading-normal">System Uptime</p>
-</div>
-<p class="text-success tracking-light text-3xl font-bold leading-tight">99.98%</p>
-</div>
-<div class="flex flex-col gap-4 rounded-xl p-6 bg-background-light dark:bg-surface-dark border border-transparent dark:border-border-dark">
-<div class="flex items-center gap-4">
-<div class="flex items-center justify-center size-10 rounded-lg bg-primary/20 text-primary">
-<span class="material-symbols-outlined">sync_alt</span>
-</div>
-<p class="text-text-primary-dark text-base font-medium leading-normal">Requests / Sec</p>
-</div>
-<p class="text-text-primary-dark tracking-light text-3xl font-bold leading-tight">1,204</p>
-</div>
-<div class="flex flex-col gap-4 rounded-xl p-6 bg-background-light dark:bg-surface-dark border border-transparent dark:border-border-dark">
-<div class="flex items-center gap-4">
-<div class="flex items-center justify-center size-10 rounded-lg bg-error/20 text-error">
-<span class="material-symbols-outlined">error</span>
-</div>
-<p class="text-text-primary-dark text-base font-medium leading-normal">Error Rate</p>
-</div>
-<p class="text-error tracking-light text-3xl font-bold leading-tight">0.02%</p>
-</div>
-</div>
-<!-- SectionHeader for Key Actions -->
-<h2 class="text-text-primary-dark text-[22px] font-bold leading-tight tracking-[-0.015em] pt-5">Key Actions</h2>
-<!-- Action Cards -->
-<div class="grid grid-cols-1 gap-6 md:grid-cols-3">
-<a class="group flex flex-col items-center justify-center gap-4 rounded-xl p-8 bg-background-light dark:bg-surface-dark border border-transparent dark:border-border-dark hover:border-primary transition-colors" href="upload.html">
-<div class="flex items-center justify-center size-16 rounded-full bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
-<span class="material-symbols-outlined text-4xl">upload_file</span>
-</div>
-<p class="text-text-primary-dark text-lg font-semibold">Upload New Files</p>
-<p class="text-text-secondary-dark text-sm text-center">Drag and drop or select files to add to the system.</p>
-</a>
-<a class="group flex flex-col items-center justify-center gap-4 rounded-xl p-8 bg-background-light dark:bg-surface-dark border border-transparent dark:border-border-dark hover:border-primary transition-colors" href="search.html">
-<div class="flex items-center justify-center size-16 rounded-full bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
-<span class="material-symbols-outlined text-4xl">search</span>
-</div>
-<p class="text-text-primary-dark text-lg font-semibold">Perform a Search</p>
-<p class="text-text-secondary-dark text-sm text-center">Find specific files using powerful search queries.</p>
-</a>
-<a class="group flex flex-col items-center justify-center gap-4 rounded-xl p-8 bg-background-light dark:bg-surface-dark border border-transparent dark:border-border-dark hover:border-primary transition-colors" href="admin.html">
-<div class="flex items-center justify-center size-16 rounded-full bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
-<span class="material-symbols-outlined text-4xl">shield_person</span>
-</div>
-<p class="text-text-primary-dark text-lg font-semibold">Go to Admin Panel</p>
-<p class="text-text-secondary-dark text-sm text-center">Manage users, permissions, and system settings.</p>
-</a>
-</div>
-<!-- Additional Widgets -->
-<div class="grid grid-cols-1 gap-6 lg:grid-cols-5">
-<div class="lg:col-span-3 flex flex-col gap-4 rounded-xl p-6 bg-background-light dark:bg-surface-dark border border-transparent dark:border-border-dark">
-<h3 class="text-text-primary-dark text-lg font-bold">Request Volume (Last 24h)</h3>
-<div class="flex items-center justify-center h-64 text-text-secondary-dark bg-background-dark/50 rounded-lg">
-<img class="w-full h-full object-contain" data-alt="Bar chart showing request volume over the last 24 hours" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC4CtlyO8I7A7jT4oEeadLQ60X0r4S-oghDh-Pe1LmxYWuuq5Jh-2h7bQcDt6Vc6DQuxwQvrZjLiresTqMSpvAesOHBvgQv7wzHbbcazOQlIsTeFROYdCKG0bu9J23dMeT47zSBJ1KqCpY3k3OYK0SF7fpZO_uO4HtDk56cZSM2_gSvlttY-ZuLGLU9lHigSvG3jNNBRVQYPPjRDIc7bhY1x99cmoNHL_R6qRgNtPUNOPlAC_XKUGaJDTu2W24o1IvP-ssmCFd2t14"/>
-</div>
-</div>
-<div class="lg:col-span-2 flex flex-col gap-4 rounded-xl p-6 bg-background-light dark:bg-surface-dark border border-transparent dark:border-border-dark">
-<h3 class="text-text-primary-dark text-lg font-bold">Recent Activity</h3>
-<ul class="space-y-4">
-<li class="flex items-start gap-3">
-<span class="material-symbols-outlined text-text-secondary-dark mt-0.5">person</span>
-<div class="flex flex-col">
-<p class="text-sm text-text-primary-dark">User <span class="font-semibold">john.doe</span> uploaded <span class="font-semibold">document_final.pdf</span></p>
-<p class="text-xs text-text-secondary-dark">2 minutes ago</p>
-</div>
-</li>
-<li class="flex items-start gap-3">
-<span class="material-symbols-outlined text-text-secondary-dark mt-0.5">error</span>
-<div class="flex flex-col">
-<p class="text-sm text-text-primary-dark">System alert: High CPU usage detected on <span class="font-semibold">worker-03</span></p>
-<p class="text-xs text-text-secondary-dark">15 minutes ago</p>
-</div>
-</li>
-<li class="flex items-start gap-3">
-<span class="material-symbols-outlined text-text-secondary-dark mt-0.5">search</span>
-<div class="flex flex-col">
-<p class="text-sm text-text-primary-dark">User <span class="font-semibold">jane.doe</span> searched for <span class="font-semibold">"Q4 reports"</span></p>
-<p class="text-xs text-text-secondary-dark">45 minutes ago</p>
-</div>
-</li>
-<li class="flex items-start gap-3">
-<span class="material-symbols-outlined text-text-secondary-dark mt-0.5">person</span>
-<div class="flex flex-col">
-<p class="text-sm text-text-primary-dark">User <span class="font-semibold">admin</span> updated settings.</p>
-<p class="text-xs text-text-secondary-dark">1 hour ago</p>
-</div>
-</li>
-</ul>
-</div>
-</div>
-</div>
-</main>
-</div>
-</div>
-</div>
-<script>
-  (() => {
-    // Normalize relative links for file:// preview and server /frontend/dashboard/
-    const origin = window.location.origin;
-    const base = origin.startsWith("file:")
-      ? window.location.href.replace(/landing\\.html.*/, "")
-      : origin.replace(/\\/$/, "") + "/frontend/dashboard/";
-    document.querySelectorAll("a[href]").forEach((a) => {
-      const href = a.getAttribute("href");
-      if (!href) return;
-      if (href.endsWith(".html")) {
-        a.href = base + href;
-      }
-    });
-  })();
-</script>
+<body class="bg-background-light dark:bg-background-dark font-display text-text-main-dark">
+  <div class="flex min-h-screen">
+    <!-- SideNavBar -->
+    <aside class="flex h-screen flex-col justify-between bg-surface-dark/50 p-4 w-64 border-r border-border-dark">
+      <div class="flex flex-col gap-4">
+        <div class="flex gap-3 items-center">
+          <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="Abstract gradient logo" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBSRe6aCEChDJPLBphsa_t4GP2ZvVu3tM8PNvFwl9_dQcjWaApcFbSxpGk8cKF-vMPaRJtNKPbzJSt90jrRkZw3qaeXHGCzIpHphbveA5bxqwptT09kgOBX6ZvriZoSx0WFFnzYdPFjLVk_EDGx-FX0lBE9JWaxw54pm9S1f8KgLJM9pWJYxF84dc3Votj9PX142Nlehglwp7Ior5rvBPuj2Ct_kPJu_oTQOseOb6w-aZQvgd36Tk-rtk5kbvvT1WiKETu0_QAYF9s");'></div>
+          <div class="flex flex-col">
+            <h1 class="text-text-main-dark text-base font-medium leading-normal">Filesearch Ops</h1>
+            <p class="text-text-secondary-dark text-sm font-normal leading-normal">Dashboard</p>
+          </div>
+        </div>
+        <nav class="flex flex-col gap-2 mt-4">
+          <a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/20 text-primary" href="landing_new.html">
+            <span class="material-symbols-outlined">dashboard</span>
+            <p class="text-sm font-medium leading-normal">Dashboard</p>
+          </a>
+          <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="search_new.html">
+            <span class="material-symbols-outlined">search</span>
+            <p class="text-sm font-medium leading-normal">Search</p>
+          </a>
+          <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="upload_new.html">
+            <span class="material-symbols-outlined">upload_file</span>
+            <p class="text-sm font-medium leading-normal">Upload</p>
+          </a>
+          <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="cache_new.html">
+            <span class="material-symbols-outlined">hub</span>
+            <p class="text-sm font-medium leading-normal">Cache</p>
+          </a>
+          <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="metrics_new.html">
+            <span class="material-symbols-outlined">monitoring</span>
+            <p class="text-sm font-medium leading-normal">Metrics</p>
+          </a>
+          <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="admin.html">
+            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">shield_person</span>
+            <p class="text-sm font-medium leading-normal">Admin</p>
+          </a>
+        </nav>
+      </div>
+      <div class="flex flex-col gap-1">
+        <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="https://github.com/flamehaven01/Flamehaven-Filesearch" title="Open docs/help">
+          <span class="material-symbols-outlined">help</span>
+          <p class="text-sm font-medium leading-normal">Help</p>
+        </a>
+        <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="landing_new.html">
+          <span class="material-symbols-outlined">logout</span>
+          <p class="text-sm font-medium leading-normal">Logout</p>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-8">
+      <div class="mx-auto max-w-7xl">
+        <!-- PageHeading -->
+        <header class="flex flex-wrap justify-between items-center gap-3 mb-6">
+          <h1 class="text-text-main-dark text-4xl font-black leading-tight tracking-[-0.033em]">Dashboard</h1>
+        </header>
+        <!-- Body content copied from original landing -->
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div class="rounded-lg border border-border-dark bg-surface-dark/70 p-4">
+            <p class="text-text-secondary-dark text-sm">Uptime</p>
+            <p class="text-text-main-dark text-2xl font-bold">--</p>
+          </div>
+          <div class="rounded-lg border border-border-dark bg-surface-dark/70 p-4">
+            <p class="text-text-secondary-dark text-sm">Requests / sec</p>
+            <p class="text-text-main-dark text-2xl font-bold">--</p>
+          </div>
+          <div class="rounded-lg border border-border-dark bg-surface-dark/70 p-4">
+            <p class="text-text-secondary-dark text-sm">Error rate</p>
+            <p class="text-text-main-dark text-2xl font-bold">--</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
 </body></html>

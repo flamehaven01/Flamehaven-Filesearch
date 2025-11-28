@@ -61,11 +61,11 @@ Leverages Gemini's generous free tier. Process thousands of docs free.
 
 ## UI Preview (3×2)
 
-| Landing | Search | Upload |
+| Dashboard | Search | Upload |
 | --- | --- | --- |
-| <img src="uiux/landingdashboard/screen.png" width="220" /> | <img src="uiux/searchconsole/screen.png" width="220" /> | <img src="uiux/upload/index_files/screen.png" width="220" /> |
+| <img src="assets/dashboard.png" width="220" /> | <img src="assets/search.png" width="220" /> | <img src="assets/upload.png" width="220" /> |
 | Cache | Metrics | Admin |
-| <img src="uiux/cache/redis_monitor/screen.png" width="220" /> | <img src="uiux/metrics/health_overview/screen.png" width="220" /> | <img src="uiux/admin/rbac_panel/screen.png" width="220" /> |
+| <img src="assets/cache.png" width="220" /> | <img src="assets/metrics.png" width="220" /> | <img src="assets/admin.png" width="220" /> |
 
 ---
 

@@ -1,23 +1,13 @@
 <!DOCTYPE html>
-<html class="dark" lang="en">
-<head>
-  <meta charset="UTF-8" />
+<html class="dark" lang="en"><head>
+  <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FileSearch Ops - Search Console</title>
+  <title>Filesearch Ops - Search</title>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
-  <style>
-    .material-symbols-outlined {
-      font-variation-settings:
-        'FILL' 0,
-        'wght' 400,
-        'GRAD' 0,
-        'opsz' 24
-    }
-  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
   <script id="tailwind-config">
     tailwind.config = {
       darkMode: "class",
@@ -27,169 +17,138 @@
             "primary": "#137fec",
             "background-light": "#f6f7f8",
             "background-dark": "#101922",
-            "surface-dark": "#182431",
-            "border-dark": "#233648",
-            "text-primary-dark": "#EAEAEA",
+            "surface-dark": "#1d2833",
+            "border-dark": "#324d67",
+            "text-main-dark": "#e1eaf2",
             "text-secondary-dark": "#92adc9",
-            "success": "#28A745",
-            "error": "#DC3545",
+            "success": "#38A169",
+            "error": "#E53E3E"
           },
-          fontFamily: {
-            "display": ["Inter", "sans-serif"]
-          },
+          fontFamily: { "display": ["Inter", "sans-serif"] },
           borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
         },
       },
     }
   </script>
 </head>
-<body class="bg-background-light dark:bg-background-dark font-display">
-  <div class="relative flex h-screen w-full flex-col overflow-hidden">
-    <div class="flex h-full w-full">
-      <!-- SideNavBar -->
-      <aside class="flex h-full w-64 flex-col bg-[#111a22] p-4 border-r border-solid border-r-[#233648]">
-        <div class="flex flex-col gap-4">
-          <div class="flex items-center gap-3 px-3 py-2">
-            <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="User avatar"
-              style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAdg0yoiZvfeBFnyKgCklcsiqffZNlWX6CaLubu7o5BQYaAHAy6-M9YBLhFiBWKr4wZoOz7SAKdCC6ME_K3rj8EiOZ4MFa76o7dJJj-LfmXD1X6rDubcY5VVjFTB3r7ukRzN-TmXWvIUHKlmf9aDHhLR2aOlsoG3PDxkBhpJjmJpMJKGtQtapYY1WndXSzkuakgwxCbioeBfJva7tM7YURUgbkR1qfrEu75h1XPU1EydqDmd6JYZYSFA6hheZ0JKLfnL5JlXxELDQ8");'></div>
-            <div class="flex flex-col">
-              <h1 class="text-white text-base font-medium leading-normal">Admin</h1>
-              <p class="text-[#92adc9] text-sm font-normal leading-normal">Search Console</p>
-            </div>
+<body class="bg-background-light dark:bg-background-dark font-display text-text-main-dark">
+  <div class="flex min-h-screen">
+    <!-- SideNavBar -->
+    <aside class="flex h-screen flex-col justify-between bg-surface-dark/50 p-4 w-64 border-r border-border-dark">
+      <div class="flex flex-col gap-4">
+        <div class="flex gap-3 items-center">
+          <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="Abstract gradient logo" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBSRe6aCEChDJPLBphsa_t4GP2ZvVu3tM8PNvFwl9_dQcjWaApcFbSxpGk8cKF-vMPaRJtNKPbzJSt90jrRkZw3qaeXHGCzIpHphbveA5bxqwptT09kgOBX6ZvriZoSx0WFFnzYdPFjLVk_EDGx-FX0lBE9JWaxw54pm9S1f8KgLJM9pWJYxF84dc3Votj9PX142Nlehglwp7Ior5rvBPuj2Ct_kPJu_oTQOseOb6w-aZQvgd36Tk-rtk5kbvvT1WiKETu0_QAYF9s");'></div>
+          <div class="flex flex-col">
+            <h1 class="text-text-main-dark text-base font-medium leading-normal">Filesearch Ops</h1>
+            <p class="text-text-secondary-dark text-sm font-normal leading-normal">Search</p>
           </div>
-          <nav class="flex flex-col gap-2 mt-4">
-            <a class="flex items-center gap-3 px-3 py-2 text-gray-400 hover:bg-[#233648] hover:text-white rounded-lg"
-              href="landing.html">
-              <span class="material-symbols-outlined">dashboard</span>
-              <p class="text-sm font-medium leading-normal">Dashboard</p>
-            </a>
-            <a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary text-white" href="search.html">
-              <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">search</span>
-              <p class="text-sm font-medium leading-normal">Search Console</p>
-            </a>
-            <a class="flex items-center gap-3 px-3 py-2 text-gray-400 hover:bg-[#233648] hover:text-white rounded-lg"
-              href="upload.html">
-              <span class="material-symbols-outlined">upload_file</span>
-              <p class="text-sm font-medium leading-normal">Upload/Index</p>
-            </a>
-            <a class="flex items-center gap-3 px-3 py-2 text-gray-400 hover:bg-[#233648] hover:text-white rounded-lg"
-              href="cache.html">
-              <span class="material-symbols-outlined">hub</span>
-              <p class="text-sm font-medium leading-normal">Cache</p>
-            </a>
-            <a class="flex items-center gap-3 px-3 py-2 text-gray-400 hover:bg-[#233648] hover:text-white rounded-lg"
-              href="metrics.html">
-              <span class="material-symbols-outlined">monitoring</span>
-              <p class="text-sm font-medium leading-normal">Metrics</p>
-            </a>
-            <a class="flex items-center gap-3 px-3 py-2 text-gray-400 hover:bg-[#233648] hover:text-white rounded-lg"
-              href="admin.html">
-              <span class="material-symbols-outlined">admin_panel_settings</span>
-              <p class="text-sm font-medium leading-normal">Admin</p>
-            </a>
-          </nav>
         </div>
-      </aside>
-      <main class="flex-1 flex flex-col h-full overflow-hidden">
-        <!-- TopNavBar -->
-        <header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#233648] px-10 py-3 bg-[#111a22] flex-shrink-0">
-          <div class="flex items-center gap-4 text-white">
-            <div class="text-primary size-7">
-              <svg fill="currentColor" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path
-                  d="M24 45.8096C19.6865 45.8096 15.4698 44.5305 11.8832 42.134C8.29667 39.7376 5.50128 36.3314 3.85056 32.3462C2.19985 28.361 1.76794 23.9758 2.60947 19.7452C3.451 15.5145 5.52816 11.6284 8.57829 8.5783C11.6284 5.52817 15.5145 3.45101 19.7452 2.60948C23.9758 1.76795 28.361 2.19986 32.3462 3.85057C36.3314 5.50129 39.7376 8.29668 42.134 11.8833C44.5305 15.4698 45.8096 19.6865 45.8096 24L24 24L24 45.8096Z"></path></svg>
-            </div>
-            <h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em]">FileSearch Ops</h2>
-          </div>
-          <div class="flex items-center gap-2">
-            <input id="bearerToken" class="w-64 h-10 rounded-lg bg-[#233648] text-white text-sm px-3"
-              placeholder="Bearer token (API/Admin)" />
-            <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 ml-2" data-alt="User avatar"
-              style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDIzSOocWKT_Ps3oe-WYx8UFMS_VknYyrPKNORiqrSGGmeIZk41fA_FBjk4WTeN-K0zxpWml2Em7kAUTa7t7RwzIUqLuOcKlUKtywqTrSnRs1UTtEaldxfhJls5LgzVkMXPM557z3xwlwl1kIZw1JCYAUuNUZPbm7J1RoudbyKnjl4PA9ulqUnDVSaerBmnIKkaT4dvE79_LRZHWD6ERZOYS4t2hZC9AuqUVNOc-bsOH2nWC1X_-Vs4pkioEvQixERGDjt3rU5IRX0");'></div>
-          </div>
+        <nav class="flex flex-col gap-2 mt-4">
+          <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="landing_new.html">
+            <span class="material-symbols-outlined">dashboard</span>
+            <p class="text-sm font-medium leading-normal">Dashboard</p>
+          </a>
+          <a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/20 text-primary" href="search_new.html">
+            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">search</span>
+            <p class="text-sm font-medium leading-normal">Search</p>
+          </a>
+          <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="upload_new.html">
+            <span class="material-symbols-outlined">upload_file</span>
+            <p class="text-sm font-medium leading-normal">Upload</p>
+          </a>
+          <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="cache_new.html">
+            <span class="material-symbols-outlined">hub</span>
+            <p class="text-sm font-medium leading-normal">Cache</p>
+          </a>
+          <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="metrics_new.html">
+            <span class="material-symbols-outlined">monitoring</span>
+            <p class="text-sm font-medium leading-normal">Metrics</p>
+          </a>
+          <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="admin.html">
+            <span class="material-symbols-outlined">admin_panel_settings</span>
+            <p class="text-sm font-medium leading-normal">Admin</p>
+          </a>
+        </nav>
+      </div>
+      <div class="flex flex-col gap-1">
+        <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="https://github.com/flamehaven01/Flamehaven-Filesearch" title="Open docs/help">
+          <span class="material-symbols-outlined">help</span>
+          <p class="text-sm font-medium leading-normal">Help</p>
+        </a>
+        <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="landing_new.html">
+          <span class="material-symbols-outlined">logout</span>
+          <p class="text-sm font-medium leading-normal">Logout</p>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-8">
+      <div class="mx-auto max-w-7xl">
+        <!-- PageHeading -->
+        <header class="flex flex-wrap justify-between items-center gap-3 mb-6">
+          <h1 class="text-text-main-dark text-4xl font-black leading-tight tracking-[-0.033em]">Search Console</h1>
         </header>
-        <div class="flex-1 overflow-y-auto">
-          <div class="p-8">
-            <!-- Tabs -->
-            <div class="pb-3">
-              <div class="flex border-b border-[#324d67] px-4 gap-8">
-                <a class="flex flex-col items-center justify-center border-b-[3px] border-b-primary text-white pb-[13px] pt-4"
-                  href="search.html">
-                  <p class="text-white text-sm font-bold leading-normal tracking-[0.015em]">Search Console</p>
-                </a>
-              </div>
+        <!-- Search body -->
+        <div class="flex flex-col gap-4">
+          <div class="flex items-center gap-2">
+            <input id="bearerToken" class="h-10 rounded-lg bg-[#233648] text-white text-sm px-3 w-80" placeholder="Bearer token" />
+            <select id="store" class="h-10 rounded-lg bg-[#233648] text-white text-sm px-3">
+              <option value="default">default</option>
+            </select>
+          </div>
+          <label class="flex flex-col w-full">
+            <p class="text-[#A0AEC0] text-sm font-medium leading-normal pb-2">Query</p>
+            <textarea id="query" class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-white focus:outline-0 focus:ring-1 focus:ring-primary border-none bg-[#233648] min-h-24 placeholder:text-[#92adc9] p-4 text-base font-normal leading-normal" placeholder="Enter a query to begin your search..."></textarea>
+          </label>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label class="flex flex-col w-full">
+                <p class="text-[#A0AEC0] text-sm font-medium leading-normal pb-2">Model</p>
+                <select id="model" class="form-select flex w-full min-w-0 flex-1 rounded-lg text-white focus:outline-0 focus:ring-1 focus:ring-primary border-none bg-[#233648] p-3 text-base font-normal leading-normal">
+                  <option value="default">default</option>
+                  <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+                  <option value="local">local</option>
+                </select>
+              </label>
             </div>
-            <!-- Card -->
-            <div class="p-4 bg-[#1a202c] rounded-lg mt-4 border border-[#233648]">
-              <div class="flex flex-col">
-                <div class="flex items-center justify-between pb-4">
-                  <p class="text-white text-lg font-bold leading-tight tracking-[-0.015em]">New Query</p>
+            <div>
+              <label class="flex flex-col w-full">
+                <div class="flex justify-between items-center pb-2">
+                  <p class="text-[#A0AEC0] text-sm font-medium leading-normal">Temperature</p>
+                  <span id="tempVal" class="text-white text-sm font-medium">0.5</span>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div class="md:col-span-2">
-                    <label class="flex flex-col w-full">
-                      <p class="text-[#A0AEC0] text-sm font-medium leading-normal pb-2">Query</p>
-                      <textarea id="query" class="form-input flex w/full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-white focus:outline-0 focus:ring-1 focus:ring-primary border-none bg-[#233648] min-h-24 placeholder:text-[#92adc9] p-4 text-base font-normal leading-normal" placeholder="Enter a query to begin your search..."></textarea>
-                    </label>
-                  </div>
-                  <div>
-                    <label class="flex flex-col w-full">
-                      <p class="text-[#A0AEC0] text-sm font-medium leading-normal pb-2">Model</p>
-                      <select id="model" class="form-select flex w-full min-w-0 flex-1 rounded-lg text-white focus:outline-0 focus:ring-1 focus:ring-primary border-none bg-[#233648] p-3 text-base font-normal leading-normal">
-                        <option value="default">default</option>
-                        <option value="gemini-2.5-flash">gemini-2.5-flash</option>
-                        <option value="local">local</option>
-                      </select>
-                    </label>
-                  </div>
-                  <div>
-                    <label class="flex flex-col w-full">
-                      <div class="flex justify-between items-center pb-2">
-                        <p class="text-[#A0AEC0] text-sm font-medium leading-normal">Temperature</p>
-                        <span id="tempVal" class="text-white text-sm font-medium">0.5</span>
-                      </div>
-                      <input id="temperature" class="w-full h-2 bg-[#233648] rounded-lg appearance-none cursor-pointer accent-primary" max="1" min="0" step="0.1" type="range" value="0.5" oninput="document.getElementById('tempVal').innerText=this.value" />
-                    </label>
-                  </div>
-                  <div>
-                    <label class="flex flex-col w-full">
-                      <div class="flex justify-between items-center pb-2">
-                        <p class="text-[#A0AEC0] text-sm font-medium leading-normal">Max Tokens</p>
-                        <span id="tokensVal" class="text-white text-sm font-medium">1024</span>
-                      </div>
-                      <input id="maxTokens" class="w-full h-2 bg-[#233648] rounded-lg appearance-none cursor-pointer accent-primary" max="4096" min="1" step="1" type="range" value="1024" oninput="document.getElementById('tokensVal').innerText=this.value" />
-                    </label>
-                  </div>
-                  <div class="flex items-end">
-                    <button id="btn-run" class="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 bg-primary text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] px-4 hover:bg-primary/80">
-                      <span class="material-symbols-outlined">search</span>
-                      <span>Run Query</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
+                <input id="temperature" class="w-full h-2 bg-[#233648] rounded-lg appearance-none cursor-pointer accent-primary" max="1" min="0" step="0.1" type="range" value="0.5" oninput="document.getElementById('tempVal').innerText=this.value" />
+              </label>
             </div>
-            <!-- Results Section -->
-            <div class="mt-8">
-              <h3 class="text-lg font-bold text-white mb-2">Results</h3>
-              <div id="results" class="p-4 bg-[#1a202c] rounded-lg border border-[#233648] text-white text-sm">
-                <p class="text-[#92adc9]">Run a query to see results. POST /api/search with {query, store, model, max_tokens, temperature}. The response will render here.</p>
-              </div>
+            <div>
+              <label class="flex flex-col w-full">
+                <div class="flex justify-between items-center pb-2">
+                  <p class="text-[#A0AEC0] text-sm font-medium leading-normal">Max Tokens</p>
+                  <span id="tokensVal" class="text-white text-sm font-medium">1024</span>
+                </div>
+                <input id="maxTokens" class="w-full h-2 bg-[#233648] rounded-lg appearance-none cursor-pointer accent-primary" max="4096" min="1" step="1" type="range" value="1024" oninput="document.getElementById('tokensVal').innerText=this.value" />
+              </label>
+            </div>
+            <div class="flex items-end">
+              <button id="btn-run" class="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 bg-primary text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] px-4 hover:bg-primary/80">
+                <span class="material-symbols-outlined">search</span>
+                <span>Run Query</span>
+              </button>
+            </div>
+          </div>
+          <div class="mt-8">
+            <h3 class="text-lg font-bold text-white mb-2">Results</h3>
+            <div id="results" class="p-4 bg-[#1a202c] rounded-lg border border-[#233648] text-white text-sm">
+              <p class="text-[#92adc9]">Run a query to see results. POST /api/search with {query, store, model, max_tokens, temperature}. The response will render here.</p>
             </div>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </main>
   </div>
   <script>
     (() => {
-      const origin = window.location.origin;
-      const base = origin.startsWith("file:")
-        ? window.location.href.replace(/search\\.html.*/, "")
-        : origin.replace(/\\/$/, "") + "/frontend/dashboard/";
-      document.querySelectorAll("a[href$='.html']").forEach((a) => {
-        a.href = base + a.getAttribute("href");
-      });
-
       const btn = document.getElementById("btn-run");
       const tokenInput = document.getElementById("bearerToken");
       const queryEl = document.getElementById("query");
@@ -241,5 +200,4 @@
       });
     })();
   </script>
-</body>
-</html>
+</body></html>
