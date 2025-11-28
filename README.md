@@ -84,12 +84,6 @@ Leverages Gemini's generous free tier. Process thousands of docs free.
 
 ---
 
-## Admin Dashboard (v1.2.1)
-
-<img src="assets/dashboard-demo.png" alt="FLAMEHAVEN FileSearch Admin Dashboard" width="100%" style="max-width: 900px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1)">
-
----
-
 ## Problem: Your Situation
 
 ```
