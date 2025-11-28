@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Filesearch Ops - Identity and Access Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings:
+            'FILL' 0,
+            'wght' 400,
+            'GRAD' 0,
+            'opsz' 24
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                        "surface-dark": "#1d2833",
+                        "border-dark": "#324d67",
+                        "text-main-dark": "#e1eaf2",
+                        "text-secondary-dark": "#92adc9",
+                        "success": "#38A169",
+                        "error": "#E53E3E"
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-text-main-dark">
+<div class="flex min-h-screen">
+<!-- SideNavBar -->
+<aside class="flex h-screen flex-col justify-between bg-surface-dark/50 p-4 w-64 border-r border-border-dark">
+<div class="flex flex-col gap-4">
+<div class="flex gap-3 items-center">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="Abstract gradient logo" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBSRe6aCEChDJPLBphsa_t4GP2ZvVu3tM8PNvFwl9_dQcjWaApcFbSxpGk8cKF-vMPaRJtNKPbzJSt90jrRkZw3qaeXHGCzIpHphbveA5bxqwptT09kgOBX6ZvriZoSx0WFFnzYdPFjLVk_EDGx-FX0lBE9JWaxw54pm9S1f8KgLJM9pWJYxF84dc3Votj9PX142Nlehglwp7Ior5rvBPuj2Ct_kPJu_oTQOseOb6w-aZQvgd36Tk-rtk5kbvvT1WiKETu0_QAYF9s");'></div>
+<div class="flex flex-col">
+<h1 class="text-text-main-dark text-base font-medium leading-normal">Filesearch Ops</h1>
+<p class="text-text-secondary-dark text-sm font-normal leading-normal">Admin Panel</p>
+</div>
+</div>
+<nav class="flex flex-col gap-2 mt-4">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="landing.html">
+<span class="material-symbols-outlined">dashboard</span>
+<p class="text-sm font-medium leading-normal">Dashboard</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="search.html">
+<span class="material-symbols-outlined">search</span>
+<p class="text-sm font-medium leading-normal">Search</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="upload.html">
+<span class="material-symbols-outlined">upload_file</span>
+<p class="text-sm font-medium leading-normal">Upload</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="cache.html">
+<span class="material-symbols-outlined">hub</span>
+<p class="text-sm font-medium leading-normal">Cache</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="metrics.html">
+<span class="material-symbols-outlined">monitoring</span>
+<p class="text-sm font-medium leading-normal">Metrics</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/20 text-primary" href="admin.html">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">settings</span>
+<p class="text-sm font-medium leading-normal">Admin</p>
+</a>
+</nav>
+</div>
+<div class="flex flex-col gap-4">
+<div class="flex flex-col gap-2">
+<label class="text-xs text-text-secondary-dark">Bearer token (admin/API)</label>
+<input id="adminToken" class="w-full h-10 rounded-lg bg-surface-dark text-text-main-dark text-sm px-3 border border-border-dark" placeholder="Paste admin key or API key" />
+</div>
+<div class="flex flex-col gap-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="#">
+<span class="material-symbols-outlined">help</span>
+<p class="text-sm font-medium leading-normal">Help</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="#">
+<span class="material-symbols-outlined">logout</span>
+<p class="text-sm font-medium leading-normal">Logout</p>
+</a>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 p-8">
+<div class="mx-auto max-w-7xl">
+<!-- PageHeading -->
+<header class="flex flex-wrap justify-between items-center gap-3 mb-6">
+<h1 class="text-text-main-dark text-4xl font-black leading-tight tracking-[-0.033em]">Identity and Access Management</h1>
+</header>
+<!-- Tabs -->
+<div class="pb-3">
+<div class="flex border-b border-border-dark gap-8">
+<a class="flex flex-col items-center justify-center border-b-[3px] border-b-primary text-text-main-dark pb-[13px] pt-4" href="#">
+<p class="text-sm font-bold leading-normal tracking-[0.015em]">API Keys</p>
+</a>
+<a class="flex flex-col items-center justify-center border-b-[3px] border-b-transparent text-text-secondary-dark pb-[13px] pt-4 hover:text-text-main-dark" href="#">
+<p class="text-sm font-bold leading-normal tracking-[0.015em]">IAM Providers</p>
+</a>
+<a class="flex flex-col items-center justify-center border-b-[3px] border-b-transparent text-text-secondary-dark pb-[13px] pt-4 hover:text-text-main-dark" href="#">
+<p class="text-sm font-bold leading-normal tracking-[0.015em]">Audit Logs</p>
+</a>
+</div>
+</div>
+<!-- API Keys Content -->
+<div class="mt-6">
+<!-- ToolBar & SearchBar -->
+<div class="flex flex-col md:flex-row justify-between gap-4 py-3">
+<div class="flex-1">
+<label class="flex flex-col h-12 w-full max-w-md">
+<div class="flex w-full flex-1 items-stretch rounded-lg h-full">
+<div class="text-text-secondary-dark flex border-none bg-surface-dark items-center justify-center pl-4 rounded-l-lg border-r-0">
+<span class="material-symbols-outlined">search</span>
+</div>
+<input id="filterKey" class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-r-lg text-text-main-dark focus:outline-0 focus:ring-2 focus:ring-primary focus:ring-inset border-none bg-surface-dark h-full placeholder:text-text-secondary-dark px-4 pl-2 text-base font-normal leading-normal" placeholder="Search by key prefix or label" value=""/>
+</div>
+</label>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark hover:text-text-main-dark">
+<span class="material-symbols-outlined">filter_list</span>
+</button>
+<button class="p-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark hover:text-text-main-dark">
+<span class="material-symbols-outlined">swap_vert</span>
+</button>
+<button class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-primary text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-4 hover:bg-primary/90">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add</span>
+<span class="truncate">Generate New Key</span>
+</button>
+</div>
+</div>
+<!-- Data Table for API Keys -->
+<div class="overflow-x-auto bg-surface-dark rounded-lg border border-border-dark mt-4">
+<table class="w-full text-left text-sm text-text-secondary-dark">
+<thead class="text-xs text-text-secondary-dark uppercase bg-surface-dark/50">
+<tr>
+<th class="px-6 py-3" scope="col">Key Prefix</th>
+<th class="px-6 py-3" scope="col">Label</th>
+<th class="px-6 py-3" scope="col">Permissions</th>
+<th class="px-6 py-3" scope="col">Rate Limit</th>
+<th class="px-6 py-3" scope="col">Status</th>
+<th class="px-6 py-3" scope="col">Created</th>
+<th class="px-6 py-3 text-right" scope="col">Actions</th>
+</tr>
+</thead>
+<tbody id="keyBody">
+<tr><td colspan="7" class="px-6 py-4 text-text-secondary-dark">Loading keys...</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</main>
+</div>
+<script>
+(() => {
+  const origin = window.location.origin;
+  const base = origin.startsWith("file:")
+    ? window.location.href.replace(/admin\\.html.*/, "")
+    : origin.replace(/\\/$/, "") + "/frontend/dashboard/";
+  document.querySelectorAll("a[href$='.html']").forEach((a) => {
+    a.href = base + a.getAttribute("href");
+  });
+
+  const tokenInput = document.getElementById("adminToken");
+  const keyBody = document.getElementById("keyBody");
+  const filterInput = document.getElementById("filterKey");
+  const btnRefresh = document.getElementById("btn-refresh-keys");
+  const btnGenerate = document.getElementById("btn-generate-key");
+
+  const authHeaders = () =>
+    tokenInput?.value ? { Authorization: `Bearer ${tokenInput.value}` } : {};
+
+  const renderKeys = (keys) => {
+    const filter = (filterInput?.value || "").toLowerCase();
+    const rows = (keys || [])
+      .filter((k) => !filter || (k.name || "").toLowerCase().includes(filter) || (k.id || "").toLowerCase().includes(filter))
+      .map(
+        (k) => `
+        <tr class="border-b border-border-dark">
+          <td class="px-6 py-4 font-mono text-text-main-dark">${(k.id || "").slice(0, 8)}...</td>
+          <td class="px-6 py-4">${k.name || "n/a"}</td>
+          <td class="px-6 py-4">${(k.permissions || []).join(", ") || "n/a"}</td>
+          <td class="px-6 py-4">${k.rate_limit_per_minute || 0}/min</td>
+          <td class="px-6 py-4">
+            <div class="flex items-center gap-2">
+              <span class="h-2 w-2 rounded-full bg-success"></span>
+              <span>Active</span>
+            </div>
+          </td>
+          <td class="px-6 py-4">${k.created_at || "n/a"}</td>
+          <td class="px-6 py-4 text-right">
+            <button class="p-2 rounded-lg hover:bg-error/20 text-error" data-key="${k.id}">
+              <span class="material-symbols-outlined text-base">delete</span>
+            </button>
+          </td>
+        </tr>`
+      )
+      .join("");
+    keyBody.innerHTML = rows || '<tr><td colspan="7" class="px-6 py-4 text-text-secondary-dark">No keys found</td></tr>';
+    keyBody.querySelectorAll("button[data-key]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const keyId = btn.getAttribute("data-key");
+        if (!keyId) return;
+        if (!confirm(`Revoke key ${keyId}?`)) return;
+        await fetch(`/api/admin/keys/${keyId}`, { method: "DELETE", headers: authHeaders() });
+        loadKeys();
+      });
+    });
+  };
+
+  const loadKeys = async () => {
+    if (!keyBody) return;
+    keyBody.innerHTML = '<tr><td colspan="7" class="px-6 py-4 text-text-secondary-dark">Loading...</td></tr>';
+    try {
+      const resp = await fetch("/api/admin/keys", { headers: authHeaders() });
+      if (!resp.ok) {
+        keyBody.innerHTML = `<tr><td colspan="7" class="px-6 py-4 text-error">Failed: ${resp.status}</td></tr>`;
+        return;
+      }
+      const data = await resp.json();
+      renderKeys(data.keys || []);
+    } catch (e) {
+      keyBody.innerHTML = `<tr><td colspan="7" class="px-6 py-4 text-error">Error: ${e.message}</td></tr>`;
+    }
+  };
+
+  filterInput?.addEventListener("input", () => loadKeys());
+  btnRefresh?.addEventListener("click", (e) => {
+    e.preventDefault();
+    loadKeys();
+  });
+  btnGenerate?.addEventListener("click", async (e) => {
+    e.preventDefault();
+    const name = prompt("Key name (label)?", "New API Key");
+    if (!name) return;
+    try {
+      const resp = await fetch("/api/admin/keys", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({
+          name,
+          permissions: ["upload", "search", "stores"],
+          rate_limit_per_minute: 100,
+        }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        alert(`Failed to create key: ${data.detail || resp.status}`);
+        return;
+      }
+      alert(`Key created. Save it now: ${data.key}`);
+      loadKeys();
+    } catch (err) {
+      alert(`Error creating key: ${err.message}`);
+    }
+  });
+
+  loadKeys();
+})();
+</script>
+</body></html>

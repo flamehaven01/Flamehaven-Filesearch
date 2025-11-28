@@ -14,7 +14,8 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
 
-from .auth import get_key_manager
+from .auth import get_iam_provider, get_key_manager
+from .cache import get_all_cache_stats, reset_all_caches
 
 logger = logging.getLogger(__name__)
 
@@ -108,6 +109,12 @@ def _get_admin_user(request: Request) -> str:
     admin_key = os.getenv("FLAMEHAVEN_ADMIN_KEY")
 
     if not admin_key or key != admin_key:
+        # IAM provider hook (pluggable)
+        iam = get_iam_provider()
+        iam_user = iam.validate_admin_token(key)
+        if iam_user:
+            return iam_user
+
         # Alternatively, validate as regular API key
         key_manager = get_key_manager()
         api_key_info = key_manager.validate_key(key)
@@ -117,6 +124,14 @@ def _get_admin_user(request: Request) -> str:
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid API key",
                 headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        # Require admin permission on API key
+        perms = set(api_key_info.permissions or [])
+        if "admin" not in perms:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Admin permission required",
             )
 
         return api_key_info.user_id
@@ -141,10 +156,16 @@ async def create_api_key(
     key_manager = get_key_manager()
 
     try:
+        default_permissions = key_data.permissions or [
+            "upload",
+            "search",
+            "stores",
+            "admin",
+        ]
         key_id, plain_key = key_manager.generate_key(
             user_id=current_user,
             name=key_data.name,
-            permissions=key_data.permissions,
+            permissions=default_permissions,
             rate_limit_per_minute=key_data.rate_limit_per_minute,
             expires_in_days=key_data.expires_in_days,
         )
@@ -161,7 +182,7 @@ async def create_api_key(
             "key": plain_key,
             "name": key_data.name,
             "created_at": key_manager.validate_key(plain_key).created_at,
-            "permissions": key_data.permissions or ["upload", "search", "stores"],
+            "permissions": default_permissions,
             "rate_limit_per_minute": key_data.rate_limit_per_minute,
         }
 
@@ -259,4 +280,35 @@ async def get_usage_stats(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get usage statistics",
+        )
+
+
+@router.get("/cache/stats")
+async def get_cache_stats(current_user: str = Depends(_get_admin_user)):
+    """
+    Return current cache statistics (search/file caches).
+    """
+    try:
+        return get_all_cache_stats()
+    except Exception as e:
+        logger.error("Failed to get cache stats: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get cache stats",
+        )
+
+
+@router.post("/cache/flush")
+async def flush_caches(current_user: str = Depends(_get_admin_user)):
+    """
+    Flush all caches (search + file metadata).
+    """
+    try:
+        reset_all_caches()
+        return {"status": "ok", "message": "Caches flushed"}
+    except Exception as e:
+        logger.error("Failed to flush caches: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to flush caches",
         )

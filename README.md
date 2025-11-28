@@ -9,7 +9,7 @@
 **Search your local documents with RAG instantly**
 
 [![CI/CD](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)](https://github.com/flamehaven01/Flamehaven-Filesearch)
-[![Latest Version](https://img.shields.io/badge/Version-v1.2.0-blue)](CHANGELOG.md)
+[![Latest Version](https://img.shields.io/badge/Version-v1.2.1-blue)](CHANGELOG.md)
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org/)
 [![MIT License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
@@ -69,12 +69,12 @@ Leverages Gemini's generous free tier. Process thousands of docs free.
 | **[*] Store Management** | Organize documents into separate collections |
 | **[*] Dual Interface** | Python SDK + REST API with Swagger UI |
 | **[*] Docker Ready** | One-command deployment with persistence |
-| **[*] Enterprise Auth** | v1.2.0: API keys, audit logging, rate limiting |
+| **[*] Enterprise Auth** | v1.2.1: API keys, audit logging, rate limiting |
 | **[*] Batch Processing** | Process 1-100 queries per request |
 
 ---
 
-## Admin Dashboard (v1.2.0)
+## Admin Dashboard (v1.2.1)
 
 <img src="assets/dashboard-demo.png" alt="FLAMEHAVEN FileSearch Admin Dashboard" width="100%" style="max-width: 900px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1)">
 
@@ -99,7 +99,7 @@ Leverages Gemini's generous free tier. Process thousands of docs free.
 ✓ 100% self-hosted (your data stays yours)
 ✓ Single Docker command deployment
 ✓ Free tier Google Gemini (up to 1500 queries/month)
-✓ v1.2.0: Enterprise-grade authentication & multi-user support
+✓ v1.2.1: Enterprise-grade authentication & multi-user support
 ✓ Batch search API for 1-100 queries per request
 ✓ Optional Redis for distributed caching across workers
 ```
@@ -116,7 +116,7 @@ docker run -d \
   -e GEMINI_API_KEY="your_gemini_api_key" \
   -p 8000:8000 \
   -v $(pwd)/data:/app/data \
-  flamehaven-filesearch:1.2.0
+  flamehaven-filesearch:1.2.1
 
 # Available at http://localhost:8000 in 3 seconds
 ```
@@ -124,7 +124,7 @@ docker run -d \
 ### 2. Your First Search (cURL)
 
 ```bash
-# Step 1: Generate API key (v1.2.0 requirement)
+# Step 1: Generate API key (v1.2.1 requirement)
 curl -X POST http://localhost:8000/api/admin/keys \
   -H "X-Admin-Key: your_admin_key" \
   -H "Content-Type: application/json" \
@@ -219,14 +219,14 @@ pip install flamehaven-filesearch[all]
 
 ```bash
 # Build image
-docker build -t flamehaven-filesearch:1.2.0 .
+docker build -t flamehaven-filesearch:1.2.1 .
 
 # Run standalone
 docker run \
   -e GEMINI_API_KEY="your_key" \
   -e FLAMEHAVEN_ADMIN_KEY="your_admin_key" \
   -p 8000:8000 \
-  flamehaven-filesearch:1.2.0
+  flamehaven-filesearch:1.2.1
 
 # With Docker Compose (includes Redis)
 docker-compose up -d
@@ -246,8 +246,14 @@ See the [Kubernetes deployment example](#kubernetes-deployment) above for comple
 # Google Gemini API key (get free tier at ai.google.dev)
 export GEMINI_API_KEY="your_api_key"
 
-# Admin key for creating API keys in v1.2.0
+# Admin key for creating API keys in v1.2.1
 export FLAMEHAVEN_ADMIN_KEY="your_secure_admin_password"
+export FLAMEHAVEN_ENC_KEY="base64_32byte_key_for_AES256"  # required for encrypted key/perm storage
+# Optional OIDC admin validation (HS256 shared secret)
+# export FLAMEHAVEN_IAM_PROVIDER="oidc"
+# export FLAMEHAVEN_OIDC_SECRET="your_oidc_hs256_secret"
+# export FLAMEHAVEN_OIDC_ISSUER="https://issuer.example.com"
+# export FLAMEHAVEN_OIDC_AUDIENCE="your-audience"
 ```
 
 ### Optional Environment Variables
@@ -272,7 +278,8 @@ export MAX_FILE_SIZE_MB="50"        # Default: 50
 
 ---
 
-## API Key Management (v1.2.0)
+## API Key Management (v1.2.1)
+> Admin access requires an API key with `"admin"` permission (default for newly created keys) or the `FLAMEHAVEN_ADMIN_KEY` environment value. Existing keys without `admin` will receive 403 on admin routes.
 
 ### Generate API Key
 
@@ -328,7 +335,7 @@ curl "http://localhost:8000/api/admin/usage?days=7" \
 
 ---
 
-## Security Features (v1.2.0)
+## Security Features (v1.2.1)
 
 - **[#] API Key Encryption:** SHA256 hashing (plain keys never stored)
 - **[#] Rate Limiting:** Per-API-key customizable limits (default 100/min)
@@ -427,7 +434,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for complete contribution guidelines.
 
 ---
 
-## Migration from v1.1.0 to v1.2.0
+## Migration from v1.1.0 to v1.2.1
 
 ### Breaking Changes
 
@@ -458,7 +465,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for complete contribution guidelines.
    # Old (v1.1.0)
    requests.post("http://localhost:8000/api/search", json={"query": "test"})
 
-   # New (v1.2.0)
+   # New (v1.2.1)
    api_key = "sk_live_your_key"
    requests.post(
        "http://localhost:8000/api/search",
@@ -505,7 +512,7 @@ If issues occur, v1.1.0 remains available. No data loss on downgrade.
 
 ## Performance Metrics
 
-Recent v1.2.0 benchmark (Docker on M1 Mac):
+Recent v1.2.1 benchmark (Docker on M1 Mac):
 
 ```
 Health Check:           8ms
@@ -535,4 +542,4 @@ Built with:
 
 **Questions? Open an issue or email support@flamehaven.space**
 
-**Last Updated:** November 16, 2025 (v1.2.0)
+**Last Updated:** November 16, 2025 (v1.2.1)

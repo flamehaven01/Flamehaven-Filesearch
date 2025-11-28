@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Filesearch Ops - Metrics &amp; Health</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#38BDF8", // Vibrant Blue/Teal
+              "background-light": "#f6f7f8",
+              "background-dark": "#101922",
+              "card-dark": "#1F2937",
+              "card-light": "#FFFFFF",
+              "text-heading-dark": "#E2E8F0",
+              "text-heading-light": "#1F2937",
+              "text-body-dark": "#94A3B8",
+              "text-body-light": "#6B7280",
+              "border-dark": "#374151",
+              "border-light": "#E5E7EB",
+              "status-healthy": "#10B981",
+              "status-warn": "#F59E0B",
+              "status-critical": "#EF4444"
+            },
+            fontFamily: {
+              "display": ["Inter", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.5rem", "lg": "0.75rem", "xl": "1rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+</head>
+<body class="font-display bg-background-light dark:bg-background-dark">
+<div class="relative flex min-h-screen w-full">
+<!-- SideNavBar -->
+<aside class="flex h-screen flex-col bg-card-light dark:bg-card-dark p-4 border-r border-border-light dark:border-border-dark w-64 sticky top-0">
+<div class="flex flex-col gap-4">
+<div class="flex items-center gap-3 px-2">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="Filesearch app logo" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCYTo3xwh2kWeb8r_xC4ainsil0Fur6qpc6KOqwDZBr8uLR-EFopBQvct-lSXuoDlLbAsS3s5lpa8FnRkwuBkO4ccecWMs1btbC146J_SWLAycag_aC3AV06QkCA2QHYCUIW4LeS2z2W_OF0Ue_Bs_8cwirezo4NC7l-GP0VrPcwaCc02tH5BX1AA7F2OnDy9Vl8QIDdjpF5zWOsL0cBDNMVhLOy3lpA5BxjBUgRjDqn-ntIRN2Bxy1XjMnq4ReKOhQM5qMASnEpuM");'></div>
+<div class="flex flex-col">
+<h1 class="text-text-heading-light dark:text-text-heading-dark text-base font-bold leading-normal">Filesearch</h1>
+<p class="text-text-body-light dark:text-text-body-dark text-sm font-normal leading-normal">Operations</p>
+</div>
+</div>
+<nav class="flex flex-col gap-2 mt-4">
+<a class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700/50" href="landing.html">
+<span class="material-symbols-outlined text-text-body-light dark:text-text-body-dark">dashboard</span>
+<p class="text-text-heading-light dark:text-text-heading-dark text-sm font-medium leading-normal">Dashboard</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700/50" href="search.html">
+<span class="material-symbols-outlined text-text-body-light dark:text-text-body-dark">search</span>
+<p class="text-text-heading-light dark:text-text-heading-dark text-sm font-medium leading-normal">Search</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700/50" href="upload.html">
+<span class="material-symbols-outlined text-text-body-light dark:text-text-body-dark">upload_file</span>
+<p class="text-text-heading-light dark:text-text-heading-dark text-sm font-medium leading-normal">Upload</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-md bg-primary/20 text-primary" href="metrics.html">
+<span class="material-symbols-outlined">heart_check</span>
+<p class="text-sm font-medium leading-normal">Metrics &amp; Health</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700/50" href="cache.html">
+<span class="material-symbols-outlined text-text-body-light dark:text-text-body-dark">hub</span>
+<p class="text-text-heading-light dark:text-text-heading-dark text-sm font-medium leading-normal">Cache</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700/50" href="admin.html">
+<span class="material-symbols-outlined text-text-body-light dark:text-text-body-dark">admin_panel_settings</span>
+<p class="text-text-heading-light dark:text-text-heading-dark text-sm font-medium leading-normal">Admin</p>
+</a>
+</nav>
+</div>
+</aside>
+<!-- Main Content -->
+<div class="flex flex-1 flex-col">
+<!-- TopNavBar -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-border-light dark:border-border-dark px-10 py-3 bg-card-light dark:bg-card-dark sticky top-0 z-10">
+<div class="flex items-center gap-3 text-text-heading-light dark:text-text-heading-dark">
+<span class="material-symbols-outlined">monitoring</span>
+<p class="text-base font-semibold leading-normal tracking-[-0.015em]">Metrics &amp; Health Overview</p>
+</div>
+<div class="flex items-center gap-3">
+<input id="metricsToken" class="h-10 rounded-lg bg-card-dark text-text-heading-dark px-3 text-sm border border-border-dark" placeholder="Bearer token" />
+<button id="btn-refresh-metrics" class="flex h-10 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-background-light px-4 text-sm font-semibold text-text-heading-light shadow-sm transition-all hover:bg-gray-100 dark:bg-card-dark dark:text-text-heading-dark dark:hover:bg-gray-700">
+<span class="material-symbols-outlined text-lg">refresh</span>
+<span class="ml-1">Refresh</span>
+</button>
+</div>
+</header>
+<!-- Page Content -->
+<main class="flex-1 p-6 lg:p-10">
+<!-- PageHeading -->
+<div class="flex flex-wrap justify-between gap-4 mb-6">
+<div class="flex flex-col gap-1">
+<h1 class="text-text-heading-light dark:text-text-heading-dark text-3xl font-bold leading-tight tracking-tight">Metrics &amp; Health</h1>
+<p class="text-text-body-light dark:text-text-body-dark text-base font-normal leading-normal">Live monitoring of service performance and system status.</p>
+</div>
+</div>
+<!-- Stats Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+<div class="flex flex-col gap-2 rounded-lg p-6 bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark">
+<p class="text-text-body-light dark:text-text-body-dark text-base font-medium leading-normal">System Status</p>
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center rounded-full bg-status-healthy/10 px-3 py-1 text-sm font-medium text-status-healthy">
+<span class="w-2 h-2 mr-2 rounded-full bg-status-healthy"></span>Healthy
+                            </span>
+</div>
+</div>
+<div class="flex flex-col gap-2 rounded-lg p-6 bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark">
+<p class="text-text-body-light dark:text-text-body-dark text-base font-medium leading-normal">API Latency (p99)</p>
+<p class="text-text-heading-light dark:text-text-heading-dark tracking-light text-2xl font-bold leading-tight">48ms</p>
+</div>
+<div class="flex flex-col gap-2 rounded-lg p-6 bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark">
+<p class="text-text-body-light dark:text-text-body-dark text-base font-medium leading-normal">Error Rate (24h)</p>
+<p class="text-text-heading-light dark:text-text-heading-dark tracking-light text-2xl font-bold leading-tight">0.15%</p>
+</div>
+</div>
+<!-- Charts -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+<div class="flex lg:col-span-1 flex-col gap-2 rounded-lg border border-border-light dark:border-border-dark p-6 bg-card-light dark:bg-card-dark">
+<p class="text-text-heading-light dark:text-text-heading-dark text-base font-medium leading-normal">API Latency (p99)</p>
+<p class="text-text-heading-light dark:text-text-heading-dark tracking-light text-3xl font-bold leading-tight truncate">48ms</p>
+<div class="flex gap-1">
+<p class="text-text-body-light dark:text-text-body-dark text-sm font-normal leading-normal">Last 24h</p>
+<p class="text-status-healthy text-sm font-medium leading-normal flex items-center gap-1"><span class="material-symbols-outlined text-base">arrow_upward</span>+2.1%</p>
+</div>
+<div class="flex min-h-[180px] flex-1 flex-col gap-8 pt-4">
+<svg fill="none" height="100%" preserveaspectratio="none" viewbox="0 0 472 150" width="100%" xmlns="http://www.w3.org/2000/svg">
+<path d="M0 109C18.1538 109 18.1538 21 36.3077 21C54.4615 21 54.4615 41 72.6154 41C90.7692 41 90.7692 93 108.923 93C127.077 93 127.077 33 145.231 33C163.385 33 163.385 101 181.538 101C199.692 101 199.692 61 217.846 61C236 61 236 45 254.154 45C272.308 45 272.308 121 290.462 121C308.615 121 308.615 149 326.769 149C344.923 149 344.923 1 363.077 1C381.231 1 381.231 81 399.385 81C417.538 81 417.538 129 435.692 129C453.846 129 453.846 25 472 25" stroke="#38BDF8" stroke-linecap="round" stroke-width="2.5"></path>
+</svg>
+</div>
+</div>
+<div class="flex lg:col-span-1 flex-col gap-2 rounded-lg border border-border-light dark:border-border-dark p-6 bg-card-light dark:bg-card-dark">
+<p class="text-text-heading-light dark:text-text-heading-dark text-base font-medium leading-normal">Query Throughput</p>
+<p class="text-text-heading-light dark:text-text-heading-dark tracking-light text-3xl font-bold leading-tight truncate">2,105 req/s</p>
+<div class="flex gap-1">
+<p class="text-text-body-light dark:text-text-body-dark text-sm font-normal leading-normal">Last 24h</p>
+<p class="text-status-critical text-sm font-medium leading-normal flex items-center gap-1"><span class="material-symbols-outlined text-base">arrow_downward</span>-0.5%</p>
+</div>
+<div class="flex min-h-[180px] flex-1 flex-col gap-8 pt-4">
+<svg fill="none" height="100%" preserveaspectratio="none" viewbox="0 0 472 150" width="100%" xmlns="http://www.w3.org/2000/svg">
+<path d="M0 41C18.1538 41 18.1538 121 36.3077 121C54.4615 121 54.4615 91 72.6154 91C90.7692 91 90.7692 141 108.923 141C127.077 141 127.077 51 145.231 51C163.385 51 163.385 101 181.538 101C199.692 101 199.692 21 217.846 21C236 21 236 81 254.154 81C272.308 81 272.308 31 290.462 31C308.615 31 308.615 111 326.769 111C344.923 111 344.923 1 363.077 1C381.231 1 381.231 61 399.385 61C417.538 61 417.538 131 435.692 131C453.846 131 453.846 71 472 71" stroke="#38BDF8" stroke-linecap="round" stroke-width="2.5"></path>
+</svg>
+</div>
+</div>
+<div class="flex lg:col-span-1 flex-col gap-2 rounded-lg border border-border-light dark:border-border-dark p-6 bg-card-light dark:bg-card-dark">
+<p class="text-text-heading-light dark:text-text-heading-dark text-base font-medium leading-normal">Error Rate</p>
+<p class="text-text-heading-light dark:text-text-heading-dark tracking-light text-3xl font-bold leading-tight truncate">0.15%</p>
+<div class="flex gap-1">
+<p class="text-text-body-light dark:text-text-body-dark text-sm font-normal leading-normal">Last 24h</p>
+<p class="text-status-healthy text-sm font-medium leading-normal flex items-center gap-1"><span class="material-symbols-outlined text-base">arrow_upward</span>+0.02%</p>
+</div>
+<div class="flex min-h-[180px] flex-1 flex-col gap-8 pt-4">
+<svg fill="none" height="100%" preserveaspectratio="none" viewbox="0 0 472 150" width="100%" xmlns="http://www.w3.org/2000/svg">
+<path d="M0 140C18.1538 140 18.1538 120 36.3077 120C54.4615 120 54.4615 130 72.6154 130C90.7692 130 90.7692 110 108.923 110C127.077 110 127.077 135 145.231 135C163.385 135 163.385 125 181.538 125C199.692 125 199.692 145 217.846 145C236 145 236 10 254.154 10C272.308 10 272.308 138 290.462 138C308.615 138 308.615 128 326.769 128C344.923 128 344.923 118 363.077 118C381.231 118 381.231 128 399.385 128C417.538 128 417.538 138 435.692 138C453.846 138 453.846 148 472 148" stroke="#38BDF8" stroke-linecap="round" stroke-width="2.5"></path>
+</svg>
+</div>
+</div>
+</div>
+<!-- Events & Logs -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+<div class="flex flex-col gap-4 rounded-lg border border-border-light dark:border-border-dark p-6 bg-card-light dark:bg-card-dark">
+<h3 class="text-text-heading-light dark:text-text-heading-dark text-base font-medium leading-normal">Recent Warnings</h3>
+<div class="flex flex-col divide-y divide-border-light dark:divide-border-dark">
+<div class="py-3 flex items-start gap-3">
+<span class="material-symbols-outlined text-status-warn mt-1">warning</span>
+<div class="flex flex-col">
+<p class="text-text-heading-light dark:text-text-heading-dark text-sm font-medium">Cache read latency high: 150ms</p>
+<p class="text-text-body-light dark:text-text-body-dark text-xs">2 minutes ago</p>
+</div>
+</div>
+<div class="py-3 flex items-start gap-3">
+<span class="material-symbols-outlined text-status-warn mt-1">warning</span>
+<div class="flex flex-col">
+<p class="text-text-heading-light dark:text-text-heading-dark text-sm font-medium">Shard replication lag detected on index 'docs-2b'</p>
+<p class="text-text-body-light dark:text-text-body-dark text-xs">5 minutes ago</p>
+</div>
+</div>
+<div class="py-3 flex items-start gap-3">
+<span class="material-symbols-outlined text-status-warn mt-1">warning</span>
+<div class="flex flex-col">
+<p class="text-text-heading-light dark:text-text-heading-dark text-sm font-medium">CPU utilization at 85% on node 'search-prod-04'</p>
+<p class="text-text-body-light dark:text-text-body-dark text-xs">12 minutes ago</p>
+</div>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-4 rounded-lg border border-border-light dark:border-border-dark p-6 bg-card-light dark:bg-card-dark">
+<h3 class="text-text-heading-light dark:text-text-heading-dark text-base font-medium leading-normal">Rate Limit Occurrences</h3>
+<div class="flex flex-col divide-y divide-border-light dark:divide-border-dark">
+<div class="py-3 flex items-start gap-3">
+<span class="material-symbols-outlined text-status-critical mt-1">block</span>
+<div class="flex flex-col">
+<p class="text-text-heading-light dark:text-text-heading-dark text-sm font-medium">User 'api-user-123' exceeded query limit</p>
+<p class="text-text-body-light dark:text-text-body-dark text-xs">30 seconds ago</p>
+</div>
+</div>
+<div class="py-3 flex items-start gap-3">
+<span class="material-symbols-outlined text-status-critical mt-1">block</span>
+<div class="flex flex-col">
+<p class="text-text-heading-light dark:text-text-heading-dark text-sm font-medium">IP '203.0.113.45' temporarily blocked</p>
+<p class="text-text-body-light dark:text-text-body-dark text-xs">1 minute ago</p>
+</div>
+</div>
+<div class="py-3 flex items-start gap-3">
+<span class="material-symbols-outlined text-status-critical mt-1">block</span>
+<div class="flex flex-col">
+<p class="text-text-heading-light dark:text-text-heading-dark text-sm font-medium">User 'api-user-456' exceeded query limit</p>
+<p class="text-text-body-light dark:text-text-body-dark text-xs">8 minutes ago</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+<script>
+(() => {
+  const origin = window.location.origin;
+  const base = origin.startsWith("file:")
+    ? window.location.href.replace(/metrics\\.html.*/, "")
+    : origin.replace(/\\/$/, "") + "/frontend/dashboard/";
+  document.querySelectorAll("nav a").forEach((a) => {
+    const label = (a.textContent || "").toLowerCase();
+    if (label.includes("dashboard")) a.href = base + "landing.html";
+    if (label.includes("search")) a.href = base + "search.html";
+    if (label.includes("upload")) a.href = base + "upload.html";
+    if (label.includes("cache")) a.href = base + "cache.html";
+    if (label.includes("metrics")) a.href = base + "metrics.html";
+    if (label.includes("admin")) a.href = base + "admin.html";
+  });
+
+  const tokenEl = document.getElementById("metricsToken");
+  const btnRefresh = document.getElementById("btn-refresh-metrics");
+  const setText = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  };
+
+  const refresh = async () => {
+    try {
+      const resp = await fetch("/api/metrics", { headers: tokenEl?.value ? { Authorization: `Bearer ${tokenEl.value}` } : {} });
+      if (!resp.ok) throw new Error(resp.statusText);
+      const data = await resp.json();
+      setText("metrics-health", data.health_status || "unknown");
+      setText("metrics-uptime", data.system?.uptime || "--");
+      setText("metrics-requests", data.metrics?.requests_per_sec ?? "--");
+      setText("metrics-errors", data.metrics?.error_rate ?? "--");
+      setText("metrics-cache", JSON.stringify(data.cache || {}, null, 2));
+    } catch (err) {
+      setText("metrics-cache", `Error: ${err.message}`);
+    }
+  };
+
+  btnRefresh?.addEventListener("click", (e) => {
+    e.preventDefault();
+    refresh();
+  });
+
+  refresh();
+})();
+</script>
+</body></html>

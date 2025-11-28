@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Filesearch Ops - Cache Monitor</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#137fec",
+              "background-light": "#f6f7f8",
+              "background-dark": "#101922",
+              "success": "#28A745",
+              "warning": "#FFC107",
+              "error": "#DC3545",
+            },
+            fontFamily: {
+              "display": ["Inter", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings:
+            'FILL' 0,
+            'wght' 400,
+            'GRAD' 0,
+            'opsz' 24
+        }
+    </style>
+</head>
+<body class="font-display bg-background-light dark:bg-background-dark">
+<div class="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden">
+<div class="flex h-full min-h-screen">
+<!-- SideNavBar -->
+<aside class="flex h-full min-h-screen w-64 flex-col justify-between border-r border-[#233648] bg-[#111a22] p-4">
+<div class="flex flex-col gap-4">
+<div class="flex items-center gap-3 p-2">
+<div class="size-8 text-primary">
+<svg fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M36.7273 44C33.9891 44 31.6043 39.8386 30.3636 33.69C29.123 39.8386 26.7382 44 24 44C21.2618 44 18.877 39.8386 17.6364 33.69C16.3957 39.8386 14.0109 44 11.2727 44C7.25611 44 4 35.0457 4 24C4 12.9543 7.25611 4 11.2727 4C14.0109 4 16.3957 8.16144 17.6364 14.31C18.877 8.16144 21.2618 4 24 4C26.7382 4 29.123 8.16144 30.3636 14.31C31.6043 8.16144 33.9891 4 36.7273 4C40.7439 4 44 12.9543 44 24C44 35.0457 40.7439 44 36.7273 44Z" fill="currentColor"></path>
+</svg>
+</div>
+<h1 class="text-white text-lg font-bold leading-tight tracking-[-0.015em]">Filesearch Ops</h1>
+</div>
+<nav class="flex flex-col gap-2">
+<a class="flex items-center gap-3 rounded-lg px-3 py-2 text-white/70 hover:bg-[#233648] hover:text-white" href="landing.html">
+<span class="material-symbols-outlined text-xl">grid_view</span>
+<p class="text-sm font-medium leading-normal">Dashboard</p>
+</a>
+<a class="flex items-center gap-3 rounded-lg px-3 py-2 text-white/70 hover:bg-[#233648] hover:text-white" href="search.html">
+<span class="material-symbols-outlined text-xl">manage_search</span>
+<p class="text-sm font-medium leading-normal">Search</p>
+</a>
+<a class="flex items-center gap-3 rounded-lg px-3 py-2 text-white/70 hover:bg-[#233648] hover:text-white" href="upload.html">
+<span class="material-symbols-outlined text-xl">upload_file</span>
+<p class="text-sm font-medium leading-normal">Upload</p>
+</a>
+<a class="flex items-center gap-3 rounded-lg bg-primary/20 px-3 py-2 text-primary" href="cache.html">
+<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">memory</span>
+<p class="text-sm font-medium leading-normal">Cache Monitor</p>
+</a>
+<a class="flex items-center gap-3 rounded-lg px-3 py-2 text-white/70 hover:bg-[#233648] hover:text-white" href="metrics.html">
+<span class="material-symbols-outlined text-xl">monitoring</span>
+<p class="text-sm font-medium leading-normal">Metrics</p>
+</a>
+<a class="flex items-center gap-3 rounded-lg px-3 py-2 text-white/70 hover:bg-[#233648] hover:text-white" href="admin.html">
+<span class="material-symbols-outlined text-xl">settings</span>
+<p class="text-sm font-medium leading-normal">Admin</p>
+</a>
+</nav>
+</div>
+</aside>
+<main class="flex flex-1 flex-col">
+<!-- TopNavBar -->
+<header class="flex h-16 items-center justify-end whitespace-nowrap border-b border-solid border-[#233648] px-8 py-3">
+<div class="flex flex-1 items-center justify-end gap-3">
+<input id="cacheToken" class="h-10 rounded-lg bg-[#233648] text-white text-sm px-3 border border-[#324d67]" placeholder="Bearer token" />
+<button id="btn-refresh-cache" class="flex h-10 items-center rounded-lg bg-primary px-4 text-sm font-bold text-white gap-2 hover:bg-primary/80">
+<span class="material-symbols-outlined">refresh</span>
+<span>Refresh</span>
+</button>
+<button id="btn-flush-cache" class="flex h-10 items-center rounded-lg bg-[#233648] px-4 text-sm font-bold text-white gap-2 hover:bg-[#1c2a35]">
+<span class="material-symbols-outlined">delete</span>
+<span>Flush</span>
+</button>
+</div>
+</header>
+<!-- Main Content -->
+<div class="flex flex-1 flex-col p-8">
+<!-- Tabs -->
+<div class="pb-3">
+<div class="flex border-b border-[#324d67] gap-8">
+<a class="flex flex-col items-center justify-center border-b-[3px] border-b-transparent text-[#92adc9] pb-[13px] pt-4" href="#">
+<p class="text-sm font-bold leading-normal tracking-[0.015em]">Overview</p>
+</a>
+<a class="flex flex-col items-center justify-center border-b-[3px] border-b-primary text-white pb-[13px] pt-4" href="#">
+<p class="text-sm font-bold leading-normal tracking-[0.015em]">Cache Monitor</p>
+</a>
+<a class="flex flex-col items-center justify-center border-b-[3px] border-b-transparent text-[#92adc9] pb-[13px] pt-4" href="#">
+<p class="text-sm font-bold leading-normal tracking-[0.015em]">System Health</p>
+</a>
+</div>
+</div>
+<!-- Stats -->
+<div id="cacheCards" class="grid grid-cols-1 gap-4 py-6 sm:grid-cols-2 lg:grid-cols-4">
+<div class="flex flex-1 flex-col gap-2 rounded-lg border border-[#324d67] bg-[#111a22]/50 p-6">
+<p class="text-white text-base font-medium leading-normal">Cache Hit Rate</p>
+<p id="hitRate" class="text-white tracking-light text-3xl font-bold leading-tight">--</p>
+<p class="text-success flex items-center gap-1 text-sm font-medium leading-normal"><span class="material-symbols-outlined text-base">speed</span>latest</p>
+</div>
+<div class="flex flex-1 flex-col gap-2 rounded-lg border border-[#324d67] bg-[#111a22]/50 p-6">
+<p class="text-white text-base font-medium leading-normal">Memory Used</p>
+<p id="memUsed" class="text-white tracking-light text-3xl font-bold leading-tight">--</p>
+<p class="text-warning flex items-center gap-1 text-sm font-medium leading-normal"><span class="material-symbols-outlined text-base">data_usage</span>bytes</p>
+</div>
+<div class="flex flex-1 flex-col gap-2 rounded-lg border border-[#324d67] bg-[#111a22]/50 p-6">
+<p class="text-white text-base font-medium leading-normal">Keys Cached</p>
+<p id="keysCached" class="text-white tracking-light text-3xl font-bold leading-tight">--</p>
+<p class="text-success flex items-center gap-1 text-sm font-medium leading-normal"><span class="material-symbols-outlined text-base">inventory_2</span>items</p>
+</div>
+<div class="flex flex-1 flex-col gap-2 rounded-lg border border-[#324d67] bg-[#111a22]/50 p-6">
+<p class="text-white text-base font-medium leading-normal">TTL</p>
+<p id="ttlSeconds" class="text-white tracking-light text-3xl font-bold leading-tight">--</p>
+<p class="text-success flex items-center gap-1 text-sm font-medium leading-normal"><span class="material-symbols-outlined text-base">check_circle</span>Active</p>
+</div>
+</div>
+<!-- Charts -->
+<div class="flex flex-wrap gap-6 py-4">
+<div class="flex min-w-72 flex-1 flex-col gap-2 rounded-lg border border-[#324d67] bg-[#111a22]/50 p-6">
+<p class="text-white text-base font-medium leading-normal">Memory Usage</p>
+<p class="text-white tracking-light text-[32px] font-bold leading-tight truncate">1.2 GB</p>
+<div class="flex gap-1">
+<p class="text-[#92adc9] text-sm font-normal leading-normal">Last Hour</p>
+<p class="text-warning text-sm font-medium leading-normal">+1.5%</p>
+</div>
+<div class="flex min-h-[180px] flex-1 flex-col gap-8 py-4">
+<svg fill="none" height="148" preserveaspectratio="none" viewbox="-3 0 478 150" width="100%" xmlns="http://www.w3.org/2000/svg">
+<path d="M0 109C18.1538 109 18.1538 21 36.3077 21C54.4615 21 54.4615 41 72.6154 41C90.7692 41 90.7692 93 108.923 93C127.077 93 127.077 33 145.231 33C163.385 33 163.385 101 181.538 101C199.692 101 199.692 61 217.846 61C236 61 236 45 254.154 45C272.308 45 272.308 121 290.462 121C308.615 121 308.615 149 326.769 149C344.923 149 344.923 1 363.077 1C381.231 1 381.231 81 399.385 81C417.538 81 417.538 129 435.692 129C453.846 129 453.846 25 472 25V149H326.769H0V109Z" fill="url(#paint0_linear_1131_5935)"></path>
+<path d="M0 109C18.1538 109 18.1538 21 36.3077 21C54.4615 21 54.4615 41 72.6154 41C90.7692 41 90.7692 93 108.923 93C127.077 93 127.077 33 145.231 33C163.385 33 163.385 101 181.538 101C199.692 101 199.692 61 217.846 61C236 61 236 45 254.154 45C272.308 45 272.308 121 290.462 121C308.615 121 308.615 149 326.769 149C344.923 149 344.923 1 363.077 1C381.231 1 381.231 81 399.385 81C417.538 81 417.538 129 435.692 129C453.846 129 453.846 25 472 25" stroke="#137fec" stroke-linecap="round" stroke-width="3"></path>
+<defs>
+<lineargradient gradientunits="userSpaceOnUse" id="paint0_linear_1131_5935" x1="236" x2="236" y1="1" y2="149">
+<stop stop-color="#137fec" stop-opacity="0.4"></stop>
+<stop offset="1" stop-color="#137fec" stop-opacity="0"></stop>
+</lineargradient>
+</defs>
+</svg>
+<div class="flex justify-around">
+<p class="text-[#92adc9] text-[13px] font-bold leading-normal tracking-[0.015em]">-60m</p>
+<p class="text-[#92adc9] text-[13px] font-bold leading-normal tracking-[0.015em]">-50m</p>
+<p class="text-[#92adc9] text-[13px] font-bold leading-normal tracking-[0.015em]">-40m</p>
+<p class="text-[#92adc9] text-[13px] font-bold leading-normal tracking-[0.015em]">-30m</p>
+<p class="text-[#92adc9] text-[13px] font-bold leading-normal tracking-[0.015em]">-20m</p>
+<p class="text-[#92adc9] text-[13px] font-bold leading-normal tracking-[0.015em]">-10m</p>
+<p class="text-[#92adc9] text-[13px] font-bold leading-normal tracking-[0.015em]">Now</p>
+</div>
+</div>
+</div>
+<div class="flex w-full max-w-sm flex-col gap-2 rounded-lg border border-[#324d67] bg-[#111a22]/50 p-6">
+<p class="text-white text-base font-medium leading-normal">Hits vs. Misses</p>
+<div class="flex min-h-[180px] flex-1 items-center justify-center p-4">
+<div class="relative flex items-center justify-center">
+<svg class="h-48 w-48 -rotate-90 transform" viewbox="0 0 120 120">
+<circle cx="60" cy="60" fill="none" r="54" stroke="#233648" stroke-width="12"></circle>
+<circle class="transition-all duration-500" cx="60" cy="60" fill="none" r="54" stroke="#137fec" stroke-dasharray="339.29" stroke-dashoffset="34.6" stroke-linecap="round" stroke-width="12"></circle>
+</svg>
+<div class="absolute flex flex-col items-center">
+<span class="text-3xl font-bold text-white">90%</span>
+<span class="text-sm text-[#92adc9]">Hit Rate</span>
+</div>
+</div>
+</div>
+<div class="flex justify-center gap-6 pt-4">
+<div class="flex items-center gap-2">
+<div class="h-3 w-3 rounded-full bg-primary"></div>
+<span class="text-sm text-[#92adc9]">Hits: 1.32M</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="h-3 w-3 rounded-full bg-[#233648]"></div>
+<span class="text-sm text-[#92adc9]">Misses: 147k</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Key Management Table -->
+<div class="mt-4 flex flex-col rounded-lg border border-[#324d67] bg-[#111a22]/50">
+<div class="flex flex-wrap items-center justify-between gap-4 p-6">
+<div>
+<h3 class="text-lg font-bold text-white">Manage Cache Keys</h3>
+<p class="text-sm text-[#92adc9]">Search, view, and delete individual keys from the cache.</p>
+</div>
+<button class="flex items-center gap-2 rounded-lg bg-error/90 px-4 py-2 text-sm font-semibold text-white hover:bg-error">
+<span class="material-symbols-outlined text-lg">delete_sweep</span>
+                                Flush All Cache
+                            </button>
+</div>
+<div class="border-y border-[#324d67] p-4">
+<label class="relative flex h-10 w-full max-w-sm">
+<div class="text-[#92adc9] absolute left-3 top-1/2 -translate-y-1/2">
+<span class="material-symbols-outlined">search</span>
+</div>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg border-none bg-[#233648] text-white placeholder:text-[#92adc9] focus:outline-0 focus:ring-2 focus:ring-primary focus:ring-inset h-full pl-10 pr-4 text-sm font-normal leading-normal" placeholder="Search by key name..." value=""/>
+</label>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left text-sm text-white">
+<thead class="border-b border-[#324d67] text-xs uppercase text-[#92adc9]">
+<tr>
+<th class="px-6 py-3" scope="col">Key Name</th>
+<th class="px-6 py-3" scope="col">Type</th>
+<th class="px-6 py-3" scope="col">TTL</th>
+<th class="px-6 py-3" scope="col">Size</th>
+<th class="px-6 py-3 text-right" scope="col">Actions</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border-b border-[#324d67] hover:bg-white/5">
+<td class="px-6 py-4 font-mono">user:session:a4e0c1f9</td>
+<td class="px-6 py-4">string</td>
+<td class="px-6 py-4">3598s</td>
+<td class="px-6 py-4">1.2 KB</td>
+<td class="px-6 py-4 text-right">
+<button class="text-error/80 hover:text-error"><span class="material-symbols-outlined text-xl">delete</span></button>
+</td>
+</tr>
+<tr class="border-b border-[#324d67] hover:bg-white/5">
+<td class="px-6 py-4 font-mono">config:feature_flags</td>
+<td class="px-6 py-4">hash</td>
+<td class="px-6 py-4">-1 (persistent)</td>
+<td class="px-6 py-4">5.8 KB</td>
+<td class="px-6 py-4 text-right">
+<button class="text-error/80 hover:text-error"><span class="material-symbols-outlined text-xl">delete</span></button>
+</td>
+</tr>
+<tr class="border-b border-[#324d67] hover:bg-white/5">
+<td class="px-6 py-4 font-mono">cache:products:all</td>
+<td class="px-6 py-4">list</td>
+<td class="px-6 py-4">12240s</td>
+<td class="px-6 py-4">2.3 MB</td>
+<td class="px-6 py-4 text-right">
+<button class="text-error/80 hover:text-error"><span class="material-symbols-outlined text-xl">delete</span></button>
+</td>
+</tr>
+<tr class="border-b border-[#324d67] hover:bg-white/5">
+<td class="px-6 py-4 font-mono">rate_limit:user:12345</td>
+<td class="px-6 py-4">string</td>
+<td class="px-6 py-4">59s</td>
+<td class="px-6 py-4">8 Bytes</td>
+<td class="px-6 py-4 text-right">
+<button class="text-error/80 hover:text-error"><span class="material-symbols-outlined text-xl">delete</span></button>
+</td>
+</tr>
+<tr class="hover:bg-white/5">
+<td class="px-6 py-4 font-mono">user:session:b8f1d2a3</td>
+<td class="px-6 py-4">string</td>
+<td class="px-6 py-4">3580s</td>
+<td class="px-6 py-4">1.2 KB</td>
+<td class="px-6 py-4 text-right">
+<button class="text-error/80 hover:text-error"><span class="material-symbols-outlined text-xl">delete</span></button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+<script>
+(() => {
+  const origin = window.location.origin;
+  const base = origin.startsWith("file:")
+    ? window.location.href.replace(/cache\\.html.*/, "")
+    : origin.replace(/\\/$/, "") + "/frontend/dashboard/";
+  document.querySelectorAll("nav a").forEach((a) => {
+    const label = (a.textContent || "").toLowerCase();
+    if (label.includes("dashboard")) a.href = base + "landing.html";
+    if (label.includes("search")) a.href = base + "search.html";
+    if (label.includes("upload")) a.href = base + "upload.html";
+    if (label.includes("metrics")) a.href = base + "metrics.html";
+    if (label.includes("admin") || label.includes("settings")) a.href = base + "admin.html";
+    if (label.includes("cache")) a.href = base + "cache.html";
+  });
+
+  const tokenEl = document.getElementById("cacheToken");
+  const hitRateEl = document.getElementById("hitRate");
+  const memUsedEl = document.getElementById("memUsed");
+  const keysEl = document.getElementById("keysCached");
+  const ttlEl = document.getElementById("ttlSeconds");
+  const btnRefresh = document.getElementById("btn-refresh-cache");
+  const btnFlush = document.getElementById("btn-flush-cache");
+
+  const headers = () => (tokenEl?.value ? { Authorization: `Bearer ${tokenEl.value}` } : {});
+
+  const refresh = async () => {
+    try {
+      const resp = await fetch("/api/metrics", { headers: headers() });
+      if (!resp.ok) throw new Error(resp.statusText);
+      const data = await resp.json();
+      const cache = (data.cache && data.cache.search_cache) || {};
+      const hits = (data.prometheus && data.prometheus.cache_hits_total) || null;
+      const misses = (data.prometheus && data.prometheus.cache_misses_total) || null;
+      const rate = hits || misses ? ((hits || 0) / Math.max((hits || 0) + (misses || 0), 1) * 100).toFixed(1) + "%" : "--";
+      hitRateEl.textContent = rate;
+      memUsedEl.textContent = cache.current_size ? `${cache.current_size} items` : "--";
+      keysEl.textContent = cache.current_size ?? "--";
+      ttlEl.textContent = cache.ttl ?? "--";
+    } catch (err) {
+      hitRateEl.textContent = "ERR";
+      memUsedEl.textContent = err.message;
+    }
+  };
+
+  btnRefresh?.addEventListener("click", (e) => {
+    e.preventDefault();
+    refresh();
+  });
+
+  btnFlush?.addEventListener("click", async (e) => {
+    e.preventDefault();
+    if (!confirm("Flush cache?")) return;
+    try {
+      const resp = await fetch("/api/admin/cache/flush", { method: "POST", headers: headers() });
+      if (!resp.ok) throw new Error(resp.statusText);
+      refresh();
+    } catch (err) {
+      alert(`Flush failed: ${err.message}`);
+    }
+  });
+
+  refresh();
+})();
+</script>
+</body></html>

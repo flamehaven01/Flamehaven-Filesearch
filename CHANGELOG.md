@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.1] - 2025-11-27
+
+### Added
+- Admin cache controls: `/api/admin/cache/stats` and `/api/admin/cache/flush` (admin-only).
+- Admin permission enforcement on API keys (403 if `admin` perm missing).
+- IAMProvider hook for future OIDC/IAM backends.
+- Metrics payload now includes `cache`, `health_status`, `prometheus` placeholders for dashboard use.
+- Frontend cache/metrics pages wired to backend endpoints; upload/admin pages wired with token inputs.
+- Tests: `tests/test_admin_cache.py` for cache stats/flush admin routes.
+
+### Changed
+- Default new API keys include `admin` in permissions.
+- README version/tag bumped to v1.2.1; added `FLAMEHAVEN_ENC_KEY` env guidance; SECURITY updated for admin/encryption notes.
+
+### Fixed
+- Prevent admin access with non-admin API keys (returns 403).
+
+---
+
 ## [1.2.0] - 2025-11-16
 
 ### 🔐 Enterprise-Ready Release: API Authentication & Dashboard

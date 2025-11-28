@@ -383,6 +383,15 @@ trufflehog git file://. --only-verified
 
 ---
 
+## Admin & Encryption (v1.2.x)
+
+- Admin routes require `FLAMEHAVEN_ADMIN_KEY` **or** an API key that includes the `admin` permission. Keys without `admin` receive 403.
+- Sensitive admin payloads (key names, permissions) are encrypted at rest with `FLAMEHAVEN_ENC_KEY` (32-byte base64, AES-256-GCM/Fernet). Configure this in secrets before production.
+- Cache controls (`/api/admin/cache/stats`, `/api/admin/cache/flush`) are restricted to admin tokens only.
+- Optional OIDC validation: set `FLAMEHAVEN_IAM_PROVIDER=oidc` with `FLAMEHAVEN_OIDC_SECRET` (+ optional `FLAMEHAVEN_OIDC_ISSUER`/`FLAMEHAVEN_OIDC_AUDIENCE`). Tokens failing validation are rejected.
+
+---
+
 ## Contact
 
 **Security Team**: security@flamehaven.space

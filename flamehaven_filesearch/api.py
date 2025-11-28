@@ -1,5 +1,5 @@
 """
-FastAPI server for FLAMEHAVEN FileSearch v1.1.0
+FastAPI server for FLAMEHAVEN FileSearch v1.2.1
 
 Production-ready API with:
 - Rate limiting
@@ -22,6 +22,7 @@ from datetime import datetime
 from typing import List, Optional
 
 import psutil
+from contextlib import asynccontextmanager
 from fastapi import (
     Depends,
     FastAPI,
@@ -93,7 +94,15 @@ def rate_limit_key(request: Request) -> str:
 # Initialize rate limiter
 limiter = Limiter(key_func=rate_limit_key)
 
-# Initialize app
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """FastAPI lifespan to replace deprecated on_event hooks."""
+    initialize_services(force=True)
+    yield
+    logger.info("Shutting down FLAMEHAVEN FileSearch API")
+
+
+# Initialize app (lifespan replaces startup/shutdown on_event)
 app = FastAPI(
     title="FLAMEHAVEN FileSearch API",
     description=(
@@ -102,6 +111,7 @@ app = FastAPI(
     version="1.2.0",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 
@@ -217,6 +227,9 @@ class MetricsResponse(BaseModel):
     config: dict
     system: dict
     uptime_seconds: float
+    cache: Optional[dict] = None
+    health_status: Optional[str] = None
+    prometheus: Optional[dict] = None
 
 
 class ErrorResponse(BaseModel):
@@ -271,24 +284,6 @@ def initialize_services(force: bool = False) -> None:
         logger.info("Prometheus metrics enabled at /prometheus")
     except Exception as exc:  # pragma: no cover - defensive guard
         logger.warning("Failed to initialize metrics collector: %s", exc)
-
-
-# Startup event
-@app.on_event("startup")
-async def startup_event():
-    """Initialize the searcher and caching on startup"""
-    initialize_services(force=True)
-
-
-# Ensure services are available even when FastAPI startup events are skipped
-initialize_services()
-
-
-# Shutdown event
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Cleanup on shutdown"""
-    logger.info("Shutting down FLAMEHAVEN FileSearch API")
 
 
 # Helper functions
@@ -912,11 +907,14 @@ async def get_metrics(request: Request):
     metrics = searcher.get_metrics()
     metrics["system"] = get_system_info()
     metrics["uptime_seconds"] = round(time.time() - startup_time, 2)
+    metrics["health_status"] = "healthy"
 
     # Add cache statistics
     cache_stats = get_all_cache_stats()
     if cache_stats:
         metrics["cache"] = cache_stats
+    # Add summarized prometheus counters for UI cards
+    metrics["prometheus"] = MetricsCollector.summary()
 
     return metrics
 

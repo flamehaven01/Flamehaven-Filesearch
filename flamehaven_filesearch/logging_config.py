@@ -7,40 +7,57 @@ Production-ready logging with JSON format for log aggregation systems.
 import logging
 import sys
 
-from pythonjsonlogger import jsonlogger
+try:
+    from pythonjsonlogger import jsonlogger
+    _JSONLOGGER_AVAILABLE = True
+except ImportError:  # pragma: no cover - fallback when dependency missing
+    _JSONLOGGER_AVAILABLE = False
+    jsonlogger = None
 
 
-class CustomJsonFormatter(jsonlogger.JsonFormatter):
-    """
-    Custom JSON formatter with additional fields
+if _JSONLOGGER_AVAILABLE:
 
-    Adds request_id, service_name, and environment to all log records.
-    """
+    class CustomJsonFormatter(jsonlogger.JsonFormatter):
+        """
+        Custom JSON formatter with additional fields
 
-    def add_fields(self, log_record, record, message_dict):
-        super(CustomJsonFormatter, self).add_fields(log_record, record, message_dict)
+        Adds request_id, service_name, and environment to all log records.
+        """
 
-        # Add service identification
-        log_record["service"] = "flamehaven-filesearch"
-        log_record["version"] = "1.1.0"
+        def add_fields(self, log_record, record, message_dict):
+            super(CustomJsonFormatter, self).add_fields(
+                log_record, record, message_dict
+            )
 
-        # Add request ID if available
-        if hasattr(record, "request_id"):
-            log_record["request_id"] = record.request_id
+            # Add service identification
+            log_record["service"] = "flamehaven-filesearch"
+            log_record["version"] = "1.2.1"
 
-        # Add environment (from env var or default to 'development')
-        import os
+            # Add request ID if available
+            if hasattr(record, "request_id"):
+                log_record["request_id"] = record.request_id
 
-        log_record["environment"] = os.getenv("ENVIRONMENT", "development")
+            # Add environment (from env var or default to 'development')
+            import os
 
-        # Ensure timestamp is present
-        if "timestamp" not in log_record:
-            from datetime import datetime
+            log_record["environment"] = os.getenv("ENVIRONMENT", "development")
 
-            log_record["timestamp"] = datetime.utcnow().isoformat() + "Z"
+            # Ensure timestamp is present
+            if "timestamp" not in log_record:
+                from datetime import datetime
 
-        # Add level name
-        log_record["level"] = record.levelname
+                log_record["timestamp"] = datetime.utcnow().isoformat() + "Z"
+
+            # Add level name
+            log_record["level"] = record.levelname
+else:
+
+    class CustomJsonFormatter(logging.Formatter):
+        """Fallback plain formatter when python-json-logger is unavailable."""
+
+        def format(self, record):
+            base = super().format(record)
+            return base
 
 
 def setup_json_logging(log_level=logging.INFO, **kwargs):
@@ -54,17 +71,23 @@ def setup_json_logging(log_level=logging.INFO, **kwargs):
     # Support logging.basicConfig-style signatures (level=...)
     effective_level = kwargs.get("level", log_level)
 
-    # Create JSON formatter
-    formatter = CustomJsonFormatter(
-        "%(timestamp)s %(level)s %(name)s %(message)s %(request_id)s "
-        "%(service)s %(version)s %(environment)s",
-        rename_fields={
-            "levelname": "level",
-            "name": "logger",
-            "asctime": "timestamp",
-        },
-        datefmt="%Y-%m-%dT%H:%M:%S",
-    )
+    # Create JSON formatter (or fallback)
+    if _JSONLOGGER_AVAILABLE:
+        formatter = CustomJsonFormatter(
+            "%(timestamp)s %(level)s %(name)s %(message)s %(request_id)s "
+            "%(service)s %(version)s %(environment)s",
+            rename_fields={
+                "levelname": "level",
+                "name": "logger",
+                "asctime": "timestamp",
+            },
+            datefmt="%Y-%m-%dT%H:%M:%S",
+        )
+    else:
+        formatter = logging.Formatter(
+            "%(asctime)s %(levelname)s %(name)s %(message)s",
+            datefmt="%Y-%m-%dT%H:%M:%S",
+        )
 
     # Configure root logger
     root_logger = logging.getLogger()
@@ -74,7 +97,7 @@ def setup_json_logging(log_level=logging.INFO, **kwargs):
     for handler in root_logger.handlers[:]:
         root_logger.removeHandler(handler)
 
-    # Add JSON handler to stdout
+    # Add handler to stdout
     json_handler = logging.StreamHandler(sys.stdout)
     json_handler.setFormatter(formatter)
     root_logger.addHandler(json_handler)

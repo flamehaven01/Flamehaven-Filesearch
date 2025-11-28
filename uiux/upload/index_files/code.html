@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>File Upload &amp; Indexing - Filesearch Ops</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings:
+                'FILL' 0,
+                'wght' 400,
+                'GRAD' 0,
+                'opsz' 24
+        }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#3182CE",
+              "background-light": "#f6f7f8",
+              "background-dark": "#101922",
+              "surface-dark": "#1A202C",
+              "border-dark": "#2D3748",
+              "text-main-dark": "#E2E8F0",
+              "text-secondary-dark": "#A0AEC0",
+              "success": "#38A169",
+              "warning": "#D69E2E",
+              "error": "#E53E3E"
+            },
+            fontFamily: {
+              "display": ["Inter", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+</head>
+<body class="font-display bg-background-light dark:bg-background-dark text-text-main-dark">
+<div class="relative flex h-auto min-h-screen w-full flex-col">
+<div class="flex h-full min-h-screen">
+<!-- SideNavBar -->
+<aside class="flex w-64 flex-col justify-between border-r border-solid border-border-dark bg-surface-dark p-4">
+<div class="flex flex-col gap-8">
+<div class="flex items-center gap-3 px-3">
+<div class="size-8 text-primary">
+<svg fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M36.7273 44C33.9891 44 31.6043 39.8386 30.3636 33.69C29.123 39.8386 26.7382 44 24 44C21.2618 44 18.877 39.8386 17.6364 33.69C16.3957 39.8386 14.0109 44 11.2727 44C7.25611 44 4 35.0457 4 24C4 12.9543 7.25611 4 11.2727 4C14.0109 4 16.3957 8.16144 17.6364 14.31C18.877 8.16144 21.2618 4 24 4C26.7382 4 29.123 8.16144 30.3636 14.31C31.6043 8.16144 33.9891 4 36.7273 4C40.7439 4 44 12.9543 44 24C44 35.0457 40.7439 44 36.7273 44Z" fill="currentColor"></path>
+</svg>
+</div>
+<h1 class="text-xl font-bold text-text-main-dark">Filesearch</h1>
+</div>
+<nav class="flex flex-col gap-2">
+<a class="flex items-center gap-3 rounded-lg px-3 py-2 text-text-secondary-dark transition-colors hover:bg-white/5" href="#">
+<span class="material-symbols-outlined text-2xl">grid_view</span>
+<p class="text-sm font-medium">Dashboard</p>
+</a>
+<a class="flex items-center gap-3 rounded-lg px-3 py-2 text-text-secondary-dark transition-colors hover:bg-white/5" href="#">
+<span class="material-symbols-outlined text-2xl">search</span>
+<p class="text-sm font-medium">Search</p>
+</a>
+<a class="flex items-center gap-3 rounded-lg px-3 py-2 text-text-secondary-dark transition-colors hover:bg-white/5" href="#">
+<span class="material-symbols-outlined text-2xl">monitoring</span>
+<p class="text-sm font-medium">Analytics</p>
+</a>
+<a class="flex items-center gap-3 rounded-lg bg-primary/20 px-3 py-2 text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">upload_file</span>
+<p class="text-sm font-bold">File Upload</p>
+</a>
+</nav>
+</div>
+<div class="flex flex-col gap-1">
+<a class="flex items-center gap-3 rounded-lg px-3 py-2 text-text-secondary-dark transition-colors hover:bg-white/5" href="#">
+<span class="material-symbols-outlined text-2xl">settings</span>
+<p class="text-sm font-medium">Settings</p>
+</a>
+<a class="flex items-center gap-3 rounded-lg px-3 py-2 text-text-secondary-dark transition-colors hover:bg-white/5" href="#">
+<span class="material-symbols-outlined text-2xl">logout</span>
+<p class="text-sm font-medium">Logout</p>
+</a>
+</div>
+</aside>
+<!-- Main Content -->
+<div class="flex flex-1 flex-col">
+<!-- TopNavBar -->
+<header class="flex h-16 items-center justify-between whitespace-nowrap border-b border-solid border-border-dark bg-surface-dark px-8 py-3">
+<div class="flex items-center gap-8">
+<label class="relative flex h-10 w-80 items-center">
+<span class="material-symbols-outlined absolute left-3 text-text-secondary-dark">search</span>
+<input class="h-full w-full rounded-lg border-none bg-background-dark pl-10 pr-4 text-sm text-text-main-dark placeholder:text-text-secondary-dark focus:outline-none focus:ring-2 focus:ring-primary/50" placeholder="Search files, documents, or reports..." type="text"/>
+</label>
+</div>
+<div class="flex items-center gap-4">
+<button class="flex h-10 w-10 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-background-dark text-text-secondary-dark transition-colors hover:text-text-main-dark">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="aspect-square size-10 rounded-full bg-cover bg-center bg-no-repeat" data-alt="User avatar image" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAmcLPvzcTG2_X7L2I9tIEKlFNSGChprD9_qJWJFK-1cDhOIKFFwmUi99cN1lqqnp9XaM8Vms201mOGX6nUlsQFqLr3ganhPt5fOolhwjP5golAyUPuCHk7G94-uYmyMEZc8LaWlLnYxY1tn9mP00cX5kr6Zo-IyHV1VoMiHM45SEAYNmY-jrFd58_Fpfq14jrYe8pZ03ymZo5uIQMtNitNUVD92j2zpZBJwMffOPrJ2ATsc01IGMJedP0Uc3k6EwpCYzjzH2HDJNo");'></div>
+</div>
+</header>
+<!-- Page Content -->
+<main class="flex flex-1 flex-col gap-6 p-8">
+<!-- PageHeading -->
+<div class="flex flex-wrap items-center justify-between gap-3">
+<div class="flex flex-col gap-1">
+<h1 class="text-3xl font-bold leading-tight tracking-tight text-text-main-dark">File Upload &amp; Indexing</h1>
+<p class="text-base font-normal text-text-secondary-dark">Upload single or multiple files for indexing into the system.</p>
+</div>
+</div>
+<!-- EmptyState (File Upload Zone) -->
+<div class="flex flex-col rounded-xl border-2 border-dashed border-border-dark bg-surface-dark/50 p-14 transition-all hover:border-primary/50 hover:bg-primary/10">
+<div class="flex flex-col items-center gap-4">
+<div class="flex h-16 w-16 items-center justify-center rounded-full bg-primary/20 text-primary">
+<span class="material-symbols-outlined text-4xl">cloud_upload</span>
+</div>
+<div class="flex max-w-md flex-col items-center gap-1 text-center">
+<p class="text-lg font-bold leading-tight text-text-main-dark">Drag &amp; drop files here</p>
+<p class="text-sm font-normal text-text-secondary-dark">Max file size: 100MB. Supported formats: PDF, DOCX, TXT.</p>
+</div>
+<button class="flex h-10 min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-primary px-5 text-sm font-bold text-white transition-opacity hover:opacity-90">
+<span>Select Files</span>
+</button>
+</div>
+</div>
+<!-- SectionHeader -->
+<h2 class="text-xl font-bold leading-tight tracking-tight text-text-main-dark">Recent Uploads</h2>
+<!-- Recent Uploads Table -->
+<div class="overflow-hidden rounded-lg border border-solid border-border-dark bg-surface-dark">
+<div class="overflow-x-auto">
+<table class="min-w-full divide-y divide-border-dark text-sm">
+<thead class="bg-background-dark/50">
+<tr>
+<th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-secondary-dark" scope="col">File Name</th>
+<th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-secondary-dark" scope="col">Upload Date</th>
+<th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-secondary-dark" scope="col">Size</th>
+<th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-secondary-dark" scope="col">Status</th>
+<th class="relative px-6 py-3" scope="col">
+<span class="sr-only">Actions</span>
+</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-dark">
+<tr>
+<td class="whitespace-nowrap px-6 py-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-xl text-primary">description</span>
+<span class="font-medium text-text-main-dark">Annual_Report_2023.pdf</span>
+</div>
+</td>
+<td class="whitespace-nowrap px-6 py-4 text-text-secondary-dark">2024-05-20 10:45 AM</td>
+<td class="whitespace-nowrap px-6 py-4 text-text-secondary-dark">2.5 MB</td>
+<td class="whitespace-nowrap px-6 py-4">
+<span class="inline-flex items-center gap-1.5 rounded-full bg-success/20 px-2.5 py-0.5 text-xs font-medium text-success">
+<span class="size-2 rounded-full bg-success"></span>
+                                                Complete
+                                            </span>
+</td>
+<td class="whitespace-nowrap px-6 py-4 text-right">
+<button class="text-text-secondary-dark transition-colors hover:text-text-main-dark"><span class="material-symbols-outlined">more_vert</span></button>
+</td>
+</tr>
+<tr>
+<td class="whitespace-nowrap px-6 py-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-xl text-primary">description</span>
+<span class="font-medium text-text-main-dark">Marketing_Strategy_Q3.docx</span>
+</div>
+</td>
+<td class="whitespace-nowrap px-6 py-4 text-text-secondary-dark">2024-05-20 09:12 AM</td>
+<td class="whitespace-nowrap px-6 py-4 text-text-secondary-dark">850 KB</td>
+<td class="whitespace-nowrap px-6 py-4">
+<span class="inline-flex items-center gap-1.5 rounded-full bg-warning/20 px-2.5 py-0.5 text-xs font-medium text-warning">
+<span class="size-2 rounded-full bg-warning"></span>
+                                                Indexing
+                                            </span>
+</td>
+<td class="whitespace-nowrap px-6 py-4 text-right">
+<button class="text-text-secondary-dark transition-colors hover:text-text-main-dark"><span class="material-symbols-outlined">more_vert</span></button>
+</td>
+</tr>
+<tr>
+<td class="whitespace-nowrap px-6 py-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-xl text-primary">description</span>
+<span class="font-medium text-text-main-dark">Project_Phoenix_Brief.txt</span>
+</div>
+</td>
+<td class="whitespace-nowrap px-6 py-4 text-text-secondary-dark">2024-05-19 03:22 PM</td>
+<td class="whitespace-nowrap px-6 py-4 text-text-secondary-dark">12 KB</td>
+<td class="whitespace-nowrap px-6 py-4">
+<span class="inline-flex items-center gap-1.5 rounded-full bg-error/20 px-2.5 py-0.5 text-xs font-medium text-error">
+<span class="size-2 rounded-full bg-error"></span>
+                                                Failed
+                                            </span>
+</td>
+<td class="whitespace-nowrap px-6 py-4 text-right">
+<button class="text-text-secondary-dark transition-colors hover:text-text-main-dark"><span class="material-symbols-outlined">more_vert</span></button>
+</td>
+</tr>
+<tr>
+<td class="whitespace-nowrap px-6 py-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-xl text-primary">description</span>
+<span class="font-medium text-text-main-dark">Competitor_Analysis.pdf</span>
+</div>
+</td>
+<td class="whitespace-nowrap px-6 py-4 text-text-secondary-dark">2024-05-18 11:05 AM</td>
+<td class="whitespace-nowrap px-6 py-4 text-text-secondary-dark">5.1 MB</td>
+<td class="whitespace-nowrap px-6 py-4">
+<span class="inline-flex items-center gap-1.5 rounded-full bg-success/20 px-2.5 py-0.5 text-xs font-medium text-success">
+<span class="size-2 rounded-full bg-success"></span>
+                                                Complete
+                                            </span>
+</td>
+<td class="whitespace-nowrap px-6 py-4 text-right">
+<button class="text-text-secondary-dark transition-colors hover:text-text-main-dark"><span class="material-symbols-outlined">more_vert</span></button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</main>
+</div>
+</div>
+<!-- Toast Notification -->
+<div class="pointer-events-none fixed bottom-8 right-8 w-full max-w-sm">
+<div class="pointer-events-auto flex items-start gap-4 rounded-lg bg-surface-dark p-4 shadow-2xl ring-1 ring-border-dark">
+<div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-success/20 text-success">
+<span class="material-symbols-outlined">check_circle</span>
+</div>
+<div class="flex-1">
+<p class="font-bold text-text-main-dark">Upload successful</p>
+<p class="text-sm text-text-secondary-dark">"Annual_Report_2023.pdf" has been uploaded and is now being indexed.</p>
+</div>
+<button class="text-text-secondary-dark hover:text-text-main-dark">
+<span class="material-symbols-outlined text-xl">close</span>
+</button>
+</div>
+</div>
+</div>
+</body></html>

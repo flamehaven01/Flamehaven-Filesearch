@@ -11,11 +11,16 @@ Provides:
 import hashlib
 import json
 import logging
+import os
 import sqlite3
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import List, Optional, Tuple
+
+import jwt
+
+from .encryption import encryption_service
 
 logger = logging.getLogger(__name__)
 
@@ -144,6 +149,7 @@ class APIKeyManager:
         permissions: Optional[List[str]] = None,
         rate_limit_per_minute: int = 100,
         expires_in_days: Optional[int] = None,
+        metadata: Optional[dict] = None,
     ) -> Tuple[str, str]:
         """
         Generate new API key
@@ -165,25 +171,34 @@ class APIKeyManager:
         if expires_in_days:
             expires_at = (now + timedelta(days=expires_in_days)).isoformat() + "Z"
 
+        safe_name = encryption_service.encrypt(name)
+        safe_user_id = encryption_service.encrypt(user_id)
+        safe_permissions = encryption_service.encrypt(json.dumps(permissions))
+
         try:
+            enc_metadata = None
+            if metadata:
+                enc_metadata = encryption_service.encrypt(json.dumps(metadata))
+
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.cursor()
                 cursor.execute(
                     """
                     INSERT INTO api_keys
                     (id, name, key_hash, user_id, created_at, expires_at,
-                     rate_limit_per_minute, permissions, created_at_unix)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                     rate_limit_per_minute, permissions, metadata, created_at_unix)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         key_id,
-                        name,
+                        safe_name,
                         key_hash,
-                        user_id,
+                        safe_user_id,
                         created_at,
                         expires_at,
                         rate_limit_per_minute,
-                        json.dumps(permissions),
+                        safe_permissions,
+                        enc_metadata,
                         now.timestamp(),
                     ),
                 )
@@ -253,12 +268,19 @@ class APIKeyManager:
                 )
                 conn.commit()
 
-                permissions = json.loads(perms_json) if perms_json else []
+                decrypted_name = encryption_service.decrypt(name) or name
+                decrypted_user_id = encryption_service.decrypt(user_id) or user_id
+                try:
+                    permissions = json.loads(
+                        encryption_service.decrypt(perms_json) or perms_json
+                    )
+                except Exception:
+                    permissions = json.loads(perms_json) if perms_json else []
 
                 return APIKeyInfo(
                     key_id=key_id,
-                    name=name,
-                    user_id=user_id,
+                    name=decrypted_name,
+                    user_id=decrypted_user_id,
                     created_at=created_at,
                     last_used=last_used,
                     is_active=is_active,
@@ -322,13 +344,18 @@ class APIKeyManager:
                         perms_json,
                     ) = row
                     is_active = bool(is_active)
-                    permissions = json.loads(perms_json) if perms_json else []
+                    try:
+                        permissions = json.loads(
+                            encryption_service.decrypt(perms_json) or perms_json
+                        )
+                    except Exception:
+                        permissions = json.loads(perms_json) if perms_json else []
 
                     keys.append(
                         APIKeyInfo(
                             key_id=key_id,
-                            name=name,
-                            user_id=user,
+                            name=encryption_service.decrypt(name) or name,
+                            user_id=encryption_service.decrypt(user) or user,
                             created_at=created_at,
                             last_used=last_used,
                             is_active=is_active,
@@ -357,6 +384,7 @@ class APIKeyManager:
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.cursor()
                 timestamp = datetime.utcnow().isoformat() + "Z"
+                safe_request_id = encryption_service.encrypt(request_id)
 
                 cursor.execute(
                     """
@@ -367,7 +395,7 @@ class APIKeyManager:
                     """,
                     (
                         api_key_id,
-                        request_id,
+                        safe_request_id,
                         endpoint,
                         method,
                         status_code,
@@ -487,3 +515,60 @@ def get_key_manager(db_path: str = "./data/flamehaven.db") -> APIKeyManager:
     if _key_manager is None:
         _key_manager = APIKeyManager(db_path)
     return _key_manager
+from typing import Optional
+
+class IAMProvider:
+    """Pluggable IAM provider (placeholder for future backends)."""
+
+    def validate_admin_token(self, token: str) -> Optional[str]:
+        """
+        Validate admin token and return user_id if valid, else None.
+        Override in real provider (AWS IAM / OIDC, etc.).
+        """
+        return None
+
+
+_iam_provider: Optional[IAMProvider] = None
+
+
+class OIDCIAMProvider(IAMProvider):
+    """OIDC-based admin token validator (HS256 shared secret)."""
+
+    def __init__(self, secret: str, issuer: Optional[str], audience: Optional[str]):
+        self.secret = secret
+        self.issuer = issuer
+        self.audience = audience
+
+    def validate_admin_token(self, token: str) -> Optional[str]:
+        try:
+            options = {"verify_aud": bool(self.audience)}
+            payload = jwt.decode(
+                token,
+                self.secret,
+                algorithms=["HS256"],
+                audience=self.audience,
+                issuer=self.issuer,
+                options=options,
+            )
+            return payload.get("sub") or payload.get("preferred_username") or "oidc-admin"
+        except Exception:
+            return None
+
+
+def get_iam_provider() -> IAMProvider:
+    """Return IAM provider singleton."""
+    global _iam_provider
+    if _iam_provider is None:
+        provider = os.getenv("FLAMEHAVEN_IAM_PROVIDER", "default").lower()
+        if provider == "oidc":
+            secret = os.getenv("FLAMEHAVEN_OIDC_SECRET")
+            issuer = os.getenv("FLAMEHAVEN_OIDC_ISSUER")
+            audience = os.getenv("FLAMEHAVEN_OIDC_AUDIENCE")
+            if secret:
+                _iam_provider = OIDCIAMProvider(secret, issuer, audience)
+            else:
+                logger.warning("OIDC provider selected but FLAMEHAVEN_OIDC_SECRET missing; falling back to default IAM provider")
+                _iam_provider = IAMProvider()
+        else:
+            _iam_provider = IAMProvider()
+    return _iam_provider

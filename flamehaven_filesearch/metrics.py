@@ -6,6 +6,7 @@ Comprehensive application metrics for monitoring and alerting.
 
 import logging
 import time
+from collections import deque
 
 import psutil
 from prometheus_client import (
@@ -29,7 +30,7 @@ app_info = Info(
     "flamehaven_filesearch_app", "Application information", registry=registry
 )
 app_info.info(
-    {"version": "1.1.0", "service": "flamehaven-filesearch", "framework": "fastapi"}
+    {"version": "1.2.1", "service": "flamehaven-filesearch", "framework": "fastapi"}
 )
 
 # Request metrics
@@ -163,15 +164,50 @@ active_requests = Gauge(
 )
 
 
+_requests_ts = deque(maxlen=5000)
+_errors_ts = deque(maxlen=2000)
+
+
 class MetricsCollector:
     """
     Helper class for collecting and updating metrics
     """
 
     @staticmethod
+    def _sum_metric(name: str) -> float:
+        """Aggregate samples for a given metric name."""
+        total = 0.0
+        for metric in registry.collect():
+            if metric.name == name:
+                for sample in metric.samples:
+                    total += float(sample.value)
+        return total
+
+    @staticmethod
+    def summary() -> dict:
+        """Lightweight summary for /metrics JSON endpoint."""
+        now = time.time()
+        req_60 = len([t for t in _requests_ts if now - t <= 60])
+        req_300 = len([t for t in _requests_ts if now - t <= 300])
+        err_60 = len([t for t in _errors_ts if now - t <= 60])
+        err_300 = len([t for t in _errors_ts if now - t <= 300])
+        return {
+            "requests_total": MetricsCollector._sum_metric("http_requests_total"),
+            "errors_total": MetricsCollector._sum_metric("errors_total"),
+            "rate_limit_exceeded": MetricsCollector._sum_metric(
+                "rate_limit_exceeded_total"
+            ),
+            "cache_hits_total": MetricsCollector._sum_metric("cache_hits_total"),
+            "cache_misses_total": MetricsCollector._sum_metric("cache_misses_total"),
+            "requests_last_60s": req_60,
+            "requests_last_300s": req_300,
+            "errors_last_60s": err_60,
+            "errors_last_300s": err_300,
+        }
+
+    @staticmethod
     def record_request(method: str, endpoint: str, status: int, duration: float):
-        """
-        Record HTTP request metrics
+        """Record HTTP request metrics
 
         Args:
             method: HTTP method
@@ -186,6 +222,11 @@ class MetricsCollector:
         http_request_duration_seconds.labels(method=method, endpoint=endpoint).observe(
             duration
         )
+        now = time.time()
+        _requests_ts.append(now)
+        while _requests_ts and now - _requests_ts[0] > 300:
+            _requests_ts.popleft()
+
 
     @staticmethod
     def record_file_upload(store: str, size_bytes: int, duration: float, success: bool):
@@ -249,6 +290,11 @@ class MetricsCollector:
     def record_error(error_type: str, endpoint: str):
         """Record error"""
         errors_total.labels(error_type=error_type, endpoint=endpoint).inc()
+        now = time.time()
+        _errors_ts.append(now)
+        while _errors_ts and now - _errors_ts[0] > 300:
+            _errors_ts.popleft()
+
 
     @staticmethod
     def update_system_metrics():
