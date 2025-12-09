@@ -7,20 +7,20 @@ Provides:
 - Mock Google Gemini API
 """
 
-import tempfile
-import sys
 import site
+import sys
+import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
 
-# Ensure user site-packages are visible (for psutil, etc.)
-sys.path.append(site.getusersitepackages())
-
 from flamehaven_filesearch.api import app
 from flamehaven_filesearch.auth import get_key_manager
+
+# Ensure user site-packages are visible (for psutil, etc.)
+sys.path.append(site.getusersitepackages())
 
 
 @pytest.fixture(scope="session")
