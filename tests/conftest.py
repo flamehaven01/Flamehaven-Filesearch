@@ -7,9 +7,9 @@ Provides:
 - Mock Google Gemini API
 """
 
-import tempfile
-import sys
 import site
+import sys
+import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 

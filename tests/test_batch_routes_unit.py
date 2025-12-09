@@ -1,8 +1,8 @@
 import asyncio
 
 import pytest
-from starlette.requests import Request
 from fastapi import HTTPException
+from starlette.requests import Request
 
 from flamehaven_filesearch import batch_routes
 from flamehaven_filesearch.batch_routes import (
