@@ -211,12 +211,23 @@ async def _execute_single_search(
         validate_search_request(query_obj.query)
 
         # Perform search
-        result = await asyncio.to_thread(
-            searcher.search,
-            query_obj.query,
-            store_name=query_obj.store,
-            max_sources=max_results,
-        )
+        # asyncio.to_thread is available on Py3.9+; provide fallback for older runtimes
+        if hasattr(asyncio, "to_thread"):
+            result = await asyncio.to_thread(
+                searcher.search,
+                query_obj.query,
+                store_name=query_obj.store,
+                max_sources=max_results,
+            )
+        else:  # pragma: no cover - legacy Python guard
+            loop = asyncio.get_running_loop()
+            result = await loop.run_in_executor(
+                None,
+                searcher.search,
+                query_obj.query,
+                query_obj.store,
+                max_results,
+            )
 
         duration = time.time() - query_start
 
