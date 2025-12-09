@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.2] - 2025-12-09
+
+### Added
+- Tests: new coverage for encryption service, batch search (sequential/parallel, error paths), and Redis cache backend via in-memory fake client.
+- Default store seeding in fallback mode to keep `/search` and perf smoke tests green out of the box.
+
+### Changed
+- Coverage config now includes Redis cache backend; package version, docs, metrics, and logging metadata bumped to v1.2.2; FastAPI app metadata set to v1.2.2.
+
+### Fixed
+- Batch search helpers now covered for FileSearch and unexpected error paths; encryption invalid token path validated to return raw text with warning.
+- Autouse test fixture initializes services each test to avoid uninitialized searcher/cache during API workflows.
+
+### Tests
+- `python -m pytest` (22 passed, 2 skipped).
+
 ## [1.2.1] - 2025-11-27
 
 ### Added

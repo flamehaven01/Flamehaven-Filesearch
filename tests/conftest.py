@@ -219,6 +219,15 @@ def cleanup_metrics():
     # Cleanup after test
 
 
+@pytest.fixture(autouse=True)
+def ensure_searcher_initialized():
+    """Ensure searcher and cache are initialized for each test."""
+    from flamehaven_filesearch import api as api_module
+
+    api_module.initialize_services(force=True)
+    yield
+
+
 @pytest.fixture
 def isolated_fs(tmp_path, monkeypatch):
     """Provide isolated filesystem for tests"""

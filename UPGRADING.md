@@ -1,6 +1,6 @@
-# Upgrading to v1.2.1
+# Upgrading to v1.2.2
 
-This guide covers the upgrade process from **v1.1.x → v1.2.1**.
+This guide covers the upgrade process from **v1.1.x -> v1.2.2**.
 
 ---
 
@@ -22,7 +22,7 @@ flamehaven-api
 
 ---
 
-## What's New in v1.2.1
+## What's New in v1.2.2
 
 ### Security / Admin
 - Admin API 키는 `admin` 퍼미션이 필요(기존 키에 퍼미션 없으면 403). 새 키 기본 퍼미션에 admin 포함.
@@ -567,4 +567,4 @@ After upgrading to v1.1.0:
 ---
 
 **Last Updated**: 2025-11-13
-**Document Version**: 1.0.0 (v1.0.0 → v1.1.0 migration)
+**Document Version**: 1.0.0 (v1.0.0 -> v1.1.0 migration)

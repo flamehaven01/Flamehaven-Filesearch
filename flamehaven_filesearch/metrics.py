@@ -30,7 +30,7 @@ app_info = Info(
     "flamehaven_filesearch_app", "Application information", registry=registry
 )
 app_info.info(
-    {"version": "1.2.1", "service": "flamehaven-filesearch", "framework": "fastapi"}
+    {"version": "1.2.2", "service": "flamehaven-filesearch", "framework": "fastapi"}
 )
 
 # Request metrics

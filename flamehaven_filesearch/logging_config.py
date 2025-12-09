@@ -31,7 +31,7 @@ if _JSONLOGGER_AVAILABLE:
 
             # Add service identification
             log_record["service"] = "flamehaven-filesearch"
-            log_record["version"] = "1.2.1"
+            log_record["version"] = "1.2.2"
 
             # Add request ID if available
             if hasattr(record, "request_id"):
