@@ -11,6 +11,7 @@ from typing import Optional
 
 try:
     from cryptography.fernet import Fernet, InvalidToken
+
     _CRYPTO_AVAILABLE = True
 except ImportError:  # pragma: no cover - fallback when cryptography missing
     _CRYPTO_AVAILABLE = False
@@ -27,7 +28,9 @@ class EncryptionService:
         if key and _CRYPTO_AVAILABLE:
             try:
                 # Accept either raw Fernet key or 32-byte base64url
-                self._fernet = Fernet(key.encode() if not key.startswith("gAAAA") else key)
+                self._fernet = Fernet(
+                    key.encode() if not key.startswith("gAAAA") else key
+                )
                 self.enabled = True
             except Exception as exc:  # pragma: no cover - defensive
                 logger.warning("Invalid encryption key, disabling encryption: %s", exc)

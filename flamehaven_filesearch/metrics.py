@@ -227,7 +227,6 @@ class MetricsCollector:
         while _requests_ts and now - _requests_ts[0] > 300:
             _requests_ts.popleft()
 
-
     @staticmethod
     def record_file_upload(store: str, size_bytes: int, duration: float, success: bool):
         """
@@ -294,7 +293,6 @@ class MetricsCollector:
         _errors_ts.append(now)
         while _errors_ts and now - _errors_ts[0] > 300:
             _errors_ts.popleft()
-
 
     @staticmethod
     def update_system_metrics():

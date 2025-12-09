@@ -515,7 +515,10 @@ def get_key_manager(db_path: str = "./data/flamehaven.db") -> APIKeyManager:
     if _key_manager is None:
         _key_manager = APIKeyManager(db_path)
     return _key_manager
+
+
 from typing import Optional
+
 
 class IAMProvider:
     """Pluggable IAM provider (placeholder for future backends)."""
@@ -550,7 +553,9 @@ class OIDCIAMProvider(IAMProvider):
                 issuer=self.issuer,
                 options=options,
             )
-            return payload.get("sub") or payload.get("preferred_username") or "oidc-admin"
+            return (
+                payload.get("sub") or payload.get("preferred_username") or "oidc-admin"
+            )
         except Exception:
             return None
 
@@ -567,7 +572,9 @@ def get_iam_provider() -> IAMProvider:
             if secret:
                 _iam_provider = OIDCIAMProvider(secret, issuer, audience)
             else:
-                logger.warning("OIDC provider selected but FLAMEHAVEN_OIDC_SECRET missing; falling back to default IAM provider")
+                logger.warning(
+                    "OIDC provider selected but FLAMEHAVEN_OIDC_SECRET missing; falling back to default IAM provider"
+                )
                 _iam_provider = IAMProvider()
         else:
             _iam_provider = IAMProvider()

@@ -14,7 +14,7 @@ requests>=2.31.0
 slowapi>=0.1.9
 psutil>=5.9.0
 cryptography>=42.0.0
-PyJWT>=2.10.0
+PyJWT>=2.8.0
 
 # Performance & Monitoring
 python-json-logger>=2.0.0

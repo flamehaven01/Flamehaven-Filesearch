@@ -3,7 +3,11 @@ import types
 import pytest
 
 from flamehaven_filesearch import cache_redis
-from flamehaven_filesearch.cache_redis import RedisCache, SearchResultCacheRedis, get_redis_cache
+from flamehaven_filesearch.cache_redis import (
+    RedisCache,
+    SearchResultCacheRedis,
+    get_redis_cache,
+)
 
 
 class _FakeRedisClient:
@@ -32,7 +36,11 @@ class _FakeRedisClient:
         # single-pass scan implementation
         if cursor != 0:
             return 0, []
-        keys = [k for k in self.store.keys() if match is None or k.startswith(match.rstrip("*"))]
+        keys = [
+            k
+            for k in self.store.keys()
+            if match is None or k.startswith(match.rstrip("*"))
+        ]
         return 0, keys
 
     def info(self, section=None):

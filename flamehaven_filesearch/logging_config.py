@@ -9,6 +9,7 @@ import sys
 
 try:
     from pythonjsonlogger import jsonlogger
+
     _JSONLOGGER_AVAILABLE = True
 except ImportError:  # pragma: no cover - fallback when dependency missing
     _JSONLOGGER_AVAILABLE = False
@@ -50,6 +51,7 @@ if _JSONLOGGER_AVAILABLE:
 
             # Add level name
             log_record["level"] = record.levelname
+
 else:
 
     class CustomJsonFormatter(logging.Formatter):

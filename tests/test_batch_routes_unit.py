@@ -26,7 +26,10 @@ class FakeSearcher:
             raise FileSearchException("boom", status_code=400)
         if self.mode == "unexpected_error":
             raise RuntimeError("unexpected")
-        return {"answer": f"{query}-answer", "sources": [{"query": query, "store": store_name}]}
+        return {
+            "answer": f"{query}-answer",
+            "sources": [{"query": query, "store": store_name}],
+        }
 
 
 @pytest.mark.asyncio

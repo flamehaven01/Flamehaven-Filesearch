@@ -94,6 +94,7 @@ def rate_limit_key(request: Request) -> str:
 # Initialize rate limiter
 limiter = Limiter(key_func=rate_limit_key)
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """FastAPI lifespan to replace deprecated on_event hooks."""
