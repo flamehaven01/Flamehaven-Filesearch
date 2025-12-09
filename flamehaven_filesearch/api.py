@@ -18,11 +18,11 @@ import os
 import shutil
 import tempfile
 import time
+from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import List, Optional
 
 import psutil
-from contextlib import asynccontextmanager
 from fastapi import (
     Depends,
     FastAPI,
@@ -270,7 +270,10 @@ def initialize_services(force: bool = False) -> None:
                         {
                             "title": "bootstrap.txt",
                             "uri": "local://bootstrap.txt",
-                            "content": "Flamehaven Filesearch default store bootstrap document.",
+                            "content": (
+                                "Flamehaven Filesearch default store bootstrap "
+                                "document."
+                            ),
                         }
                     )
         except Exception as exc:  # pragma: no cover - defensive

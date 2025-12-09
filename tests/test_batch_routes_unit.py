@@ -1,14 +1,11 @@
-import asyncio
-
 import pytest
-from starlette.requests import Request
 from fastapi import HTTPException
+from starlette.requests import Request
 
 from flamehaven_filesearch import batch_routes
 from flamehaven_filesearch.batch_routes import (
     BatchSearchQuery,
     BatchSearchRequest,
-    _execute_batch_parallel,
     _execute_batch_sequential,
     _execute_single_search,
     batch_search,

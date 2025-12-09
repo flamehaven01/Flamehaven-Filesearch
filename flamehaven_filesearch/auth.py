@@ -14,7 +14,7 @@ import logging
 import os
 import sqlite3
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List, Optional, Tuple
 
@@ -517,9 +517,6 @@ def get_key_manager(db_path: str = "./data/flamehaven.db") -> APIKeyManager:
     return _key_manager
 
 
-from typing import Optional
-
-
 class IAMProvider:
     """Pluggable IAM provider (placeholder for future backends)."""
 
@@ -573,7 +570,8 @@ def get_iam_provider() -> IAMProvider:
                 _iam_provider = OIDCIAMProvider(secret, issuer, audience)
             else:
                 logger.warning(
-                    "OIDC provider selected but FLAMEHAVEN_OIDC_SECRET missing; falling back to default IAM provider"
+                    "OIDC provider selected but FLAMEHAVEN_OIDC_SECRET missing; "
+                    "falling back to default IAM provider"
                 )
                 _iam_provider = IAMProvider()
         else:

@@ -1,7 +1,4 @@
 import logging
-import os
-
-import pytest
 from cryptography.fernet import Fernet
 
 from flamehaven_filesearch.encryption import EncryptionService
