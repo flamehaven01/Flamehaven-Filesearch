@@ -1,6 +1,3 @@
-import pytest
-
-
 def test_cache_stats_admin(admin_client):
     resp = admin_client.get("/api/admin/cache/stats")
     assert resp.status_code == 200
