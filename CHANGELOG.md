@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Tests: new coverage for encryption service, batch search (sequential/parallel, error paths), and Redis cache backend via in-memory fake client.
 - Default store seeding in fallback mode to keep `/search` and perf smoke tests green out of the box.
+- Backend clarity: README now highlights Gemini-first default plus fully offline local fallback and notes pluggable LLM adapters.
 
 ### Changed
 - Coverage config now includes Redis cache backend; package version, docs, metrics, and logging metadata bumped to v1.2.2; FastAPI app metadata set to v1.2.2.

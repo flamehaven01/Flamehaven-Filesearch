@@ -13,7 +13,7 @@
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org/)
 [![MIT License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
-[Quick Start (3 min)](#-3-minute-quick-start) • [API Docs](http://localhost:8000/docs) • [Roadmap](#-roadmap) • [Contributing](CONTRIBUTING.md)
+[Quick Start (3 min)](#-3-minute-quick-start) ??[API Docs](http://localhost:8000/docs) ??[Roadmap](#-roadmap) ??[Contributing](CONTRIBUTING.md)
 
 </div>
 
@@ -92,27 +92,27 @@ Leverages Gemini's generous free tier. Process thousands of docs free.
 
 ## Problem: Your Situation
 
-```
-✗ You have PDF, Word, and text documents scattered across your local drive
-✗ You want to search them intelligently, not keyword-by-keyword
-✗ You don't want to upload your data to external services (Pinecone, Cloudflare, etc.)
-✗ You need production-ready security without complex setup
-✗ You want zero infrastructure costs for prototype phase
-```
+
+??You have PDF, Word, and text documents scattered across your local drive
+??You want to search them intelligently, not keyword-by-keyword
+??You don't want to upload your data to external services (Pinecone, Cloudflare, etc.)
+??You need production-ready security without complex setup
+??You want zero infrastructure costs for prototype phase
+
 
 ---
 
 ## Solution: FLAMEHAVEN FileSearch
 
-```
-✓ Local RAG search engine in 5 minutes
-✓ 100% self-hosted (your data stays yours)
-✓ Single Docker command deployment
-✓ Free tier Google Gemini (up to 1500 queries/month)
-✓ v1.2.2: Enterprise-grade authentication & multi-user support
-✓ Batch search API for 1-100 queries per request
-✓ Optional Redis for distributed caching across workers
-```
+
+??Local RAG search engine in 5 minutes
+??100% self-hosted (your data stays yours)
+??Single Docker command deployment
+??Free tier Google Gemini (up to 1500 queries/month)
+??v1.2.2: Enterprise-grade authentication & multi-user support
+??Batch search API for 1-100 queries per request
+??Optional Redis for distributed caching across workers
+
 
 ---
 
@@ -120,7 +120,7 @@ Leverages Gemini's generous free tier. Process thousands of docs free.
 
 ### 1. Docker (No Setup)
 
-```bash
+bash
 # Start with one command
 docker run -d \
   -e GEMINI_API_KEY="your_gemini_api_key" \
@@ -129,11 +129,11 @@ docker run -d \
   flamehaven-filesearch:1.2.2
 
 # Available at http://localhost:8000 in 3 seconds
-```
+
 
 ### 2. Your First Search (cURL)
 
-```bash
+bash
 # Step 1: Generate API key (v1.2.2 requirement)
 curl -X POST http://localhost:8000/api/admin/keys \
   -H "X-Admin-Key: your_admin_key" \
@@ -172,11 +172,11 @@ curl -X POST http://localhost:8000/api/search \
 #     }
 #   ]
 # }
-```
+
 
 ### 3. Python Code Example
 
-```python
+python
 from flamehaven_filesearch import FlamehavenFileSearch, FileSearchConfig
 
 # Configuration
@@ -203,7 +203,7 @@ result = searcher.search(
 
 print(f"Answer: {result['answer']}")
 print(f"Sources: {result['sources']}")
-```
+
 
 ---
 
@@ -211,7 +211,7 @@ print(f"Sources: {result['sources']}")
 
 ### Option 1: Pip (Recommended for Development)
 
-```bash
+bash
 # Core functionality
 pip install flamehaven-filesearch
 
@@ -223,11 +223,11 @@ pip install flamehaven-filesearch[api,redis]
 
 # Everything (for development)
 pip install flamehaven-filesearch[all]
-```
+
 
 ### Option 2: Docker (Recommended for Production)
 
-```bash
+bash
 # Build image
 docker build -t flamehaven-filesearch:1.2.2 .
 
@@ -240,7 +240,7 @@ docker run \
 
 # With Docker Compose (includes Redis)
 docker-compose up -d
-```
+
 
 ### Option 3: Kubernetes (For High Availability)
 
@@ -252,7 +252,7 @@ See the [Kubernetes deployment example](#kubernetes-deployment) above for comple
 
 ### Required Environment Variables
 
-```bash
+bash
 # Google Gemini API key (get free tier at ai.google.dev)
 export GEMINI_API_KEY="your_api_key"
 
@@ -264,11 +264,11 @@ export FLAMEHAVEN_ENC_KEY="base64_32byte_key_for_AES256"  # required for encrypt
 # export FLAMEHAVEN_OIDC_SECRET="your_oidc_hs256_secret"
 # export FLAMEHAVEN_OIDC_ISSUER="https://issuer.example.com"
 # export FLAMEHAVEN_OIDC_AUDIENCE="your-audience"
-```
+
 
 ### Optional Environment Variables
 
-```bash
+bash
 # Server settings
 export HOST="0.0.0.0"              # Default: 127.0.0.1
 export PORT="8000"                  # Default: 8000
@@ -284,16 +284,16 @@ export REDIS_PASSWORD="password"    # Optional
 
 # API limits
 export MAX_FILE_SIZE_MB="50"        # Default: 50
-```
+
 
 ---
 
 ## API Key Management (v1.2.2)
-> Admin access requires an API key with `"admin"` permission (default for newly created keys) or the `FLAMEHAVEN_ADMIN_KEY` environment value. Existing keys without `admin` will receive 403 on admin routes.
+> Admin access requires an API key with "admin" permission (default for newly created keys) or the FLAMEHAVEN_ADMIN_KEY environment value. Existing keys without admin will receive 403 on admin routes.
 
 ### Generate API Key
 
-```bash
+bash
 curl -X POST http://localhost:8000/api/admin/keys \
   -H "X-Admin-Key: $FLAMEHAVEN_ADMIN_KEY" \
   -H "Content-Type: application/json" \
@@ -302,28 +302,28 @@ curl -X POST http://localhost:8000/api/admin/keys \
     "permissions": ["upload", "search", "stores", "delete"],
     "rate_limit_per_minute": 100
   }'
-```
+
 
 ### List Your Keys
 
-```bash
+bash
 curl http://localhost:8000/api/admin/keys \
   -H "Authorization: Bearer sk_live_your_key..."
-```
+
 
 ### Revoke a Key
 
-```bash
+bash
 curl -X DELETE http://localhost:8000/api/admin/keys/{key_id} \
   -H "Authorization: Bearer sk_live_your_key..."
-```
+
 
 ### View Usage Statistics
 
-```bash
+bash
 curl "http://localhost:8000/api/admin/usage?days=7" \
   -H "Authorization: Bearer sk_live_your_key..."
-```
+
 
 ---
 
@@ -363,7 +363,7 @@ curl "http://localhost:8000/api/admin/usage?days=7" \
 - [ ] Improved admin authentication (IAM integration)
 - [ ] Redis UI configuration in dashboard
 - [ ] Encryption at rest for sensitive data
-- [ ] Fix deprecated FastAPI `on_event` decorators
+- [ ] Fix deprecated FastAPI on_event decorators
 
 ### v1.3.0 (Q1 2026)
 - [ ] OAuth2/OIDC integration
@@ -385,27 +385,27 @@ Looking to contribute? Start with these issues:
 
 1. **Add XLSX Support** (Difficulty: Medium)
    - Extend file upload to handle Excel spreadsheets
-   - Reference: `flamehaven_filesearch/loaders.py`
+   - Reference: flamehaven_filesearch/loaders.py
    - Estimated time: 2-3 hours
 
 2. **Implement Search Result Caching UI** (Difficulty: Easy)
    - Display cache hit rate in admin dashboard
-   - Reference: `flamehaven_filesearch/dashboard.py`
+   - Reference: flamehaven_filesearch/dashboard.py
    - Estimated time: 1-2 hours
 
 3. **Add Batch Search Progress Tracking** (Difficulty: Medium)
    - Implement WebSocket endpoint for real-time batch progress
-   - Reference: `flamehaven_filesearch/batch_routes.py`
+   - Reference: flamehaven_filesearch/batch_routes.py
    - Estimated time: 3-4 hours
 
 4. **Create Integration Tests** (Difficulty: Easy)
    - Write end-to-end tests for common workflows
-   - Reference: `tests/test_api_integration.py`
+   - Reference: tests/test_api_integration.py
    - Estimated time: 2-3 hours
 
 5. **Add Dark Mode to Admin Dashboard** (Difficulty: Easy)
    - Extend dashboard.py with CSS dark theme toggle
-   - Reference: `flamehaven_filesearch/dashboard.py`
+   - Reference: flamehaven_filesearch/dashboard.py
    - Estimated time: 1-2 hours
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for complete contribution guidelines.
@@ -418,27 +418,27 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for complete contribution guidelines.
 
 **Solution:**
 - Verify FLAMEHAVEN_ADMIN_KEY environment variable is set
-- Check Authorization header format: `Authorization: Bearer sk_live_your_key`
+- Check Authorization header format: Authorization: Bearer sk_live_your_key
 - Ensure API key hasn't expired
 
 ### Issue: "Redis connection refused"
 
 **Solution:**
-- Verify Redis is running: `redis-cli ping`
+- Verify Redis is running: redis-cli ping
 - Check REDIS_HOST and REDIS_PORT environment variables
 - Remove Redis if not needed (system falls back to LRU cache)
 
 ### Issue: High memory usage
 
 **Solution:**
-- Configure Redis eviction policy: `maxmemory-policy allkeys-lru`
+- Configure Redis eviction policy: maxmemory-policy allkeys-lru
 - Reduce cache TTL in configuration
-- Monitor cache metrics: `curl http://localhost:8000/prometheus | grep cache`
+- Monitor cache metrics: curl http://localhost:8000/prometheus | grep cache
 
 ### Issue: Slow searches
 
 **Solution:**
-- Check if caching is working (view `cache_hits_total` metric)
+- Check if caching is working (view cache_hits_total metric)
 - Verify Gemini API is responsive
 - Check network latency to Redis instance
 
@@ -453,25 +453,25 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for complete contribution guidelines.
 ### Migration Steps
 
 1. **Update dependencies:**
-   ```bash
+   bash
    pip install -U flamehaven-filesearch[api]
-   ```
+   
 
 2. **Set admin key:**
-   ```bash
+   bash
    export FLAMEHAVEN_ADMIN_KEY="your_secure_admin_key"
-   ```
+   
 
 3. **Generate first API key:**
-   ```bash
+   bash
    curl -X POST http://localhost:8000/api/admin/keys \
      -H "X-Admin-Key: your_admin_key" \
      -H "Content-Type: application/json" \
      -d '{"name":"Production","permissions":["upload","search","stores","delete"]}'
-   ```
+   
 
 4. **Update application code:**
-   ```python
+   python
    # Old (v1.1.0)
    requests.post("http://localhost:8000/api/search", json={"query": "test"})
 
@@ -482,7 +482,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for complete contribution guidelines.
        json={"query": "test"},
        headers={"Authorization": f"Bearer {api_key}"}
    )
-   ```
+   
 
 5. **Test before production deployment**
 
@@ -503,7 +503,7 @@ If issues occur, v1.1.0 remains available. No data loss on downgrade.
 
 ## Architecture Overview
 
-```
+
 [Your Documents]
        |
        v
@@ -516,7 +516,7 @@ If issues occur, v1.1.0 remains available. No data loss on downgrade.
        +--- (Cache) -------+
        |
 [Prometheus Metrics] <--- [Audit Log]
-```
+
 
 ---
 
@@ -524,13 +524,13 @@ If issues occur, v1.1.0 remains available. No data loss on downgrade.
 
 Recent v1.2.2 benchmark (Docker on M1 Mac):
 
-```
+
 Health Check:           8ms
 Search (cache hit):     9ms
 Search (cache miss):    1250ms
 Batch Search (10 queries, parallel): 2500ms
 Upload (50MB file):     3200ms
-```
+
 
 ---
 
