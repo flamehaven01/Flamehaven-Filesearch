@@ -305,6 +305,9 @@ class ChronosGrid:
         if top_k is not None:
             top_k_resonances = top_k
 
+        if top_k is not None:
+            top_k_resonances = top_k
+
         self.stats.vector_essence_seeks += 1
 
         # Convert to numpy array
