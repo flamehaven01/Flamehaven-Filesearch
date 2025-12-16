@@ -283,7 +283,10 @@ class ChronosGrid:
         return None
 
     def seek_vector_resonance(
-        self, query_vector_essence: Any, top_k_resonances: int = 3
+        self,
+        query_vector_essence: Any,
+        top_k_resonances: int = 3,
+        top_k: Optional[int] = None,
     ) -> List[Tuple[Any, float]]:
         """
         Seek vector resonance for semantic search.
@@ -291,12 +294,16 @@ class ChronosGrid:
         Args:
             query_vector_essence: Query embedding vector
             top_k_resonances: Number of results to return
+            top_k: Optional alias for top_k_resonances to support legacy callers
 
         Returns:
             List of (essence, similarity_score) tuples
         """
         if not NUMPY_AVAILABLE or not self._vector_essences:
             return []
+
+        if top_k is not None:
+            top_k_resonances = top_k
 
         self.stats.vector_essence_seeks += 1
 

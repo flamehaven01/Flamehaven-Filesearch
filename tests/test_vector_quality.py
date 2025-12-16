@@ -3,6 +3,8 @@ Vector Quality Verification - SIDRCE v2.0 vs Original
 Tests semantic similarity preservation
 """
 
+# flake8: noqa
+
 import sys
 
 sys.path.insert(0, "D:\\Sanctum\\Flamehaven-Filesearch")
