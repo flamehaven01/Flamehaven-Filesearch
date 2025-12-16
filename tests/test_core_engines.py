@@ -3,7 +3,8 @@ Core engine test without API - Fast verification
 """
 
 import sys
-sys.path.insert(0, 'D:\\Sanctum\\Flamehaven-Filesearch')
+
+sys.path.insert(0, "D:\\Sanctum\\Flamehaven-Filesearch")
 
 print("[>] Core Engine Tests (No API)\n")
 
@@ -50,7 +51,7 @@ print("TEST 4: GravitasPacker")
 from flamehaven_filesearch.engine.gravitas_pack import GravitasPacker
 
 packer = GravitasPacker()
-meta = {'file_path': 'D:\\Sanctum\\test.py', 'size_bytes': 1024}
+meta = {"file_path": "D:\\Sanctum\\test.py", "size_bytes": 1024}
 compressed = packer.compress_metadata(meta)
 decompressed = packer.decompress_metadata(compressed)
 print(f"  Original size: {len(str(meta))}")
@@ -61,7 +62,8 @@ print("  [+] PASS\n")
 # Test 5: Core Integration (without API)
 print("TEST 5: FlamehavenFileSearch (offline mode)")
 import os
-os.environ['GOOGLE_API_KEY'] = 'test-bypass'
+
+os.environ["GOOGLE_API_KEY"] = "test-bypass"
 
 from flamehaven_filesearch.core import FlamehavenFileSearch
 
