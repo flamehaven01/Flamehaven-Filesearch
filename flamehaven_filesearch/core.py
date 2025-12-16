@@ -1,7 +1,8 @@
 """
 FLAMEHAVEN FileSearch - Open Source Semantic Document Search
 Fast, simple, and transparent file search powered by Google Gemini
-Now enhanced with Chronos-Grid (hyper-speed indexing) and Intent-Refiner (query optimization)
+Now enhanced with Chronos-Grid (hyper-speed indexing) and
+Intent-Refiner (query optimization)
 """
 
 import logging
@@ -19,7 +20,7 @@ except ImportError:  # pragma: no cover - optional dependency
     google_genai_types = None
 
 from .config import Config
-from .engine import ChronosGrid, ChronosConfig, IntentRefiner, GravitasPacker
+from .engine import ChronosConfig, ChronosGrid, GravitasPacker, IntentRefiner
 from .engine.embedding_generator import get_embedding_generator
 
 logger = logging.getLogger(__name__)
@@ -70,7 +71,7 @@ class FlamehavenFileSearch:
             )
 
         self.stores: Dict[str, str] = {}  # Track remote IDs or local handles
-        
+
         # [>] Initialize SAIQL-Engine components
         self.chronos_grid = ChronosGrid(config=ChronosConfig())
         self.intent_refiner = IntentRefiner()
@@ -83,7 +84,8 @@ class FlamehavenFileSearch:
             mode_label,
         )
         logger.info(
-            "[>] Advanced components initialized: Chronos-Grid, Intent-Refiner, Gravitas-Packer, EmbeddingGenerator"
+            "[>] Advanced components initialized: Chronos-Grid, "
+            "Intent-Refiner, Gravitas-Packer, EmbeddingGenerator"
         )
 
     def create_store(self, name: str = "default") -> str:
@@ -171,21 +173,21 @@ class FlamehavenFileSearch:
         # [>] Index file metadata in Chronos-Grid with vector essence
         file_abs_path = os.path.abspath(file_path)
         file_metadata = {
-            'file_name': Path(file_path).name,
-            'file_path': file_abs_path,
-            'size_bytes': os.path.getsize(file_path),
-            'file_type': ext,
-            'store': store_name,
-            'timestamp': time.time(),
+            "file_name": Path(file_path).name,
+            "file_path": file_abs_path,
+            "size_bytes": os.path.getsize(file_path),
+            "file_type": ext,
+            "store": store_name,
+            "timestamp": time.time(),
         }
-        
-        # Compress metadata with Gravitas-Pack
-        compressed_metadata = self.gravitas_packer.compress_metadata(file_metadata)
-        
+
+        # Compress metadata with Gravitas-Pack (side-effect: updates packer stats)
+        self.gravitas_packer.compress_metadata(file_metadata)
+
         # Generate vector essence from file metadata for semantic search
         metadata_text = f"{file_metadata['file_name']} {file_metadata['file_type']}"
         vector_essence = self.embedding_generator.generate(metadata_text)
-        
+
         # Inject into Chronos-Grid index with vector essence
         self.chronos_grid.inject_essence(
             glyph=file_abs_path,
@@ -327,17 +329,17 @@ class FlamehavenFileSearch:
             "temperature": temperature,
             "search_mode": search_mode,
         }
-        
+
         if intent_info:
             result["search_intent"] = {
                 "keywords": intent_info.keywords,
                 "file_extensions": intent_info.file_extensions,
                 "filters": intent_info.metadata_filters,
             }
-        
+
         if semantic_results:
             result["semantic_results"] = semantic_results
-        
+
         return result
 
     def _build_snippet(self, content: str, query: str) -> str:
@@ -398,19 +400,18 @@ class FlamehavenFileSearch:
         # [>] Refine query intent using Intent-Refiner
         intent = self.intent_refiner.refine_intent(query)
         optimized_query = intent.refined_query
-        
+
         logger.info(f"[>] Original query: {query}")
         logger.info(f"[>] Refined query: {optimized_query}")
         if intent.is_corrected:
             logger.info(f"[>] Corrections applied: {intent.correction_suggestions}")
-        
+
         # [>] Semantic search via Chronos-Grid if requested
         semantic_results = []
         if search_mode in ["semantic", "hybrid"]:
             query_embedding = self.embedding_generator.generate(optimized_query)
             semantic_results = self.chronos_grid.seek_vector_resonance(
-                query_embedding,
-                top_k=5
+                query_embedding, top_k=5
             )
             logger.info(f"[>] Semantic search returned {len(semantic_results)} results")
 
@@ -427,7 +428,11 @@ class FlamehavenFileSearch:
             )
 
         try:
-            logger.info("Searching in store '%s' with refined query: %s", store_name, optimized_query)
+            logger.info(
+                "Searching in store '%s' with refined query: %s",
+                store_name,
+                optimized_query,
+            )
 
             # Call Google File Search
             response = self.client.models.generate_content(
@@ -486,7 +491,9 @@ class FlamehavenFileSearch:
                 "model": model,
                 "query": query,
                 "refined_query": optimized_query if intent.is_corrected else None,
-                "corrections": intent.correction_suggestions if intent.is_corrected else None,
+                "corrections": intent.correction_suggestions
+                if intent.is_corrected
+                else None,
                 "store": store_name,
                 "search_mode": search_mode,
                 "search_intent": {
@@ -494,7 +501,9 @@ class FlamehavenFileSearch:
                     "file_extensions": intent.file_extensions,
                     "filters": intent.metadata_filters,
                 },
-                "semantic_results": semantic_results if search_mode in ["semantic", "hybrid"] else None,
+                "semantic_results": semantic_results
+                if search_mode in ["semantic", "hybrid"]
+                else None,
             }
 
         except Exception as e:

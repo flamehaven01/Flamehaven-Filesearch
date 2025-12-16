@@ -4,12 +4,14 @@ Tests semantic similarity preservation
 """
 
 import sys
-sys.path.insert(0, 'D:\\Sanctum\\Flamehaven-Filesearch')
+
+sys.path.insert(0, "D:\\Sanctum\\Flamehaven-Filesearch")
 
 print("[>] Vector Quality Test - Unified v2.0\n")
 
-from flamehaven_filesearch.engine.embedding_generator import EmbeddingGenerator
 import numpy as np
+
+from flamehaven_filesearch.engine.embedding_generator import EmbeddingGenerator
 
 gen = EmbeddingGenerator()
 
@@ -33,14 +35,16 @@ texts = [
     "python script file",
     "python code script",
     "java program code",
-    "completely different text here"
+    "completely different text here",
 ]
 
 vectors = [gen.generate(t) for t in texts]
 
+
 # Cosine similarity
 def cosine_sim(a, b):
     return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
 
 sim_01 = cosine_sim(vectors[0], vectors[1])  # python script vs python code
 sim_02 = cosine_sim(vectors[0], vectors[2])  # python vs java

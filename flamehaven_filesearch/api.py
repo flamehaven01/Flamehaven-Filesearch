@@ -162,8 +162,7 @@ class SearchRequest(BaseModel):
         None, description="Model temperature", ge=0.0, le=2.0
     )
     search_mode: str = Field(
-        default="keyword",
-        description="Search mode: 'keyword', 'semantic', or 'hybrid'"
+        default="keyword", description="Search mode: 'keyword', 'semantic', or 'hybrid'"
     )
 
 
@@ -178,7 +177,7 @@ class SearchResponse(BaseModel):
     store: Optional[str] = None
     message: Optional[str] = None
     request_id: Optional[str] = None
-    
+
     # Phase 2 additions
     refined_query: Optional[str] = None
     corrections: Optional[List[str]] = None

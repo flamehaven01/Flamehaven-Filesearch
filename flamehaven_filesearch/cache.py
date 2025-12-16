@@ -12,6 +12,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
 from cachetools import LRUCache, TTLCache
+
 from .engine.gravitas_pack import GravitasPacker
 
 logger = logging.getLogger(__name__)
@@ -208,10 +209,10 @@ class SearchResultCache(AbstractSearchCache):
 class FileMetadataCache:
     """
     LRU cache for file metadata with Gravitas-Pack compression
-    
+
     Phase 3: Compresses metadata using symbolic glyphs before caching,
     achieving 70-90% storage reduction while maintaining data integrity.
-    
+
     Features:
     - Automatic compression on set
     - Automatic decompression on get
@@ -222,7 +223,7 @@ class FileMetadataCache:
     def __init__(self, maxsize: int = 500):
         """
         Initialize file metadata cache with GravitasPacker
-        
+
         Args:
             maxsize: Maximum number of cached items
         """
@@ -230,33 +231,33 @@ class FileMetadataCache:
         self.maxsize = maxsize
         self.gravitas_packer = GravitasPacker()
         self.compression_enabled = True  # Can be disabled for debugging
-        
+
         logger.info(f"Initialized FileMetadataCache: maxsize={maxsize}, compression=ON")
 
     def get(self, file_path: str) -> Optional[Dict[str, Any]]:
         """
         Get cached file metadata with automatic decompression
-        
+
         Args:
             file_path: Path to file
-            
+
         Returns:
             Decompressed metadata dict or None if not cached
         """
         compressed_json = self.cache.get(file_path)
-        
+
         if compressed_json is None:
             return None
-        
+
         if not self.compression_enabled:
             return compressed_json
-        
+
         try:
             # Decompress metadata
             metadata = self.gravitas_packer.decompress_metadata(compressed_json)
             logger.debug(f"Cache GET (decompressed): {file_path}")
             return metadata
-            
+
         except Exception as e:
             logger.warning(f"Decompression failed for {file_path}: {e}")
             # Fallback: return raw data if decompression fails
@@ -265,7 +266,7 @@ class FileMetadataCache:
     def set(self, file_path: str, metadata: Dict[str, Any]):
         """
         Cache file metadata with automatic compression
-        
+
         Args:
             file_path: Path to file
             metadata: Metadata dictionary to cache
@@ -273,24 +274,30 @@ class FileMetadataCache:
         if not self.compression_enabled:
             self.cache[file_path] = metadata
             return
-        
+
         try:
             # Compress metadata before caching
             compressed_json = self.gravitas_packer.compress_metadata(metadata)
             self.cache[file_path] = compressed_json
-            
+
             # Log compression efficiency
             if logger.isEnabledFor(logging.DEBUG):
                 original_size = len(str(metadata))
                 compressed_size = len(compressed_json)
-                ratio = (1 - compressed_size / original_size) * 100 if original_size > 0 else 0
+                ratio = (
+                    (1 - compressed_size / original_size) * 100
+                    if original_size > 0
+                    else 0
+                )
                 logger.debug(
                     f"Cache SET (compressed): {file_path} "
                     f"({original_size}B -> {compressed_size}B, {ratio:.1f}% reduction)"
                 )
-                
+
         except Exception as e:
-            logger.warning(f"Compression failed for {file_path}: {e}, storing uncompressed")
+            logger.warning(
+                f"Compression failed for {file_path}: {e}, storing uncompressed"
+            )
             self.cache[file_path] = metadata
 
     def invalidate(self, file_path: str = None):
@@ -305,22 +312,22 @@ class FileMetadataCache:
     def get_stats(self) -> Dict[str, Any]:
         """
         Get cache statistics including compression metrics
-        
+
         Returns:
             Dictionary with cache and compression stats
         """
         compression_stats = self.gravitas_packer.get_stats()
-        
+
         return {
             "current_size": len(self.cache),
             "max_size": self.maxsize,
             "compression_enabled": self.compression_enabled,
-            "total_compressed": compression_stats['total_compressed'],
-            "total_decompressed": compression_stats['total_decompressed'],
-            "average_compression_ratio": compression_stats['average_ratio'],
-            "bytes_saved": compression_stats['bytes_saved'],
+            "total_compressed": compression_stats["total_compressed"],
+            "total_decompressed": compression_stats["total_decompressed"],
+            "average_compression_ratio": compression_stats["average_ratio"],
+            "bytes_saved": compression_stats["bytes_saved"],
         }
-    
+
     def enable_compression(self, enabled: bool = True):
         """Enable or disable compression (for debugging)"""
         self.compression_enabled = enabled
