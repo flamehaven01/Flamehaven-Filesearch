@@ -3,10 +3,11 @@ Quick unit tests for Phase 2 semantic search - No API/async dependencies
 Fast, isolated tests that verify core logic without TestClient
 """
 
-import pytest
-import numpy as np
-from pathlib import Path
 import tempfile
+from pathlib import Path
+
+import numpy as np
+import pytest
 
 
 class TestEmbeddingGeneratorQuick:
@@ -70,7 +71,7 @@ class TestChronosGridQuick:
 
     def test_initialization(self):
         """Verify Chronos-Grid initializes"""
-        from flamehaven_filesearch.engine.chronos_grid import ChronosGrid, ChronosConfig
+        from flamehaven_filesearch.engine.chronos_grid import ChronosConfig, ChronosGrid
 
         grid = ChronosGrid(config=ChronosConfig())
         assert grid.total_lore_essences == 0
@@ -162,9 +163,10 @@ class TestCoreIntegrationQuick:
 
     def test_upload_generates_embedding(self):
         """Verify upload generates and stores embedding"""
-        from flamehaven_filesearch.core import FlamehavenFileSearch
-        import tempfile
         import os
+        import tempfile
+
+        from flamehaven_filesearch.core import FlamehavenFileSearch
 
         searcher = FlamehavenFileSearch(allow_offline=True)
 

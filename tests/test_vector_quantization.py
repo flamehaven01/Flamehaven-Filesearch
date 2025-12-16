@@ -4,8 +4,8 @@ Phase 3.5: Vector Quantization Test Suite
 Tests memory efficiency and accuracy preservation
 """
 
-import unittest
 import sys
+import unittest
 from pathlib import Path
 
 # Add project root to path
@@ -19,7 +19,7 @@ try:
 except ImportError:
     NUMPY_AVAILABLE = False
 
-from flamehaven_filesearch.engine.chronos_grid import ChronosGrid, ChronosConfig
+from flamehaven_filesearch.engine.chronos_grid import ChronosConfig, ChronosGrid
 
 
 @unittest.skipUnless(NUMPY_AVAILABLE, "NumPy required for quantization")

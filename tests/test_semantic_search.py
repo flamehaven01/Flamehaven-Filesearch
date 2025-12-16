@@ -8,17 +8,19 @@ Tests for:
 - Semantic/hybrid search modes
 """
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
+
 from flamehaven_filesearch.core import FlamehavenFileSearch
+from flamehaven_filesearch.engine.chronos_grid import ChronosConfig, ChronosGrid
 from flamehaven_filesearch.engine.embedding_generator import (
     EmbeddingGenerator,
     get_embedding_generator,
     reset_embedding_generator,
 )
-from flamehaven_filesearch.engine.chronos_grid import ChronosGrid, ChronosConfig
-from flamehaven_filesearch.engine.intent_refiner import IntentRefiner
 from flamehaven_filesearch.engine.gravitas_pack import GravitasPacker
+from flamehaven_filesearch.engine.intent_refiner import IntentRefiner
 
 
 # Mock the entire FlamehavenFileSearch for API integration tests
@@ -448,6 +450,7 @@ class TestEndToEndSemanticSearch:
 def client(mock_flamehaven_filesearch_in_api):  # Use the autouse mock
     """Fixture for FastAPI test client, now using the mocked searcher"""
     from fastapi.testclient import TestClient
+
     from flamehaven_filesearch.api import app
 
     return TestClient(app)

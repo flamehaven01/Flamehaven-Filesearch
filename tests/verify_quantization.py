@@ -9,7 +9,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 try:
     import numpy as np
 
-    from flamehaven_filesearch.engine.chronos_grid import ChronosGrid, ChronosConfig
+    from flamehaven_filesearch.engine.chronos_grid import ChronosConfig, ChronosGrid
 
     print("[*] Phase 3.5: Vector Quantization Verification")
     print("=" * 60)

@@ -5,11 +5,11 @@ Pure unittest, no pytest dependency
 Runs all tests across the entire codebase
 """
 
-import sys
 import os
+import sys
+import time
 import unittest
 from pathlib import Path
-import time
 
 # Add to path
 sys.path.insert(0, str(Path(__file__).parent.parent))

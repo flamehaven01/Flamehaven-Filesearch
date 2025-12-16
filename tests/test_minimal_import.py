@@ -2,8 +2,8 @@
 Minimal import test - No dependencies, just syntax verification
 """
 
-import sys
 import os
+import sys
 
 # Add to path
 sys.path.insert(0, "D:\\Sanctum\\Flamehaven-Filesearch")

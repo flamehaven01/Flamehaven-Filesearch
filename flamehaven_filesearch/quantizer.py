@@ -2,8 +2,8 @@
 # Memory-efficient int8 quantization for 384-dim vectors
 
 import logging
-from typing import Union, Tuple
 import struct
+from typing import Tuple, Union
 
 logger = logging.getLogger(__name__)
 

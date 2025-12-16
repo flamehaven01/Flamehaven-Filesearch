@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 """Phase 3: Real-world compression performance test"""
 
-from flamehaven_filesearch.cache import FileMetadataCache
 import json
+
+from flamehaven_filesearch.cache import FileMetadataCache
 
 cache = FileMetadataCache(maxsize=100)
 

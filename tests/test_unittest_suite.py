@@ -3,23 +3,23 @@ Flamehaven Semantic Search Test Suite - unittest Edition
 Zero pytest dependency, pure Python standard library
 """
 
-import unittest
-import sys
 import os
+import sys
 import tempfile
+import unittest
 from pathlib import Path
 
 # Add to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from flamehaven_filesearch.core import FlamehavenFileSearch
+from flamehaven_filesearch.engine.chronos_grid import ChronosConfig, ChronosGrid
 from flamehaven_filesearch.engine.embedding_generator import (
     EmbeddingGenerator,
     reset_embedding_generator,
 )
-from flamehaven_filesearch.engine.chronos_grid import ChronosGrid, ChronosConfig
-from flamehaven_filesearch.engine.intent_refiner import IntentRefiner
 from flamehaven_filesearch.engine.gravitas_pack import GravitasPacker
-from flamehaven_filesearch.core import FlamehavenFileSearch
+from flamehaven_filesearch.engine.intent_refiner import IntentRefiner
 
 
 class TestEmbeddingGeneratorV2(unittest.TestCase):

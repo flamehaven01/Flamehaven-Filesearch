@@ -2,8 +2,8 @@
 Unit tests for Vector Quantizer (Phase 3.5)
 """
 
-import unittest
 import sys
+import unittest
 from pathlib import Path
 
 # Add parent dir to path

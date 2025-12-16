@@ -3,17 +3,18 @@ Performance Benchmark Suite for Flamehaven Semantic Search
 Tests speed, accuracy, and scalability of DSP v2.0 algorithm
 """
 
-import unittest
+import statistics
 import sys
 import time
-import statistics
+import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from flamehaven_filesearch.engine.embedding_generator import EmbeddingGenerator
-from flamehaven_filesearch.engine.chronos_grid import ChronosGrid
 import numpy as np
+
+from flamehaven_filesearch.engine.chronos_grid import ChronosGrid
+from flamehaven_filesearch.engine.embedding_generator import EmbeddingGenerator
 
 
 class TestPerformanceBenchmark(unittest.TestCase):

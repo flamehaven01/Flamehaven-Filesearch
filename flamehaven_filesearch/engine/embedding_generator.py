@@ -2,11 +2,11 @@
 # ZERO torch/transformers dependency - Pure algorithmic semantic hashing
 # Combines SIDRCE hybrid features + current implementation efficiency
 
-import logging
-import time
-import re
 import hashlib
-from typing import List, Optional, Any, Dict
+import logging
+import re
+import time
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 

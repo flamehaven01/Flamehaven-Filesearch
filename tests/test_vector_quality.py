@@ -9,8 +9,9 @@ sys.path.insert(0, "D:\\Sanctum\\Flamehaven-Filesearch")
 
 print("[>] Vector Quality Test - Unified v2.0\n")
 
-from flamehaven_filesearch.engine.embedding_generator import EmbeddingGenerator
 import numpy as np
+
+from flamehaven_filesearch.engine.embedding_generator import EmbeddingGenerator
 
 gen = EmbeddingGenerator()
 

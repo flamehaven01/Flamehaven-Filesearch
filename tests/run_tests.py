@@ -4,8 +4,8 @@ Flamehaven Test Runner - pytest Alternative
 Pure Python test execution without heavy dependencies
 """
 
-import sys
 import os
+import sys
 import time
 from pathlib import Path
 

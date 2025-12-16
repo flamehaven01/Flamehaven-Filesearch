@@ -5,10 +5,10 @@ Derived from SAIQL-Engine, optimized for Flamehaven-Filesearch
 
 import array
 import logging
-from typing import Any, Dict, List, Optional, Tuple
-from dataclasses import dataclass
 from collections import OrderedDict
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
