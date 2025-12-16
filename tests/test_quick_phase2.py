@@ -10,11 +10,11 @@ class TestEmbeddingGeneratorQuick:
     """Fast unit tests for EmbeddingGenerator without server dependencies"""
 
     def test_lazy_loading_flag(self):
-        """Verify lazy loading flag is set correctly"""
+        """Verify DSP v2.0 is always ready (no lazy loading needed)"""
         from flamehaven_filesearch.engine.embedding_generator import EmbeddingGenerator
 
         gen = EmbeddingGenerator()
-        assert gen._model_loaded is False, "Model should not load on init"
+        assert gen._model_loaded is True, "DSP v2.0 should be ready on init"
 
     def test_text_normalization(self):
         """Verify text attuning pipeline"""
@@ -34,17 +34,17 @@ class TestEmbeddingGeneratorQuick:
         assert len(attuned) == 512
 
     def test_mock_determinism(self):
-        """Verify mock vectors are deterministic"""
+        """Verify DSP v2.0 vectors are deterministic"""
         from flamehaven_filesearch.engine.embedding_generator import EmbeddingGenerator
 
         gen = EmbeddingGenerator()
 
-        # Generate twice
-        vec1 = gen._mock_essence("test text")
-        vec2 = gen._mock_essence("test text")
+        # Generate twice using actual method
+        vec1 = gen.generate("test text")
+        vec2 = gen.generate("test text")
 
-        # Should be identical (pure function)
-        assert np.allclose(vec1, vec2), "Mock vectors must be deterministic"
+        # Should be identical (deterministic algorithm)
+        assert np.allclose(vec1, vec2), "DSP vectors must be deterministic"
 
     def test_cache_basic(self):
         """Verify cache stores and retrieves"""

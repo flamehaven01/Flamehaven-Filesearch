@@ -22,7 +22,7 @@ class TestConfig:
     def test_config_validation_no_api_key(self):
         """Test config validation fails without API key"""
         config = Config(api_key=None)
-        with pytest.raises(ValueError, match="API key not provided"):
+        with pytest.raises(ValueError, match="API key required"):
             config.validate()
 
     def test_config_validation_invalid_temperature(self):
@@ -90,7 +90,7 @@ class TestFlamehavenFileSearch:
         monkeypatch.delenv("GEMINI_API_KEY", raising=False)
         monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
 
-        with pytest.raises(ValueError, match="API key not provided"):
+        with pytest.raises(ValueError, match="API key required"):
             FlamehavenFileSearch()
 
     def test_upload_file_not_found(self, mock_api_key):

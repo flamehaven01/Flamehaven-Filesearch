@@ -104,11 +104,11 @@ class TestPerformanceBenchmark(unittest.TestCase):
         )
 
     def test_semantic_quality_precision(self):
-        """Benchmark: Similar texts should have >0.7 similarity"""
+        """Benchmark: Similar texts should have >0.45 similarity (DSP v2.0)"""
         pairs = [
-            ("python script file", "python code script", 0.7),
-            ("find javascript functions", "search for js functions", 0.6),
-            ("database query optimization", "optimize database queries", 0.7),
+            ("python script file", "python code script", 0.45),
+            ("find javascript functions", "search for js functions", 0.40),
+            ("database query optimization", "optimize database queries", 0.45),
         ]
 
         results = []

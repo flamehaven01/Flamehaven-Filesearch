@@ -137,14 +137,14 @@ class TestEmbeddingGenerator:
     def test_cache_size_limit(self):
         """Verify cache doesn't exceed max size"""
         gen = EmbeddingGenerator()
-        assert gen.ESSENCE_CACHE_SIZE == 1024
+        assert gen.CACHE_SIZE == 1024
 
         # Add many items
         for i in range(1100):
             gen.generate(f"unique_query_{i}")
 
         # Cache should not exceed max size
-        assert len(gen._essence_cache) <= gen.ESSENCE_CACHE_SIZE
+        assert len(gen._essence_cache) <= gen.CACHE_SIZE
 
 
 @pytest.mark.fast
@@ -167,7 +167,7 @@ class TestChronosGridIntegration:
 
         # Vector essence should be stored if NUMPY_AVAILABLE is true
         if (
-            ChronosGrid._NUMPY_AVAILABLE_AT_INIT
+            hasattr(grid, "_vector_essences")
         ):  # Check actual numpy availability at ChronosGrid init
             assert len(grid._vector_essences) > 0
 
@@ -185,11 +185,11 @@ class TestChronosGridIntegration:
         # Query embedding
         query_embedding = [0.2, 0.0] * 192  # This vector has an essence in grid
 
-        results = grid.seek_vector_resonance(query_embedding, top_k=3)
+        results = grid.seek_vector_resonance(query_embedding, top_k_resonances=3)
         assert len(results) <= 3
 
         # If numpy available, the result should contain some match
-        if ChronosGrid._NUMPY_AVAILABLE_AT_INIT:
+        if hasattr(grid, "_vector_essences"):
             assert any(r[0] == {"id": 2} for r in results)  # Check for a specific match
 
 
