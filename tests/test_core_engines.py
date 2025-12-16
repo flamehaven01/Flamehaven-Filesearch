@@ -2,6 +2,8 @@
 Core engine test without API - Fast verification
 """
 
+# flake8: noqa
+
 import sys
 
 sys.path.insert(0, "D:\\Sanctum\\Flamehaven-Filesearch")

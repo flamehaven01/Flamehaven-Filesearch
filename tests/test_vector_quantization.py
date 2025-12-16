@@ -4,6 +4,8 @@ Phase 3.5: Vector Quantization Test Suite
 Tests memory efficiency and accuracy preservation
 """
 
+# flake8: noqa
+
 import sys
 import unittest
 from pathlib import Path

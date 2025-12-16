@@ -3,6 +3,8 @@ Test Gravitas-Pack Integration in FileMetadataCache
 Verifies Phase 3: Symbolic Compression in cache layer
 """
 
+# flake8: noqa
+
 import sys
 import unittest
 from pathlib import Path

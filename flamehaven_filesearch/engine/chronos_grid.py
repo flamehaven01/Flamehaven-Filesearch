@@ -286,7 +286,7 @@ class ChronosGrid:
         self,
         query_vector_essence: Any,
         top_k_resonances: int = 3,
-        top_k: int | None = None,
+        top_k: Optional[int] = None,
     ) -> List[Tuple[Any, float]]:
         """
         Seek vector resonance for semantic search.

@@ -424,7 +424,8 @@ class FlamehavenFileSearch:
                 return {
                     "status": "error",
                     "message": (
-                        f"Store '{store_name}' not found. Create it first or upload files."
+                        "Store '" f"{store_name}"
+                        "' not found. Create it first or upload files."
                     ),
                 }
 
