@@ -17,7 +17,7 @@
 
 ---
 
-## [>] Why FLAMEHAVEN?
+## Why FLAMEHAVEN?
 
 | [!] **Fast** | [#] **Private** | [$] **Free** |
 |:---:|:---:|:---:|
@@ -25,7 +25,7 @@
 
 ---
 
-## [*] Features
+## Key Features
 
 **Core**
 - Multi-format: PDF, DOCX, TXT, MD (up to 50MB)
@@ -81,7 +81,7 @@
 
 ---
 
-## [>] 3-Minute Quick Start
+## Quick Start
 
 ### 1. Docker (No Setup)
 
@@ -100,7 +100,7 @@ docker run -d \
 
 ---
 
-## [>] Quick Start
+## Installation
 
 ### 1. Docker (Fastest)
 
@@ -147,7 +147,7 @@ curl -X POST http://localhost:8000/api/search \
 
 ---
 
-## [&] Installation
+## Local Installation
 
 ```bash
 # Core
@@ -165,7 +165,7 @@ docker build -t flamehaven-filesearch:1.3.1 .
 
 ---
 
-## [T] Configuration
+## Configuration
 
 **Required:**
 ```bash
@@ -182,7 +182,7 @@ export REDIS_HOST="localhost"  # For distributed caching
 
 ---
 
-## [=] Performance
+## Performance
 
 | Metric | v1.3.1 | Notes |
 |--------|--------|-------|
@@ -193,7 +193,7 @@ export REDIS_HOST="localhost"  # For distributed caching
 
 ---
 
-## [#] Security
+## Security
 
 - API key SHA256 hashing
 - Rate limiting (100/min default)
@@ -203,7 +203,7 @@ export REDIS_HOST="localhost"  # For distributed caching
 
 ---
 
-## [W] Roadmap
+## Roadmap
 
 **v1.4.0** (Q1 2026)
 - Multimodal search (images)
@@ -217,7 +217,7 @@ export REDIS_HOST="localhost"  # For distributed caching
 
 ---
 
-## [L] Troubleshooting
+## Troubleshooting
 
 **401 Unauthorized:**
 - Verify `FLAMEHAVEN_ADMIN_KEY` is set
@@ -233,7 +233,7 @@ export REDIS_HOST="localhost"  # For distributed caching
 
 ---
 
-## [B] Contributing
+## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md)
 
