@@ -3,6 +3,8 @@ Flamehaven Semantic Search Test Suite - unittest Edition
 Zero pytest dependency, pure Python standard library
 """
 
+# flake8: noqa
+
 import os
 import sys
 import unittest

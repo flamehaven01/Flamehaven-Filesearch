@@ -3,6 +3,8 @@ Performance Benchmark Suite for Flamehaven Semantic Search
 Tests speed, accuracy, and scalability of DSP v2.0 algorithm
 """
 
+# flake8: noqa
+
 import statistics
 import sys
 import time

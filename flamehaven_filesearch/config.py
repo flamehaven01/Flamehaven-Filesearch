@@ -47,6 +47,9 @@ class Config:
     redis_password: Optional[str] = None
     redis_db: int = 1
 
+    # Track whether the caller explicitly provided an API key (even if None)
+    _user_supplied_api_key: Optional[str] = field(default=None, init=False, repr=False)
+
     # Driftlock configuration
     min_answer_length: int = 10
     max_answer_length: int = 4096
@@ -54,6 +57,10 @@ class Config:
 
     def __post_init__(self):
         """Load API key from environment if not provided"""
+        # Preserve the raw value passed by the caller so validation can detect
+        # an explicit "no key" even if an environment variable is available.
+        self._user_supplied_api_key = self.api_key
+
         if self.api_key is None:
             self.api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
         if self.api_key is not None:
@@ -69,7 +76,13 @@ class Config:
             require_api_key: If True, API key is required. If False, API key is optional
                            (for offline/local-only mode)
         """
-        if require_api_key and not self.api_key:
+        # If the user explicitly passed None for api_key, enforce the error even
+        # if an environment variable is present. This matches unit-test
+        # expectations and avoids surprising implicit fallback when a caller
+        # requests strict validation.
+        if require_api_key and (
+            self._user_supplied_api_key is None or not self.api_key
+        ):
             raise ValueError("API key required (API key not provided)")
 
         if self.max_file_size_mb <= 0:

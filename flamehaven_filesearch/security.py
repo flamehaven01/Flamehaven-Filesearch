@@ -51,7 +51,11 @@ async def extract_api_key(request: Request) -> str:
     """
     auth_header = request.headers.get("Authorization", "")
 
+    # Support X-API-Key for test clients and simple integrations
     if not auth_header:
+        direct_key = request.headers.get("X-API-Key")
+        if direct_key:
+            return direct_key
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing Authorization header",

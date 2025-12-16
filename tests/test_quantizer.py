@@ -2,6 +2,8 @@
 Unit tests for Vector Quantizer (Phase 3.5)
 """
 
+# flake8: noqa
+
 import sys
 import unittest
 from pathlib import Path

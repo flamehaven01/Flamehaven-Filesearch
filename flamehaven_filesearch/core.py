@@ -52,7 +52,9 @@ class FlamehavenFileSearch:
             allow_offline: Enable offline mode with local search
         """
         self.config = config or Config(api_key=api_key)
-        self._use_native_client = bool(google_genai)
+        self._use_native_client = (
+            bool(google_genai) and not allow_offline and bool(self.config.api_key)
+        )
 
         # Validate config - API key required only for remote mode
         self.config.validate(require_api_key=not allow_offline)
@@ -77,6 +79,10 @@ class FlamehavenFileSearch:
         self.intent_refiner = IntentRefiner()
         self.gravitas_packer = GravitasPacker()
         self.embedding_generator = get_embedding_generator()
+
+        # Ensure a default store exists in offline mode to keep search paths consistent
+        if not self._use_native_client and "default" not in self.stores:
+            self.create_store("default")
 
         logger.info(
             "FLAMEHAVEN FileSearch initialized with model: %s (mode=%s)",
@@ -293,11 +299,43 @@ class FlamehavenFileSearch:
     ) -> Dict[str, Any]:
         """Simple local search fallback with intent awareness and semantic support."""
         docs = self._local_store_docs.get(store_name, [])
+        intent_keywords = None
+        intent_file_exts = None
+        intent_filters = None
+        refined_query = None
+        corrections = None
+
+        if intent_info:
+            intent_keywords = intent_info.keywords
+            intent_file_exts = intent_info.file_extensions
+            intent_filters = intent_info.metadata_filters
+            refined_query = intent_info.refined_query
+            corrections = intent_info.correction_suggestions
+
         if not docs:
-            return {
-                "status": "error",
-                "message": f"No files available in store '{store_name}'.",
+            response: Dict[str, Any] = {
+                "status": "success",
+                "answer": "No documents indexed yet.",
+                "sources": [],
+                "model": f"local-fallback:{model}",
+                "query": query,
+                "store": store_name,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+                "search_mode": search_mode,
             }
+            response["search_intent"] = {
+                "keywords": intent_keywords or [],
+                "file_extensions": intent_file_exts or [],
+                "filters": intent_filters or {},
+            }
+            response["refined_query"] = refined_query
+            response["corrections"] = corrections
+
+            if search_mode in ["semantic", "hybrid"]:
+                response["semantic_results"] = semantic_results or []
+
+            return response
 
         matches = []
         for doc in docs:
@@ -328,17 +366,18 @@ class FlamehavenFileSearch:
             "max_tokens": max_tokens,
             "temperature": temperature,
             "search_mode": search_mode,
+            "refined_query": refined_query,
+            "corrections": corrections,
         }
 
-        if intent_info:
-            result["search_intent"] = {
-                "keywords": intent_info.keywords,
-                "file_extensions": intent_info.file_extensions,
-                "filters": intent_info.metadata_filters,
-            }
+        result["search_intent"] = {
+            "keywords": intent_keywords or [],
+            "file_extensions": intent_file_exts or [],
+            "filters": intent_filters or {},
+        }
 
-        if semantic_results:
-            result["semantic_results"] = semantic_results
+        if search_mode in ["semantic", "hybrid"]:
+            result["semantic_results"] = semantic_results or []
 
         return result
 
@@ -390,12 +429,17 @@ class FlamehavenFileSearch:
         )
 
         if store_name not in self.stores:
-            return {
-                "status": "error",
-                "message": (
-                    f"Store '{store_name}' not found. Create it first or upload files."
-                ),
-            }
+            if not self._use_native_client:
+                self.create_store(store_name)
+            else:
+                return {
+                    "status": "error",
+                    "message": (
+                        "Store '"
+                        f"{store_name}"
+                        "' not found. Create it first or upload files."
+                    ),
+                }
 
         # [>] Refine query intent using Intent-Refiner
         intent = self.intent_refiner.refine_intent(query)
@@ -491,9 +535,9 @@ class FlamehavenFileSearch:
                 "model": model,
                 "query": query,
                 "refined_query": optimized_query if intent.is_corrected else None,
-                "corrections": intent.correction_suggestions
-                if intent.is_corrected
-                else None,
+                "corrections": (
+                    intent.correction_suggestions if intent.is_corrected else None
+                ),
                 "store": store_name,
                 "search_mode": search_mode,
                 "search_intent": {
@@ -501,9 +545,9 @@ class FlamehavenFileSearch:
                     "file_extensions": intent.file_extensions,
                     "filters": intent.metadata_filters,
                 },
-                "semantic_results": semantic_results
-                if search_mode in ["semantic", "hybrid"]
-                else None,
+                "semantic_results": (
+                    semantic_results if search_mode in ["semantic", "hybrid"] else None
+                ),
             }
 
         except Exception as e:

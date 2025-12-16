@@ -513,7 +513,8 @@ def get_key_manager(db_path: str = "./data/flamehaven.db") -> APIKeyManager:
     """Get or create API key manager instance"""
     global _key_manager
     if _key_manager is None:
-        _key_manager = APIKeyManager(db_path)
+        resolved_path = os.getenv("FLAMEHAVEN_API_KEYS_DB", db_path)
+        _key_manager = APIKeyManager(resolved_path)
     return _key_manager
 
 

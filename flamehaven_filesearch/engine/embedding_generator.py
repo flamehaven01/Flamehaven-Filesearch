@@ -43,6 +43,13 @@ class EmbeddingGenerator:
     USE_WORD_TOKENS = True
     WORD_WEIGHT = 2.0  # Words more important than n-grams
     CHAR_WEIGHT = 1.0
+    SYNONYM_MAP = {
+        "js": "javascript",
+        "javascript": "javascript",
+        "py": "python",
+        "db": "database",
+        "sql": "database",
+    }
 
     def __init__(self):
         """Initialize vectorizer - instant, no model loading."""
@@ -95,6 +102,9 @@ class EmbeddingGenerator:
             for word in words:
                 if len(word) > 1:  # Skip single chars
                     features.append((f"w:{word}", self.WORD_WEIGHT))
+                    synonym = self.SYNONYM_MAP.get(word)
+                    if synonym and synonym != word:
+                        features.append((f"w:{synonym}", self.WORD_WEIGHT))
 
         # 2. Character n-grams (morphological resilience)
         min_n, max_n = self.CHAR_NGRAM_RANGE
