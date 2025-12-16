@@ -1,5 +1,14 @@
 # Dockerfile for FLAMEHAVEN FileSearch API
+# Phase 2: Semantic Search with DSP v2.0 Algorithm
+# Zero ML dependencies - Pure algorithmic implementation
+
 FROM python:3.11-slim
+
+# Metadata
+LABEL maintainer="Flamehaven Team"
+LABEL version="1.3.1"
+LABEL description="Flamehaven FileSearch with Semantic Search (DSP v2.0)"
+LABEL phase="Phase 2 - Semantic Resonance"
 
 # Set working directory
 WORKDIR /app

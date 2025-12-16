@@ -9,9 +9,10 @@
 **Search your local documents with RAG instantly**
 
 [![CI/CD](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)](https://github.com/flamehaven01/Flamehaven-Filesearch)
-[![Latest Version](https://img.shields.io/badge/Version-v1.2.2-blue)](CHANGELOG.md)
+[![Latest Version](https://img.shields.io/badge/Version-v1.3.1--dev-blue)](CHANGELOG.md)
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org/)
 [![MIT License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
+[![Semantic Search](https://img.shields.io/badge/Semantic%20Search-DSP%20v2.0-purple)](FLAMEHAVEN_FILESEARCH_UPDATE_SUMMARY_20251215.md)
 
 [Quick Start (3 min)](#-3-minute-quick-start) ??[API Docs](http://localhost:8000/docs) ??[Roadmap](#-roadmap) ??[Contributing](CONTRIBUTING.md)
 
@@ -74,13 +75,15 @@ Leverages Gemini's generous free tier. Process thousands of docs free.
 | Feature | Description |
 |---------|-------------|
 | **[*] Multi-Format Support** | PDF, DOCX, TXT, MD files up to 50MB |
-| **[*] Semantic Search** | Natural language queries with AI-powered answers |
+| **[*] Semantic Search (v1.3.0)** | DSP v2.0 algorithm - zero ML dependencies, <1ms vector generation |
+| **[*] Search Modes** | Keyword, semantic, or hybrid search with typo correction |
 | **[*] Source Attribution** | Every answer links back to source documents |
 | **[*] Store Management** | Organize documents into separate collections |
 | **[*] Dual Interface** | Python SDK + REST API with Swagger UI |
 | **[*] Docker Ready** | One-command deployment with persistence |
 | **[*] Enterprise Auth** | v1.2.2: API keys, audit logging, rate limiting |
 | **[*] Batch Processing** | Process 1-100 queries per request |
+| **[*] Zero Timeout** | unittest suite (19/19 tests, 0.33s) replaces pytest |
 
 ---
 

@@ -109,7 +109,7 @@ app = FastAPI(
     description=(
         "Open source semantic document search powered by Google Gemini " "- v1.2.2"
     ),
-    version="1.2.2",
+    version="1.3.1",
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan,
@@ -150,7 +150,7 @@ startup_time = time.time()
 
 # Pydantic models
 class SearchRequest(BaseModel):
-    """Search request model"""
+    """Search request model with semantic search support"""
 
     query: str = Field(..., description="Search query", min_length=0)
     store_name: str = Field(default="default", description="Store name to search in")
@@ -161,10 +161,14 @@ class SearchRequest(BaseModel):
     temperature: Optional[float] = Field(
         None, description="Model temperature", ge=0.0, le=2.0
     )
+    search_mode: str = Field(
+        default="keyword",
+        description="Search mode: 'keyword', 'semantic', or 'hybrid'"
+    )
 
 
 class SearchResponse(BaseModel):
-    """Search response model"""
+    """Search response model with semantic search support"""
 
     status: str
     answer: Optional[str] = None
@@ -174,6 +178,13 @@ class SearchResponse(BaseModel):
     store: Optional[str] = None
     message: Optional[str] = None
     request_id: Optional[str] = None
+    
+    # Phase 2 additions
+    refined_query: Optional[str] = None
+    corrections: Optional[List[str]] = None
+    search_mode: Optional[str] = None
+    search_intent: Optional[dict] = None
+    semantic_results: Optional[List] = None
 
 
 class UploadResponse(BaseModel):
@@ -665,6 +676,7 @@ async def search(
             model=search_request.model,
             max_tokens=search_request.max_tokens,
             temperature=search_request.temperature,
+            search_mode=search_request.search_mode,
         )
 
         result["request_id"] = request_id
