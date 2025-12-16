@@ -1,103 +1,65 @@
 <div align="center">
 
-<img src="assets/logo.png" alt="FLAMEHAVEN FileSearch" width="240" height="auto">
+<img src="assets/logo.png" alt="FLAMEHAVEN FileSearch" width="240">
 
-# FLAMEHAVEN FileSearch
+# FLAMEHAVEN FileSearch v1.3.1
 
-> **Your documents. Searchable in minutes. No infrastructure needed.**
+> **Self-hosted RAG search engine. Production-ready in 3 minutes.**
 
-**Search your local documents with RAG instantly**
-
-[![CI/CD](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)](https://github.com/flamehaven01/Flamehaven-Filesearch)
-[![Latest Version](https://img.shields.io/badge/Version-v1.3.1--dev-blue)](CHANGELOG.md)
+[![CI/CD](https://img.shields.io/badge/Status-Production-brightgreen)](https://github.com/flamehaven01/Flamehaven-Filesearch)
+[![Version](https://img.shields.io/badge/Version-1.3.1-blue)](CHANGELOG.md)
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org/)
-[![MIT License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
-[![Semantic Search](https://img.shields.io/badge/Semantic%20Search-DSP%20v2.0-purple)](FLAMEHAVEN_FILESEARCH_UPDATE_SUMMARY_20251215.md)
+[![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
-[Quick Start (3 min)](#-3-minute-quick-start) ??[API Docs](http://localhost:8000/docs) ??[Roadmap](#-roadmap) ??[Contributing](CONTRIBUTING.md)
+[Quick Start](#-quick-start) • [Features](#-features) • [API Docs](http://localhost:8000/docs) • [Contributing](CONTRIBUTING.md)
 
 </div>
 
 ---
 
-## [>] Why FLAMEHAVEN FileSearch?
+## [>] Why FLAMEHAVEN?
 
-<table>
-<tr>
-<td width="33%">
-
-### [!] **Fast**
-From zero to production in under 5 minutes. No complex infrastructure.
-
-</td>
-<td width="33%">
-
-### [#] **Private**
-100% self-hosted. Your data never leaves your servers.
-
-</td>
-<td width="33%">
-
-### [$] **Affordable**
-Leverages Gemini's generous free tier. Process thousands of docs free.
-
-</td>
-</tr>
-</table>
+| [!] **Fast** | [#] **Private** | [$] **Free** |
+|:---:|:---:|:---:|
+| Production in 3 min | 100% self-hosted | Generous free tier |
 
 ---
 
-## Comparison with Alternatives
+## [*] Features
 
-| Feature | FLAMEHAVEN | Pinecone | Weaviate | Custom RAG |
-|---------|-----------|----------|----------|------------|
-| **Setup Time** | < 5 min | ~20 min | ~30 min | Days |
-| **Self-Hosted** | [+] Yes | [-] No | [+] Yes | [+] Yes |
-| **Free Tier** | Generous | Limited | Yes | N/A |
-| **Code Complexity** | Low | Medium | High | Very High |
-| **Maintenance** | Minimal | None | Medium | High |
-| **Best For** | Quick POCs, SMBs | Enterprise scale | ML teams | Full control |
+**Core**
+- Multi-format: PDF, DOCX, TXT, MD (up to 50MB)
+- Semantic search: DSP v2.0 algorithm (zero ML deps, <1ms vectors)
+- Search modes: Keyword, semantic, hybrid with typo correction
+- Source attribution: Every answer links to source docs
 
----
+**v1.3.1 Enhancements**
+- Vector quantization: 75% memory reduction (int8)
+- Gravitas-Pack: 90% metadata compression
+- unittest suite: 19/19 tests, 0.33s runtime
+- Zero heavy dependencies: No torch/transformers
 
-## UI Preview (3×2)
-
-| Dashboard | Search | Upload |
-| --- | --- | --- |
-| <img src="assets/dashboard.png" width="220" /> | <img src="assets/search.png" width="220" /> | <img src="assets/upload.png" width="220" /> |
-| Cache | Metrics | Admin |
-| <img src="assets/cache.png" width="220" /> | <img src="assets/metrics.png" width="220" /> | <img src="assets/admin.png" width="220" /> |
-
----
-
-## [&] Key Features
-
-| Feature | Description |
-|---------|-------------|
-| **[*] Multi-Format Support** | PDF, DOCX, TXT, MD files up to 50MB |
-| **[*] Semantic Search (v1.3.0)** | DSP v2.0 algorithm - zero ML dependencies, <1ms vector generation |
-| **[*] Search Modes** | Keyword, semantic, or hybrid search with typo correction |
-| **[*] Source Attribution** | Every answer links back to source documents |
-| **[*] Store Management** | Organize documents into separate collections |
-| **[*] Dual Interface** | Python SDK + REST API with Swagger UI |
-| **[*] Docker Ready** | One-command deployment with persistence |
-| **[*] Enterprise Auth** | v1.2.2: API keys, audit logging, rate limiting |
-| **[*] Batch Processing** | Process 1-100 queries per request |
-| **[*] Zero Timeout** | unittest suite (19/19 tests, 0.33s) replaces pytest |
+**Enterprise (v1.2.2)**
+- API key auth with permissions
+- Rate limiting & audit logging
+- Batch processing (1-100 queries)
+- Admin dashboard
 
 ---
 
-## Admin Dashboard (v1.2.2)
+## Problem → Solution
 
-<img src="assets/dashboard-demo.png" alt="FLAMEHAVEN FileSearch Admin Dashboard" width="100%" style="max-width: 900px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1)">
+**Before FLAMEHAVEN:**
+- Documents scattered across drives
+- Keyword search too limited
+- Privacy concerns with cloud services
+- Complex RAG infrastructure
 
----
-
-## Problem: Your Situation
-
-
-??You have PDF, Word, and text documents scattered across your local drive
-??You want to search them intelligently, not keyword-by-keyword
+**After FLAMEHAVEN:**
+- Local RAG in 3 minutes
+- Intelligent semantic search
+- Your data stays yours
+- Single Docker command
 ??You don't want to upload your data to external services (Pinecone, Cloudflare, etc.)
 ??You need production-ready security without complex setup
 ??You want zero infrastructure costs for prototype phase
@@ -136,375 +98,164 @@ docker run -d \
 
 ### 2. Your First Search (cURL)
 
-bash
-# Step 1: Generate API key (v1.2.2 requirement)
-curl -X POST http://localhost:8000/api/admin/keys \
-  -H "X-Admin-Key: your_admin_key" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "My First Key",
-    "permissions": ["upload", "search"]
-  }'
+---
 
-# Response: {"key_id": "...", "plain_key": "sk_live_abc123..."}
-# SAVE this key - it won't be shown again!
+## [>] Quick Start
 
-# Step 2: Upload a document
-curl -X POST http://localhost:8000/api/upload/single \
-  -H "Authorization: Bearer sk_live_abc123..." \
-  -F "file=@sample.pdf" \
-  -F "store=documents"
+### 1. Docker (Fastest)
 
-# Step 3: Search
-curl -X POST http://localhost:8000/api/search \
-  -H "Authorization: Bearer sk_live_abc123..." \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": "What are the main points in this document?",
-    "store": "documents"
-  }'
+```bash
+docker run -d \
+  -e GEMINI_API_KEY="your_key" \
+  -p 8000:8000 \
+  flamehaven-filesearch:1.3.1
+```
 
-# Response:
-# {
-#   "answer": "The main points are...",
-#   "sources": [
-#     {
-#       "file": "sample.pdf",
-#       "page": 3,
-#       "excerpt": "..."
-#     }
-#   ]
-# }
+Access at http://localhost:8000
 
+### 2. Python SDK
 
-### 3. Python Code Example
-
-python
+```python
 from flamehaven_filesearch import FlamehavenFileSearch, FileSearchConfig
 
-# Configuration
-config = FileSearchConfig(
-    google_api_key="your_gemini_api_key",
-    environment="offline"  # or "remote" for online
-)
+config = FileSearchConfig(google_api_key="your_gemini_key")
+search = FlamehavenFileSearch(config)
 
-# Initialize
-searcher = FlamehavenFileSearch(config)
+search.upload_file("document.pdf", "my_docs")
+result = search.search("Summarize this", store="my_docs")
+print(result['answer'])
+```
 
-# Create document store
-searcher.create_store("my_documents")
+### 3. REST API
 
-# Upload files
-searcher.upload_file("path/to/document.pdf", "my_documents")
-searcher.upload_file("path/to/document.docx", "my_documents")
+```bash
+# Generate API key
+curl -X POST http://localhost:8000/api/admin/keys \
+  -H "X-Admin-Key: your_admin_key" \
+  -d '{"name":"prod","permissions":["upload","search"]}'
 
-# Search with RAG
-result = searcher.search(
-    "Summarize the key findings",
-    store="my_documents"
-)
+# Upload document
+curl -X POST http://localhost:8000/api/upload/single \
+  -H "Authorization: Bearer sk_live_..." \
+  -F "file=@doc.pdf" -F "store=docs"
 
-print(f"Answer: {result['answer']}")
-print(f"Sources: {result['sources']}")
-
+# Search
+curl -X POST http://localhost:8000/api/search \
+  -H "Authorization: Bearer sk_live_..." \
+  -d '{"query":"main points?","store":"docs"}'
+```
 
 ---
 
-## Installation
+## [&] Installation
 
-### Option 1: Pip (Recommended for Development)
-
-bash
-# Core functionality
+```bash
+# Core
 pip install flamehaven-filesearch
 
 # With API server
 pip install flamehaven-filesearch[api]
 
-# With Redis support
-pip install flamehaven-filesearch[api,redis]
-
-# Everything (for development)
+# Development
 pip install flamehaven-filesearch[all]
 
-
-### Option 2: Docker (Recommended for Production)
-
-bash
-# Build image
-docker build -t flamehaven-filesearch:1.2.2 .
-
-# Run standalone
-docker run \
-  -e GEMINI_API_KEY="your_key" \
-  -e FLAMEHAVEN_ADMIN_KEY="your_admin_key" \
-  -p 8000:8000 \
-  flamehaven-filesearch:1.2.2
-
-# With Docker Compose (includes Redis)
-docker-compose up -d
-
-
-### Option 3: Kubernetes (For High Availability)
-
-See the [Kubernetes deployment example](#kubernetes-deployment) above for complete manifests with StatefulSets, ConfigMaps, and Secrets.
+# Docker
+docker build -t flamehaven-filesearch:1.3.1 .
+```
 
 ---
 
-## Configuration
+## [T] Configuration
 
-### Required Environment Variables
+**Required:**
+```bash
+export GEMINI_API_KEY="your_key"
+export FLAMEHAVEN_ADMIN_KEY="secure_password"
+```
 
-bash
-# Google Gemini API key (get free tier at ai.google.dev)
-export GEMINI_API_KEY="your_api_key"
-
-# Admin key for creating API keys in v1.2.2
-export FLAMEHAVEN_ADMIN_KEY="your_secure_admin_password"
-export FLAMEHAVEN_ENC_KEY="base64_32byte_key_for_AES256"  # required for encrypted key/perm storage
-# Optional OIDC admin validation (HS256 shared secret)
-# export FLAMEHAVEN_IAM_PROVIDER="oidc"
-# export FLAMEHAVEN_OIDC_SECRET="your_oidc_hs256_secret"
-# export FLAMEHAVEN_OIDC_ISSUER="https://issuer.example.com"
-# export FLAMEHAVEN_OIDC_AUDIENCE="your-audience"
-
-
-### Optional Environment Variables
-
-bash
-# Server settings
-export HOST="0.0.0.0"              # Default: 127.0.0.1
-export PORT="8000"                  # Default: 8000
-export ENVIRONMENT="production"     # Default: development
-
-# Database location
-export FLAMEHAVEN_API_KEYS_DB="/path/to/api_keys.db"
-
-# Redis (for multi-worker deployments)
-export REDIS_HOST="localhost"       # Default: localhost
-export REDIS_PORT="6379"            # Default: 6379
-export REDIS_PASSWORD="password"    # Optional
-
-# API limits
-export MAX_FILE_SIZE_MB="50"        # Default: 50
-
+**Optional:**
+```bash
+export HOST="0.0.0.0"
+export PORT="8000"
+export REDIS_HOST="localhost"  # For distributed caching
+```
 
 ---
 
-## API Key Management (v1.2.2)
-> Admin access requires an API key with "admin" permission (default for newly created keys) or the FLAMEHAVEN_ADMIN_KEY environment value. Existing keys without admin will receive 403 on admin routes.
+## [=] Performance
 
-### Generate API Key
-
-bash
-curl -X POST http://localhost:8000/api/admin/keys \
-  -H "X-Admin-Key: $FLAMEHAVEN_ADMIN_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Production API Key",
-    "permissions": ["upload", "search", "stores", "delete"],
-    "rate_limit_per_minute": 100
-  }'
-
-
-### List Your Keys
-
-bash
-curl http://localhost:8000/api/admin/keys \
-  -H "Authorization: Bearer sk_live_your_key..."
-
-
-### Revoke a Key
-
-bash
-curl -X DELETE http://localhost:8000/api/admin/keys/{key_id} \
-  -H "Authorization: Bearer sk_live_your_key..."
-
-
-### View Usage Statistics
-
-bash
-curl "http://localhost:8000/api/admin/usage?days=7" \
-  -H "Authorization: Bearer sk_live_your_key..."
-
+| Metric | v1.3.1 | Notes |
+|--------|--------|-------|
+| Vector generation | <1ms | DSP v2.0, zero ML deps |
+| Memory footprint | 75% reduced | int8 quantization |
+| Metadata compression | 90% | Gravitas-Pack |
+| Test suite | 0.33s | unittest (19/19 pass) |
 
 ---
 
-## Performance
+## [#] Security
 
-| Operation | Response Time | Throughput |
-|-----------|---------------|------------|
-| Health check | <10ms | - |
-| Search (cache hit) | <10ms | >2 searches/sec |
-| Search (cache miss) | 500ms - 3s | Depends on Gemini API |
-| Batch search (10 queries) | 2-5s | >1 batch/sec |
-| File upload | 1-5s | >1 file/sec |
-
-### Resource Usage
-
-- **Memory:** ~200MB baseline + 50MB per 1000 cached queries
-- **CPU:** <5% idle, <50% under sustained load
-- **Disk:** 10MB per 100,000 cached queries
+- API key SHA256 hashing
+- Rate limiting (100/min default)
+- Permission-based access control
+- Audit logging with timestamps
+- OWASP security headers
 
 ---
 
-## Security Features (v1.2.2)
+## [W] Roadmap
 
-- **[#] API Key Encryption:** SHA256 hashing (plain keys never stored)
-- **[#] Rate Limiting:** Per-API-key customizable limits (default 100/min)
-- **[#] Permission Control:** Fine-grained access (upload, search, stores, delete)
-- **[#] Audit Logging:** Complete request trail with timestamps
-- **[#] OWASP Headers:** Security headers on all responses
-- **[#] Request Tracking:** Unique request IDs for debugging
-- **[#] Key Expiration:** Optional time-limited API keys
+**v1.4.0** (Q1 2026)
+- Multimodal search (images)
+- HNSW vector index
+- OAuth2/OIDC integration
 
----
-
-## Roadmap
-
-### v1.2.2 (Q4 2025)
-- [ ] Improved admin authentication (IAM integration)
-- [ ] Redis UI configuration in dashboard
-- [ ] Encryption at rest for sensitive data
-- [ ] Fix deprecated FastAPI on_event decorators
-
-### v1.3.0 (Q1 2026)
-- [ ] OAuth2/OIDC integration
-- [ ] API key rotation
-- [ ] Billing/metering system
-- [ ] Advanced analytics dashboard
-
-### v2.0.0 (Q2 2026)
-- [ ] Multi-language support
-- [ ] Enhanced file type support (XLSX, PPTX, RTF)
-- [ ] Export search results (JSON, CSV, PDF)
-- [ ] WebSocket streaming support
+**v2.0.0** (Q2 2026)
+- Multi-language support
+- XLSX, PPTX, RTF formats
+- WebSocket streaming
 
 ---
 
-## Good First Issues (Contributions Welcome!)
+## [L] Troubleshooting
 
-Looking to contribute? Start with these issues:
+**401 Unauthorized:**
+- Verify `FLAMEHAVEN_ADMIN_KEY` is set
+- Check `Authorization: Bearer sk_live_...` header
 
-1. **Add XLSX Support** (Difficulty: Medium)
-   - Extend file upload to handle Excel spreadsheets
-   - Reference: flamehaven_filesearch/loaders.py
-   - Estimated time: 2-3 hours
+**High memory usage:**
+- Enable Redis with `maxmemory-policy allkeys-lru`
+- Monitor with `/prometheus` endpoint
 
-2. **Implement Search Result Caching UI** (Difficulty: Easy)
-   - Display cache hit rate in admin dashboard
-   - Reference: flamehaven_filesearch/dashboard.py
-   - Estimated time: 1-2 hours
-
-3. **Add Batch Search Progress Tracking** (Difficulty: Medium)
-   - Implement WebSocket endpoint for real-time batch progress
-   - Reference: flamehaven_filesearch/batch_routes.py
-   - Estimated time: 3-4 hours
-
-4. **Create Integration Tests** (Difficulty: Easy)
-   - Write end-to-end tests for common workflows
-   - Reference: tests/test_api_integration.py
-   - Estimated time: 2-3 hours
-
-5. **Add Dark Mode to Admin Dashboard** (Difficulty: Easy)
-   - Extend dashboard.py with CSS dark theme toggle
-   - Reference: flamehaven_filesearch/dashboard.py
-   - Estimated time: 1-2 hours
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for complete contribution guidelines.
+**Slow searches:**
+- Check cache hit rate in metrics
+- Verify Gemini API latency
 
 ---
 
-## Troubleshooting
+## [B] Contributing
 
-### Issue: 401 Unauthorized on API requests
+See [CONTRIBUTING.md](CONTRIBUTING.md)
 
-**Solution:**
-- Verify FLAMEHAVEN_ADMIN_KEY environment variable is set
-- Check Authorization header format: Authorization: Bearer sk_live_your_key
-- Ensure API key hasn't expired
-
-### Issue: "Redis connection refused"
-
-**Solution:**
-- Verify Redis is running: redis-cli ping
-- Check REDIS_HOST and REDIS_PORT environment variables
-- Remove Redis if not needed (system falls back to LRU cache)
-
-### Issue: High memory usage
-
-**Solution:**
-- Configure Redis eviction policy: maxmemory-policy allkeys-lru
-- Reduce cache TTL in configuration
-- Monitor cache metrics: curl http://localhost:8000/prometheus | grep cache
-
-### Issue: Slow searches
-
-**Solution:**
-- Check if caching is working (view cache_hits_total metric)
-- Verify Gemini API is responsive
-- Check network latency to Redis instance
+**Good first issues:**
+- Add XLSX support (2-3h)
+- Dark mode dashboard (1-2h)
+- Integration tests (2-3h)
 
 ---
 
-## Migration from v1.1.0 to v1.2.2
+## Support
 
-### Breaking Changes
-
-**All protected endpoints now require API key authentication.**
-
-### Migration Steps
-
-1. **Update dependencies:**
-   bash
-   pip install -U flamehaven-filesearch[api]
-   
-
-2. **Set admin key:**
-   bash
-   export FLAMEHAVEN_ADMIN_KEY="your_secure_admin_key"
-   
-
-3. **Generate first API key:**
-   bash
-   curl -X POST http://localhost:8000/api/admin/keys \
-     -H "X-Admin-Key: your_admin_key" \
-     -H "Content-Type: application/json" \
-     -d '{"name":"Production","permissions":["upload","search","stores","delete"]}'
-   
-
-4. **Update application code:**
-   python
-   # Old (v1.1.0)
-   requests.post("http://localhost:8000/api/search", json={"query": "test"})
-
-   # New (v1.2.2)
-   api_key = "sk_live_your_key"
-   requests.post(
-       "http://localhost:8000/api/search",
-       json={"query": "test"},
-       headers={"Authorization": f"Bearer {api_key}"}
-   )
-   
-
-5. **Test before production deployment**
-
-### Rollback Plan
-
-If issues occur, v1.1.0 remains available. No data loss on downgrade.
+- [CHANGELOG](CHANGELOG.md) • [Issues](https://github.com/flamehaven01/Flamehaven-Filesearch/issues)
+- Security: security@flamehaven.space
 
 ---
 
-## Support & Community
+## License
 
-- **Documentation:** [CHANGELOG](CHANGELOG.md) | [Release Notes](RELEASE_NOTES.md)
-- **Issues & Bugs:** [GitHub Issues](https://github.com/flamehaven01/Flamehaven-Filesearch/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/flamehaven01/Flamehaven-Filesearch/discussions)
-- **Security Issues:** security@flamehaven.space
+MIT License - see [LICENSE](LICENSE)
 
----
-
-## Architecture Overview
+**Last Updated:** December 16, 2025 (v1.3.1)
 
 
 [Your Documents]
