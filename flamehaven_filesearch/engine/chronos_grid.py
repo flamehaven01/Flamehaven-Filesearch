@@ -10,8 +10,6 @@ from dataclasses import dataclass
 from collections import OrderedDict
 from pathlib import Path
 
-from ..quantizer import get_quantizer
-
 logger = logging.getLogger(__name__)
 
 try:

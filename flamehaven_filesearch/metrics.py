@@ -357,7 +357,7 @@ class RequestMetricsContext:
         active_requests.labels(method=self.method, endpoint=self.endpoint).inc()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, _exc_tb):
         duration = time.time() - self.start_time
 
         active_requests.labels(method=self.method, endpoint=self.endpoint).dec()

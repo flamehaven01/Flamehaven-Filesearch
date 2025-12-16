@@ -196,7 +196,7 @@ class RequestLoggingContext:
         self.logger.addFilter(self.filter)
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, _exc_tb):
         self.logger.removeFilter(self.filter)
 
 
