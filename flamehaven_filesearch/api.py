@@ -940,6 +940,11 @@ async def get_metrics(request: Request):
     metrics["uptime_seconds"] = round(time.time() - startup_time, 2)
     metrics["health_status"] = "healthy"
 
+    # Ensure required fields for response validation
+    metrics.setdefault("stores", list(getattr(searcher, "stores", {}).keys()))
+    if "config" not in metrics and getattr(searcher, "config", None):
+        metrics["config"] = searcher.config.to_dict()
+
     # Add cache statistics
     cache_stats = get_all_cache_stats()
     if cache_stats:

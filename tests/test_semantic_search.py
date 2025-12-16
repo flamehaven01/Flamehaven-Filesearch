@@ -166,8 +166,8 @@ class TestChronosGridIntegration:
         assert result == metadata
 
         # Vector essence should be stored if NUMPY_AVAILABLE is true
-        if (
-            hasattr(grid, "_vector_essences")
+        if hasattr(
+            grid, "_vector_essences"
         ):  # Check actual numpy availability at ChronosGrid init
             assert len(grid._vector_essences) > 0
 
