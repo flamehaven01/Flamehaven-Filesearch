@@ -304,6 +304,7 @@ Built with:
 
 ---
 
-**Questions? Open an issue or email support@flamehaven.space**
+**Questions? Open an issue or email info@flamehaven.space**
 
 **Last Updated:** December 09, 2025 (v1.2.2)
+
