@@ -19,8 +19,12 @@ class TestConfig:
         assert config.max_file_size_mb == 50
         assert config.default_model == "gemini-2.5-flash"
 
-    def test_config_validation_no_api_key(self):
+    def test_config_validation_no_api_key(self, monkeypatch):
         """Test config validation fails without API key"""
+        # Clear environment variables to ensure api_key=None stays None
+        monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+        monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+
         config = Config(api_key=None)
         with pytest.raises(ValueError, match="API key required"):
             config.validate()

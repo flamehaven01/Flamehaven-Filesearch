@@ -199,9 +199,13 @@ class TestAPIKeyHandling:
         except ValueError:
             pytest.fail("Offline mode should not require API key")
 
-    def test_remote_mode_requires_key(self):
+    def test_remote_mode_requires_key(self, monkeypatch):
         """Test that remote mode requires API key"""
         from flamehaven_filesearch.config import Config
+
+        # Clear environment variables to ensure api_key=None stays None
+        monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+        monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
 
         config = Config(api_key=None)
 
