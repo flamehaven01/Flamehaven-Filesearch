@@ -74,6 +74,14 @@ def mock_flamehaven_filesearch_in_api():
             "total_queries": 0,
         },
     }
+    # Add stores attribute for metrics endpoint
+    mock_searcher.stores = {"default": "mock_store_id"}
+    mock_searcher.config = MagicMock()
+    mock_searcher.config.to_dict.return_value = {
+        "api_key": "***",
+        "default_model": "gemini-1.5-flash",
+        "temperature": 0.7,
+    }
 
     with patch("flamehaven_filesearch.api.searcher", new=mock_searcher):
         yield mock_searcher
@@ -466,8 +474,9 @@ def client(mock_flamehaven_filesearch_in_api):  # Use the autouse mock
 
     app.dependency_overrides[extract_api_key] = mock_extract_api_key
 
-    client = TestClient(app)
-    yield client
+    # Use raise_server_exceptions=False to avoid auth errors in tests
+    with TestClient(app, raise_server_exceptions=False) as test_client:
+        yield test_client
 
     # Cleanup
     app.dependency_overrides.clear()

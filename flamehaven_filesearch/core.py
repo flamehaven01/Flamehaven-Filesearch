@@ -309,7 +309,7 @@ class FlamehavenFileSearch:
             intent_filters = intent_info.metadata_filters
 
         if not docs:
-            return {
+            result = {
                 "status": "success",
                 "answer": "No documents indexed yet.",
                 "sources": [],
@@ -319,13 +319,20 @@ class FlamehavenFileSearch:
                 "max_tokens": max_tokens,
                 "temperature": temperature,
                 "search_mode": search_mode,
+                "refined_query": intent_info.refined_query if intent_info else None,
+                "corrections": (
+                    intent_info.correction_suggestions if intent_info else None
+                ),
                 "search_intent": {
                     "keywords": intent_keywords or [],
                     "file_extensions": intent_file_exts or [],
                     "filters": intent_filters or {},
                 },
-                "semantic_results": semantic_results or [],
             }
+            # Only include semantic_results for semantic/hybrid modes
+            if search_mode in ["semantic", "hybrid"]:
+                result["semantic_results"] = semantic_results or []
+            return result
 
         matches = []
         for doc in docs:
@@ -356,6 +363,10 @@ class FlamehavenFileSearch:
             "max_tokens": max_tokens,
             "temperature": temperature,
             "search_mode": search_mode,
+            "refined_query": intent_info.refined_query if intent_info else None,
+            "corrections": (
+                intent_info.correction_suggestions if intent_info else None
+            ),
         }
 
         if intent_info:
@@ -424,7 +435,8 @@ class FlamehavenFileSearch:
                 return {
                     "status": "error",
                     "message": (
-                        "Store '" f"{store_name}"
+                        "Store '"
+                        f"{store_name}"
                         "' not found. Create it first or upload files."
                     ),
                 }
