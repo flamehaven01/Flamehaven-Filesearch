@@ -32,7 +32,10 @@ _mock_searcher_instance.search.return_value = {
     "search_intent": {"keywords": ["mock"], "file_extensions": [], "filters": {}},
     "semantic_results": [{"file": "mock.txt", "score": 0.9}],
 }
-_mock_searcher_instance.upload_file.return_value = {"status": "success", "file": "mock.txt"}
+_mock_searcher_instance.upload_file.return_value = {
+    "status": "success",
+    "file": "mock.txt",
+}
 _mock_searcher_instance.get_metrics.return_value = {
     "stores_count": 1,
     "stores": ["default"],
