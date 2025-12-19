@@ -96,7 +96,7 @@ The system is configured via environment variables.
 
 ## License
 
-Distributed under the **MIT License**. See `LICENSE` for more information.
+Distributed under the **MIT License**. See [LICENSE](LICENSE) for more information.
 
 ---
 <div align="center">
