@@ -2,62 +2,19 @@
 
 <img src="assets/logo.png" alt="FLAMEHAVEN FileSearch" width="320">
 
-# 🔥 Flamehaven FileSearch v1.3.1 ∴ OMEGA
+# FLAMEHAVEN FileSearch v1.3.1
 
-**The Sovereign RAG Engine: High-Performance, Zero-ML Dependency, Production-Ready.**
+**Self-hosted RAG search engine. High-performance, zero-ML dependency, production-ready.**
 
-[![License](https://img.shields.io/badge/License-MIT-gold.svg?style=for-the-badge)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-1.3.1--OMEGA-blueviolet.svg?style=for-the-badge)](CHANGELOG.md)
-[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg?style=for-the-badge&logo=python)](https://www.python.org/)
-[![Status](https://img.shields.io/badge/Status-Production--Ready-brightgreen.svg?style=for-the-badge)](https://github.com/flamehaven01/Flamehaven-Filesearch)
+[![License](https://img.shields.io/badge/License-MIT-gold.svg?style=for-the-badge)](LICENSE) [![Version](https://img.shields.io/badge/Version-1.3.1-blue.svg?style=for-the-badge)](CHANGELOG.md) [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg?style=for-the-badge&logo=python)](https://www.python.org/) [![Status](https://img.shields.io/badge/Status-Production--Ready-brightgreen.svg?style=for-the-badge)](https://github.com/flamehaven01/Flamehaven-Filesearch)
 
-[Core Philosophy](#-philosophy) • [Key Features](#-key-features) • [Performance](#-performance) • [Quick Start](#-quick-start) • [Wiki Documentation](docs/wiki/README.md)
+[Quick Start](#quick-start) • [Key Features](#key-features) • [Configuration](#configuration) • [Benchmarks](#benchmarks) • [Wiki Documentation](docs/wiki/README.md)
 
 </div>
 
 ---
 
-## 🏛️ Philosophy: Sovereign Search
-
-**Flamehaven FileSearch** is a self-hosted RAG (Retrieval-Augmented Generation) engine designed for privacy-conscious enterprises. It solves the complexity of modern RAG stacks by eliminating heavy ML dependencies and providing a lightning-fast, secure, and deterministic search experience.
-
-| ⚡ **Deterministic** | 🛡️ **Sovereign** | 💎 **Efficient** |
-|:---:|:---:|:---:|
-| Zero-randomness DSP v2.0 | 100% Self-hosted Data | 75% Less Memory (int8) |
-
----
-
-## 🚀 Key Features
-
-### 🧠 Semantic Intelligence (v1.3.1 OMEGA)
-- **Gravitas DSP v2.0**: A custom **Deterministic Semantic Projection** algorithm. Replaces heavy transformers (BERT/RoBERTa) with a lightweight signed feature hashing system.
-- **Zero-ML Dependencies**: No `torch`, `transformers`, or `sentence-transformers` required for vectorization.
-- **Hybrid Search Modes**: Seamlessly toggle between `keyword`, `semantic`, and `hybrid` search with typo correction and intent refinement.
-
-### 📦 Optimized Storage & Cache
-- **Vector Quantization**: `int8` quantization reduces vector memory footprint by 75% with negligible precision loss.
-- **GravitasPacker**: Proprietary symbolic compression achieving **90%+ reduction** in metadata and lore scroll size.
-- **Chronos-Grid**: High-speed local vector storage with deterministic retrieval.
-
-### 🔐 Enterprise-Grade Security (v1.2.x)
-- **API Key Governance**: Fine-grained permissions (`search`, `upload`, `admin`) with SHA256 hashed storage.
-- **Production Guard**: Rate limiting, audit logging, and OWASP-compliant security headers.
-- **Batch Processing**: Single-request execution for up to 100 concurrent queries.
-
----
-
-## 📊 Performance Benchmarks (v1.3.1)
-
-| Metric | Legacy (v1.1.0) | **OMEGA (v1.3.1)** | Impact |
-|:---|:---|:---:|:---:|
-| **Init Time** | ~120s | **< 1ms** | Instant Start |
-| **Vector Latency** | 45ms | **0.8ms** | **45x Faster** |
-| **Memory Footprint** | ~500MB | **< 10MB** | **98% Lower** |
-| **Storage Ratio** | 1.0x | **0.12x** | **90% Compressed** |
-
----
-
-## ⚡ Quick Start
+## Quick Start
 
 ### 1. The 3-Minute Deployment (Docker)
 The fastest way to get a production-ready RAG server running.
@@ -72,18 +29,18 @@ docker run -d \
 ```
 
 ### 2. Python SDK Usage
-Integrate Sovereign Search into your Python applications.
+Integrate semantic search into your Python applications.
 
 ```python
 from flamehaven_filesearch import FlamehavenFileSearch
 
-# Initialize the Sovereign Client
+# Initialize the Client
 fs = FlamehavenFileSearch(api_key="your_api_key")
 
-# Upload and Vectorize
+# Upload and Index
 fs.upload_file("internal_audit.pdf", store="security_vault")
 
-# Execute Hybrid Search
+# Execute Search
 result = fs.search(
     "Check SR9 resonance metrics", 
     store="security_vault",
@@ -95,48 +52,53 @@ print(f"Answer: {result['answer']}")
 
 ---
 
-## 🛠️ API Interface Summary
+## Key Features
 
-| Method | Endpoint | Description |
-|:---:|:---|:---:|
-| `POST` | `/api/search` | Execute advanced semantic/hybrid search |
-| `POST` | `/api/upload/single` | Ingest and vectorize a document |
-| `POST` | `/api/batch-search` | Process up to 100 queries in parallel |
-| `GET`  | `/api/admin/cache/stats` | Monitor Gravitas compression efficiency |
-| `GET`  | `/prometheus` | Export 25+ real-time system metrics |
+- **Gravitas DSP v2.0**: A deterministic semantic projection algorithm. Provides high-quality vector embeddings without heavy ML dependencies (zero randomness).
+- **Hybrid Search Modes**: Seamlessly toggle between `keyword`, `semantic`, and `hybrid` search with typo correction and intent refinement.
+- **Optimized Storage**: Uses `int8` quantization to reduce vector memory footprint by 75% and symbolic compression for metadata (90%+ reduction).
+- **Enterprise Security**: API key governance with fine-grained permissions (`search`, `upload`, `admin`), rate limiting, and OWASP-compliant security headers.
+- **Batch Processing**: Single-request execution for up to 100 concurrent queries.
 
 ---
 
-## 🏗️ Architecture
+## Configuration
 
-```mermaid
-graph TD
-    A[Client Request] --> B[FastAPI Gateway]
-    B --> C{Security Gate}
-    C -- Valid API Key --> D[Intent Refiner]
-    D --> E[Gravitas DSP v2.0]
-    E --> F[Chronos-Grid Search]
-    F --> G[Gemini Reasoning]
-    G --> H[GravitasPacker Cache]
-    H --> I[Response with Citations]
-```
+The system is configured via environment variables.
+
+| Variable | Description | Default |
+|:---|:---|:---:|
+| `GEMINI_API_KEY` | **Required** API key for Google Gemini reasoning. | None |
+| `FLAMEHAVEN_ADMIN_KEY` | **Required** Master key for admin dashboard and key management. | None |
+| `HOST` | The interface to bind the server to. | `0.0.0.0` |
+| `PORT` | The port to listen on. | `8000` |
+| `REDIS_HOST` | Optional Redis host for distributed caching. | None |
 
 ---
 
-## 🗺️ Roadmap
+## Benchmarks
+
+| Metric | Legacy (v1.1.0) | **v1.3.1** | Impact |
+|:---|:---:|:---:|:---:|
+| **Initialization Time** | ~120s | **< 1ms** | Instant Start |
+| **Vector Latency** | 45ms | **0.8ms** | **45x Faster** |
+| **Memory Footprint** | ~500MB | **< 10MB** | **98% Lower** |
+| **Storage Compression** | 1.0x | **0.12x** | **90% Compressed** |
+
+---
+
+## Roadmap
 
 - **v1.4.0 (Q1 2026)**: Multimodal support (Visual RAG), HNSW vector indexing.
 - **v2.0.0 (Q2 2026)**: Advanced multi-language support, real-time WebSocket streaming.
 
-## 🤝 Contributing
+---
 
-We follow the **Sovereign Development Protocol**. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting Pull Requests.
-
-## 📜 License
+## License
 
 Distributed under the **MIT License**. See `LICENSE` for more information.
 
 ---
 <div align="center">
-    <b>Built with 🔥 by Flamehaven Sovereign Core</b>
+    <b>Built with 🔥 by Flamehaven Core</b>
 </div>
