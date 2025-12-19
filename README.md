@@ -85,7 +85,7 @@
 
 ### 1. Docker (No Setup)
 
-bash
+```bash
 # Start with one command
 docker run -d \
   -e GEMINI_API_KEY="your_gemini_api_key" \
@@ -307,4 +307,5 @@ Built with:
 **Questions? Open an issue or email info@flamehaven.space**
 
 **Last Updated:** December 09, 2025 (v1.2.2)
+
 
