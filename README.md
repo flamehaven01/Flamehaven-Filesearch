@@ -60,7 +60,9 @@ Open source & MIT licensed</p>
 - **Ultra-Fast Vectors** - DSP v2.0 algorithm generates embeddings in &lt;1ms without ML frameworks
 - **Source Attribution** - Every answer includes links back to source documents
 
-### What's New in v1.3.1
+### What's New in v1.3.1 (OMEGA Release)
+
+Version 1.3.1, codenamed **OMEGA**, introduces the Gravitas DSP v2.0 engine with breakthrough performance improvements:
 
 - **75% Memory Reduction** - Int8 vector quantization
 - **90% Metadata Compression** - Gravitas-Pack algorithm
