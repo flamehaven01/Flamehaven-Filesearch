@@ -1,197 +1,125 @@
-# API Reference
+# API Reference (v1.3.1)
 
 All endpoints return JSON unless otherwise noted. Default base URL:
 `http://localhost:8000`.
 
 ---
 
-## Authentication
+## 🔐 Authentication
 
-Current version operates on trust within your network. For public deployments,
-place the API behind an API gateway or enable an authenticating reverse proxy.
+As of **v1.2.0**, all protected endpoints require **API Key Authentication**.
 
----
+**Header:** `Authorization: Bearer <your_api_key>`
 
-## Rate Limits
-
-| Endpoint | Limit | Notes |
-|----------|-------|-------|
-| `/api/upload/single`, `/upload` | `10/minute` | Applies per IP (SlowAPI) |
-| `/api/upload/multiple`, `/upload-multiple` | `5/minute` | Heavy operation |
-| `/api/search` (GET/POST) | `100/minute` | Caching mitigates load |
-| `/metrics`, `/prometheus`, `/health`, `/` | `100/minute` | Observability |
-
-Adjust via environment variables (see `Configuration.md`).
+| Access Level | Required Permission |
+|--------------|---------------------|
+| Search       | `search`            |
+| Upload       | `upload`            |
+| Store Mgmt   | `stores`            |
+| Admin        | `admin`             |
 
 ---
 
-## Endpoints
-
-### `GET /`
-
-Returns service metadata.
-
-```json
-{
-  "name": "FLAMEHAVEN FileSearch API",
-  "version": "1.1.0",
-  "description": "...",
-  "docs": "/docs",
-  "health": "/health"
-}
-```
-
-### `GET /health`
-
-Detailed health check.
-
-```json
-{
-  "status": "healthy",
-  "version": "1.1.0",
-  "uptime_seconds": 123.45,
-  "uptime_formatted": "2m 3s",
-  "searcher_initialized": true,
-  "system": {
-    "cpu_percent": 12.5,
-    "memory_percent": 42.1,
-    "disk_percent": 71.2
-  }
-}
-```
-
-### `POST /api/upload/single`
-
-| Key | Type | Description |
-|-----|------|-------------|
-| `file` | `multipart/form-data` | File to ingest |
-| `store` | `form field` | Optional store name (default `default`) |
-
-Response:
-
-```json
-{
-  "status": "success",
-  "store": "default",
-  "file": "handbook.pdf",
-  "size_mb": 1.23,
-  "request_id": "..."
-}
-```
-
-Errors:
-
-- `400` (invalid filename, size exceeded)
-- `503` (service unavailable)
-
-### `POST /api/upload/multiple`
-
-Accepts `files[]`. Returns array of per-file statuses plus summary counts.
-Legacy alias: `POST /upload-multiple`.
+## ⚡ Search API (OMEGA Enhanced)
 
 ### `POST /api/search`
 
-Body (`application/json`):
+New parameters added in **v1.3.1** for **Gravitas DSP** control.
+
+**Body (`application/json`):**
 
 ```json
 {
-  "query": "What is our vacation policy?",
+  "query": "SR9 resonance and DI2 capsule integrity",
   "store_name": "default",
-  "model": null,
-  "max_tokens": null,
-  "temperature": null
+  "search_mode": "hybrid",
+  "top_k": 5,
+  "threshold": 0.7
 }
 ```
 
-Response:
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `query` | `string` | **Required** | The search query. |
+| `search_mode` | `string` | `hybrid` | `keyword`, `semantic`, or `hybrid`. |
+| `top_k` | `int` | 5 | Number of semantic results to return. |
+| `threshold` | `float` | 0.5 | Similarity threshold for semantic results. |
+
+**Response (v1.3.1 Schema):**
 
 ```json
 {
   "status": "success",
-  "answer": "Employees receive ...",
-  "sources": [
-    {"title": "handbook.pdf", "uri": "gs://...", "page": 5}
+  "answer": "...",
+  "refined_query": "SR9 resonance and DI2 capsule integrity check",
+  "search_mode": "hybrid",
+  "search_intent": "informational_technical",
+  "semantic_results": [
+    {
+      "title": "audit_report.pdf",
+      "score": 0.892,
+      "page": 12,
+      "snippet": "..."
+    }
   ],
-  "model": "gemini-2.5-flash",
-  "query": "What is our vacation policy?",
-  "store": "default",
   "request_id": "..."
 }
 ```
 
-Possible status codes:
+---
 
-| Code | Meaning |
-|------|---------|
-| `200` | Answer found (may be from cache) |
-| `400` | Invalid query / parameters |
-| `404` | Store not found |
-| `500` | Unexpected error |
+## 📦 Batch Operations
 
-### `GET /api/search`
+### `POST /api/batch-search`
 
-Convenience endpoint using query string (`?q=...&store=...`). Same response
-shape.
+Process multiple queries in a single request.
 
-### Store Management
-
-| Endpoint | Description |
-|----------|-------------|
-| `POST /api/stores` | Create store (`{"name": "default"}`) |
-| `GET /api/stores` | List stores |
-| `DELETE /api/stores/{store}` | Delete store |
-| Legacy aliases (`/stores`, `/stores/{store}`, `/stores` via POST) remain for backward compatibility. |
-
-### Metrics & Monitoring
-
-- `GET /metrics` – JSON payload containing store counts, config snapshot, cache
-  stats, system metrics.
-- `GET /prometheus` – Exposes Prometheus text format (see
-  `docs/wiki/Production_Deployment.md`).
-
-### Error Format
-
-All errors follow:
+**Body:**
 
 ```json
 {
-  "error": "VALIDATION_ERROR",
-  "message": "Invalid filename: ...",
-  "detail": "...",
-  "status_code": 400,
-  "request_id": "abc-123",
-  "timestamp": "2025-11-14T07:13:22Z"
+  "queries": ["What is SR9?", "How to check DI2?"],
+  "store_name": "default",
+  "parallel": true
 }
 ```
 
-### Legacy Endpoints
+---
 
-- `/upload` → `/api/upload/single`
-- `/upload-multiple` → `/api/upload/multiple`
-- `/search` → `/api/search` (GET)
-- `/stores` → `/api/stores`
+## 🛠️ Admin & Cache Control
 
-These remain for older SDKs but new integration should prefer the `/api/*`
-namespace.
+### `GET /api/admin/cache/stats`
+Returns real-time cache statistics, including **GravitasPacker** compression ratios.
+
+### `POST /api/admin/cache/flush`
+Clears the system cache (Admin permission required).
 
 ---
 
-## SDK Usage Recap
+## 📊 Observability
 
-Python SDK is a thin wrapper over the same endpoints:
+### `GET /prometheus`
+Exposes 25+ metrics, including:
+- `dsp_vectorization_latency_seconds`
+- `gravitas_compression_ratio`
+- `semantic_search_threshold_drops_total`
+
+---
+
+## 🏗️ SDK Usage (v1.3.1)
 
 ```python
 from flamehaven_filesearch import FlamehavenFileSearch
 
-fs = FlamehavenFileSearch()
-fs.upload_file("handbook.pdf")
-result = fs.search("vacation policy")
+# Initialize with API Key
+fs = FlamehavenFileSearch(api_key="your_key")
+
+# Perform Hybrid Search
+result = fs.search(
+    "vacation policy", 
+    search_mode="hybrid",
+    top_k=3
+)
+
+print(f"Refined Query: {result.refined_query}")
 ```
-
-Under the hood it configures `FlamehavenFileSearch.config` and calls the same
-validation logic, so configuration options are identical.
-
----
-
-For OpenAPI schema, open `/openapi.json` or visit `/docs` (Swagger UI) /
-`/redoc`.

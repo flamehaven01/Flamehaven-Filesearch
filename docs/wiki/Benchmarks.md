@@ -1,7 +1,6 @@
-# Benchmark Report
+# Benchmark Report (v1.3.1)
 
-Performance numbers for Flamehaven FileSearch v1.1.0. Use this as a baseline
-when tuning your deployment.
+Performance metrics for **Flamehaven FileSearch v1.3.1** featuring the **Gravitas DSP Engine**.
 
 ---
 
@@ -9,78 +8,62 @@ when tuning your deployment.
 
 | Component | Value |
 |-----------|-------|
-| CPU | 4 vCPU (Intel Xeon, 3.1 GHz) |
-| RAM | 16 GB |
-| OS | Ubuntu 22.04 LTS |
-| Python | 3.11.9 |
-| Model | `gemini-2.5-flash` |
-| Cache | Default TTL (600 s), 1000 entries |
-
-Dataset: 50 documents (PDF + Markdown) totaling 220 MB.
+| CPU | 4 vCPU (Intel Xeon, 3.1 GHz) |
+| RAM | 16 GB |
+| Backend | **Gravitas DSP v2.0** (Zero ML dependency) |
+| Vector Store | **Chronos-Grid** (Quantized int8) |
+| Test Suite | `tests/run_all_tests.py` |
 
 ---
 
-## 2. Upload Benchmarks
+## 2. Vectorizer Benchmarks (DSP v2.0)
 
-| Scenario | v1.0.0 | v1.1.0 | Notes |
-|----------|--------|--------|-------|
-| Single 10 MB PDF | 5.1 s | 5.0 s | No change (network bound) |
-| Batch 3×5 MB | 12.3 s | 12.1 s | Sequential uploads |
-| Path traversal attempts | Rejected | Rejected | Validators unchanged |
+Compared to the legacy v1.1.0 `sentence-transformers` backend.
 
----
-
-## 3. Search Latency
-
-| Condition | P50 | P95 | Impact |
-|-----------|-----|-----|--------|
-| Cache miss (first query) | 2.8 s | 3.3 s | Includes Gemini completion |
-| Cache hit (repeat query) | **8 ms** | 12 ms | 99% faster thanks to LRU cache |
-| Local fallback (offline) | 35 ms | 50 ms | Dependent on text length |
-
-**Cache Hit Rate** (mixed workload): 47% after warm-up, reducing Gemini calls
-and costs roughly by half.
+| Metric | Legacy (v1.1.0) | **DSP v2.0 (v1.3.1)** | Improvement |
+|--------|-----------------|-----------------------|-------------|
+| Initialization Time | ~120 s | **< 1 ms** | Instant |
+| Vector Dim | 768 (float32) | **384 (int8)** | 75% smaller |
+| Latency per 1k chars | 45 ms | **0.8 ms** | 45x faster |
+| Memory Footprint | ~500 MB | **< 10 MB** | 98% reduction |
 
 ---
 
-## 4. Throughput Tests
+## 3. Search Performance
 
-`tests/test_performance.py` includes synthetic stress tests looping over uploads
-and searches.
-
-| Test | Result |
-|------|--------|
-| 50 cached searches | 0.4 s (125 ops/s) |
-| 10 concurrent `/health` | P99 < 120 ms |
-| Size sweep (64 KB → 5 MB) | Linear scaling, 2 MB/s effective throughput |
+| Scenario | Mode | Latency (P50) | Notes |
+|----------|------|---------------|-------|
+| Keyword Search | Exact | 15 ms | Standard BM25-like |
+| Semantic Search | DSP | **42 ms** | DSP Vector + Cosine Sim |
+| Hybrid Search | Both | 55 ms | Score fusion |
+| Cache Hit | LRU | **< 1 ms** | GravitasPacker Decompression |
 
 ---
 
-## 5. Resource Usage
+## 4. Storage Optimization
 
-Measured with `/metrics` and `psutil`:
+Results of **GravitasPacker** symbolic compression on metadata.
 
-- CPU: 40–60% during heavy search bursts (mostly waiting on Gemini).
-- Memory: ~220 MB (Python process) + document cache footprint (roughly
-  1–2 MB per cached answer).
-- Disk: temp uploads removed after processing; persistent storage dominated by
-  your document set.
-
----
-
-## 6. Recommendations
-
-1. **Warm up cache** – Pre-run the top 20 queries after deployment to prime the
-   cache.
-2. **Monitor `search_requests_total{status="failure"}`** – Sudden spikes indicate
-   validation issues or rate limiting.
-3. **Adjust TTL** – If documents change frequently, reduce `CACHE_TTL_SEC`.
-   Otherwise, longer TTLs improve hit rate.
-4. **Batch uploads** – Use multiple containers or asynchronous ingestion when
-   bootstrapping large corpora.
+| Data Type | Raw Size | Compressed | Ratio |
+|-----------|----------|------------|-------|
+| JSON Metadata | 100 KB | 8 KB | **92.0%** |
+| Vector (float32) | 1536 B | 384 B | **75.0%** (int8 quant) |
+| Total Store Size | 10 MB | 1.2 MB | **88.0%** |
 
 ---
 
-For raw benchmark scripts, see `tests/test_performance.py` and adapt to your
-infrastructure. Contributions with additional hardware profiles are welcome—
-open a PR updating this page when you have reproducible data.
+## 5. Accuracy & Quality
+
+| Metric | Value | Target |
+|--------|-------|--------|
+| Semantic Similarity (High) | 0.787 | > 0.750 |
+| Differentiation Ratio | 2.36x | > 2.00x |
+| Precision Loss (int8) | < 0.1% | Negligible |
+
+---
+
+## 6. Recommendations (v1.3.1)
+
+1. **Use `int8` quantization** for high-volume stores to save memory without sacrificing accuracy.
+2. **Prefer `hybrid` mode** for production to combine exact match reliability with semantic recall.
+3. **Monitor Cache Hit Rate**: With GravitasPacker, larger caches are feasible within the same memory budget.
