@@ -154,6 +154,7 @@ reset_all_caches()
   unit tests.
 - To persist fallback metadata across restarts, enable the PostgreSQL backend
   with `POSTGRES_ENABLED=1` and `POSTGRES_DSN`.
+  Install dependencies via `pip install flamehaven-filesearch[postgres]`.
 
 ---
 

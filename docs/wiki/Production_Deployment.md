@@ -22,7 +22,7 @@ observable environment. Adjust to match your infrastructure.
 ## 2. Docker Deployment
 
 ```bash
-docker build -t flamehaven-filesearch:1.1.0 .
+docker build -t flamehaven-filesearch:1.4.0 .
 
 docker run -d --name flamehaven \
   -p 8000:8000 \
@@ -30,7 +30,7 @@ docker run -d --name flamehaven \
   -e DEFAULT_MODEL=gemini-2.5-flash \
   -e ENVIRONMENT=production \
   -v /srv/flamehaven/data:/app/data \
-  flamehaven-filesearch:1.1.0
+  flamehaven-filesearch:1.4.0
 ```
 
 **Tips**
@@ -117,12 +117,33 @@ exhausting Gemini quota.
    ```
 2. **Logging** – Send STDOUT to Loki/ELK. JSON logs contain
    `service`, `version`, `request_id`, `environment`.
-3. **Tracing** – Propagate `X-Request-ID` through reverse proxy to correlate
+3. **Tracing** – Propagate `X-Request-ID` through reverse proxy to correlate    
    across services.
 
 ---
 
-## 7. Backups & Disaster Recovery
+## 7. PostgreSQL Metadata Backend (Optional)
+
+Use PostgreSQL to persist local fallback metadata across restarts. This is only
+used in offline/local fallback mode (no external LLM).
+
+**Environment variables**
+
+```
+POSTGRES_ENABLED=1
+POSTGRES_DSN=postgresql://user:pass@host:5432/flamehaven
+POSTGRES_SCHEMA=public
+```
+
+**Notes**
+
+- Tables are auto-created on startup.
+- Use a dedicated schema to isolate Flamehaven metadata.
+- Restrict network access to the database host only.
+
+---
+
+## 8. Backups & Disaster Recovery
 
 - **Documents**: If using local storage, back up `/srv/flamehaven/data`. Consider
   object storage (S3, GCS) for durability.
@@ -132,7 +153,7 @@ exhausting Gemini quota.
 
 ---
 
-## 8. Security Hardening
+## 9. Security Hardening
 
 - Run container as non-root (`USER 1000`).
 - Enable `ufw`/`iptables` to allow ingress only on 80/443.
@@ -142,7 +163,7 @@ exhausting Gemini quota.
 
 ---
 
-## 9. Production Checklist
+## 10. Production Checklist
 
 - [ ] TLS certificate valid and auto-renewed.
 - [ ] Rate limits tuned for workload.
