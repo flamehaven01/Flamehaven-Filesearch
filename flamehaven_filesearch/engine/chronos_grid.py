@@ -1,6 +1,5 @@
 """
 Chronos-Grid Engine: Hyper-Speed Semantic File Indexing
-Derived from SAIQL-Engine, optimized for Flamehaven-Filesearch
 """
 
 import array

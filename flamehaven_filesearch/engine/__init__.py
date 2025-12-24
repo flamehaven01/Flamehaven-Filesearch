@@ -1,6 +1,5 @@
 """
 Flamehaven Engine - Hyper-Speed Semantic Knowledge Engine
-Integrating SAIQL-Engine technologies: Chronos-Grid, Intent-Refiner, Gravitas-Pack
 """
 
 from .chronos_grid import ChronosConfig, ChronosGrid, ChronosStats
