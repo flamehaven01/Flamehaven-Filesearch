@@ -62,11 +62,25 @@ Open source & MIT licensed</p>
 
 ### What's New in v1.4.0
 
-- **Multimodal Search** - Text + image search endpoint (disabled by default)
-- **HNSW Vector Index** - Optional HNSW backend with brute-force fallback
+- **Multimodal Search** - Text + image search endpoint (disabled by default)    
+- **HNSW Vector Index** - Optional HNSW backend with brute-force fallback       
 - **OAuth2/OIDC Support** - JWT validation alongside API keys
 - **PostgreSQL Backend** - Optional metadata persistence and vector store support
 - **Vision Delegate** - Optional Pillow/Tesseract processing for image metadata
+
+### Next Steps (usage limit focus)
+
+Current weekly usage budget is ~2%. Priorities below target cost and quota
+pressure before new surface area:
+
+- Reduce external LLM calls (better cache hit rate, batching, stricter request
+  validation, and local fallback defaults).
+- Ship usage-aware controls (per-key budgets, alerts, and usage reporting in
+  admin endpoints).
+- Strengthen pgvector path (index tuning, recall/perf benchmarks, and optional
+  background reindex).
+- Improve multimodal pipeline stability (vision provider selection, size limits,
+  and clearer error messages).
 
 ### Enterprise Features (v1.2.2+)
 
@@ -328,11 +342,15 @@ curl -X DELETE http://localhost:8000/api/admin/keys/old_key_id \
 
 ## 🗺️ Roadmap
 
-### v1.4.0 (Q1 2026)
-- [ ] Multimodal search (image + text)
-- [ ] HNSW vector indexing for 10x faster search
-- [ ] OAuth2/OIDC integration
+Full roadmap lives in `ROADMAP.md`. Summary below:
+
+### v1.4.x (Q1 2026)
+- [x] Multimodal search (image + text)
+- [x] HNSW vector indexing for faster search
+- [x] OAuth2/OIDC integration
 - [x] PostgreSQL backend option (metadata + vector store)
+- [ ] Usage-budget controls and reporting
+- [ ] pgvector tuning and reliability hardening
 
 ### v2.0.0 (Q2 2026)
 - [ ] Multi-language support (15+ languages)
@@ -341,7 +359,7 @@ curl -X DELETE http://localhost:8000/api/admin/keys/old_key_id \
 - [ ] Kubernetes Helm charts
 
 ### Community Requests
-See [GitHub Discussions](https://github.com/flamehaven01/Flamehaven-Filesearch/discussions) to vote on features.
+See `ROADMAP.md` for backlog curation and request intake.
 
 ---
 
