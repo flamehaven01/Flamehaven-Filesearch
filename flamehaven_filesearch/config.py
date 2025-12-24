@@ -48,16 +48,20 @@ class Config:
     redis_db: int = 1
 
     # Vector index configuration
+    vector_backend: str = "memory"  # "memory" or "postgres"
     vector_index_backend: str = "brute"  # "brute" or "hnsw"
     vector_hnsw_m: int = 16
     vector_hnsw_ef_construction: int = 200
     vector_hnsw_ef_search: int = 50
+    vector_postgres_table: str = "flamehaven_vectors"
 
     # Multimodal configuration
     multimodal_enabled: bool = False
     multimodal_text_weight: float = 1.0
     multimodal_image_weight: float = 1.0
     multimodal_image_max_mb: int = 10
+    vision_enabled: bool = False
+    vision_strategy: str = "fast"
 
     # OAuth2/OIDC configuration
     oauth_enabled: bool = False
@@ -104,11 +108,17 @@ class Config:
         if not 0.0 <= self.temperature <= 1.0:
             raise ValueError("temperature must be between 0.0 and 1.0")
 
+        if self.vector_backend not in {"memory", "postgres"}:
+            raise ValueError("vector_backend must be 'memory' or 'postgres'")
+
         if self.vector_index_backend not in {"brute", "hnsw"}:
             raise ValueError("vector_index_backend must be 'brute' or 'hnsw'")
 
         if self.multimodal_text_weight <= 0 or self.multimodal_image_weight <= 0:
             raise ValueError("multimodal weights must be positive")
+
+        if self.vision_strategy not in {"fast", "detail"}:
+            raise ValueError("vision_strategy must be 'fast' or 'detail'")
 
         return True
 
@@ -124,11 +134,15 @@ class Config:
             "max_sources": self.max_sources,
             "cache_ttl_sec": self.cache_ttl_sec,
             "cache_max_size": self.cache_max_size,
+            "vector_backend": self.vector_backend,
             "vector_index_backend": self.vector_index_backend,
+            "vector_postgres_table": self.vector_postgres_table,
             "multimodal_enabled": self.multimodal_enabled,
             "multimodal_text_weight": self.multimodal_text_weight,
             "multimodal_image_weight": self.multimodal_image_weight,
             "multimodal_image_max_mb": self.multimodal_image_max_mb,
+            "vision_enabled": self.vision_enabled,
+            "vision_strategy": self.vision_strategy,
             "oauth_enabled": self.oauth_enabled,
             "oauth_issuer": self.oauth_issuer,
             "oauth_audience": self.oauth_audience,
@@ -197,17 +211,24 @@ class Config:
             redis_port=int(os.getenv("REDIS_PORT", "6379")),
             redis_password=os.getenv("REDIS_PASSWORD"),
             redis_db=int(os.getenv("REDIS_DB", "1")),
+            vector_backend=os.getenv("VECTOR_BACKEND", "memory"),
             vector_index_backend=os.getenv("VECTOR_INDEX_BACKEND", "brute"),
             vector_hnsw_m=int(os.getenv("VECTOR_HNSW_M", "16")),
             vector_hnsw_ef_construction=int(
                 os.getenv("VECTOR_HNSW_EF_CONSTRUCTION", "200")
             ),
             vector_hnsw_ef_search=int(os.getenv("VECTOR_HNSW_EF_SEARCH", "50")),
+            vector_postgres_table=os.getenv(
+                "VECTOR_POSTGRES_TABLE", "flamehaven_vectors"
+            ),
             multimodal_enabled=os.getenv("MULTIMODAL_ENABLED", "false").lower()
             in {"1", "true", "yes", "on"},
             multimodal_text_weight=float(os.getenv("MULTIMODAL_TEXT_WEIGHT", "1.0")),
             multimodal_image_weight=float(os.getenv("MULTIMODAL_IMAGE_WEIGHT", "1.0")),
             multimodal_image_max_mb=int(os.getenv("MULTIMODAL_IMAGE_MAX_MB", "10")),
+            vision_enabled=os.getenv("VISION_ENABLED", "false").lower()
+            in {"1", "true", "yes", "on"},
+            vision_strategy=os.getenv("VISION_STRATEGY", "fast").strip().lower(),
             oauth_enabled=os.getenv("OAUTH_ENABLED", "false").lower()
             in {"1", "true", "yes", "on"},
             oauth_issuer=os.getenv("OAUTH_ISSUER"),

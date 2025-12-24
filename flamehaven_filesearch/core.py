@@ -22,7 +22,9 @@ except ImportError:  # pragma: no cover - optional dependency
 from .config import Config
 from .engine import ChronosConfig, ChronosGrid, GravitasPacker, IntentRefiner
 from .engine.embedding_generator import get_embedding_generator
+from .multimodal import VisionModal, get_multimodal_processor
 from .storage import MemoryMetadataStore, create_metadata_store
+from .vector_store import create_vector_store
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +45,7 @@ class FlamehavenFileSearch:
         api_key: Optional[str] = None,
         config: Optional[Config] = None,
         allow_offline: bool = False,
+        vision_modal: Optional[VisionModal] = None,
     ):
         """
         Initialize FLAMEHAVEN FileSearch with next-gen engine components
@@ -86,6 +89,12 @@ class FlamehavenFileSearch:
 
         # [>] Initialize engine components
         self.embedding_generator = get_embedding_generator()
+        self.multimodal_processor = get_multimodal_processor(
+            self.config, vision_modal=vision_modal
+        )
+        self.vector_store = create_vector_store(
+            self.config, self.embedding_generator.vector_dim
+        )
         chronos_config = ChronosConfig(
             vector_index_backend=self.config.vector_index_backend,
             hnsw_m=self.config.vector_hnsw_m,
@@ -130,6 +139,8 @@ class FlamehavenFileSearch:
                 store = self.client.file_search_stores.create()
                 self.stores[name] = store.name
                 logger.info("Created store '%s': %s", name, store.name)
+                if self.vector_store:
+                    self.vector_store.ensure_store(name)
                 return store.name
             except Exception as e:
                 logger.error("Failed to create store '%s': %s", name, e)
@@ -141,6 +152,8 @@ class FlamehavenFileSearch:
         self._local_store_docs.setdefault(name, [])
         if self._metadata_store:
             self._metadata_store.ensure_store(name)
+        if self.vector_store:
+            self.vector_store.ensure_store(name)
         logger.info("Created local store '%s' (fallback mode)", name)
         return store_id
 
@@ -215,16 +228,46 @@ class FlamehavenFileSearch:
         self.gravitas_packer.compress_metadata(file_metadata)
 
         # Generate vector essence from file metadata or image bytes for semantic search
+        vision_text = ""
         if ext in self._image_extensions():
             try:
                 with open(file_path, "rb") as source:
                     image_bytes = source.read()
             except OSError:
                 image_bytes = b""
-            vector_essence = self.embedding_generator.generate_image_bytes(image_bytes)
+            if self.multimodal_processor:
+                processed = self.multimodal_processor.describe_image_bytes(
+                    image_bytes
+                )
+                vision_text = processed.text
+                file_metadata["vision"] = processed.metadata
+                if vision_text:
+                    file_metadata["vision_text"] = vision_text
+            if vision_text:
+                vector_essence = self.embedding_generator.generate_multimodal(
+                    vision_text,
+                    image_bytes,
+                    self.config.multimodal_text_weight,
+                    self.config.multimodal_image_weight,
+                )
+            else:
+                vector_essence = self.embedding_generator.generate_image_bytes(
+                    image_bytes
+                )
         else:
             metadata_text = f"{file_metadata['file_name']} {file_metadata['file_type']}"
             vector_essence = self.embedding_generator.generate(metadata_text)
+
+        if self.vector_store:
+            try:
+                self.vector_store.add_vector(
+                    store_name=store_name,
+                    glyph=file_abs_path,
+                    vector=vector_essence,
+                    essence=file_metadata,
+                )
+            except Exception as e:
+                logger.warning("Vector store insert failed: %s", e)
 
         # Inject into Chronos-Grid index with vector essence
         self.chronos_grid.inject_essence(
@@ -264,7 +307,7 @@ class FlamehavenFileSearch:
                 logger.error("Upload failed: %s", e)
                 return {"status": "error", "message": str(e)}
 
-        return self._local_upload(file_path, store_name, size_mb)
+        return self._local_upload(file_path, store_name, size_mb, vision_text=vision_text)
 
     def upload_files(
         self, file_paths: List[str], store_name: str = "default"
@@ -294,12 +337,16 @@ class FlamehavenFileSearch:
         }
 
     def _local_upload(
-        self, file_path: str, store_name: str, size_mb: float
+        self,
+        file_path: str,
+        store_name: str,
+        size_mb: float,
+        vision_text: str = "",
     ) -> Dict[str, Any]:
         """Store file metadata/content locally when google-genai is unavailable."""
         ext = Path(file_path).suffix.lower()
         if ext in self._image_extensions():
-            content = ""
+            content = vision_text or ""
         else:
             try:
                 with open(file_path, "r", encoding="utf-8", errors="ignore") as source:
@@ -307,11 +354,15 @@ class FlamehavenFileSearch:
             except OSError:
                 content = ""
 
+        metadata = {"file_type": ext}
+        if vision_text:
+            metadata["vision_text"] = vision_text
+
         doc = {
             "title": Path(file_path).name,
             "uri": f"local://{store_name}/{Path(file_path).name}",
             "content": content,
-            "metadata": {"file_type": ext},
+            "metadata": metadata,
         }
         if self._metadata_store:
             self._metadata_store.add_doc(store_name, doc)
@@ -514,9 +565,20 @@ class FlamehavenFileSearch:
         semantic_results = []
         if search_mode in ["semantic", "hybrid"]:
             query_embedding = self.embedding_generator.generate(optimized_query)
-            semantic_results = self.chronos_grid.seek_vector_resonance(
-                query_embedding, top_k=5
-            )
+            if self.vector_store:
+                try:
+                    semantic_results = self.vector_store.query(
+                        store_name, query_embedding, top_k=5
+                    )
+                except Exception as e:
+                    logger.warning("Vector store query failed: %s", e)
+                    semantic_results = self.chronos_grid.seek_vector_resonance(
+                        query_embedding, top_k=5
+                    )
+            else:
+                semantic_results = self.chronos_grid.seek_vector_resonance(
+                    query_embedding, top_k=5
+                )
             logger.info(f"[>] Semantic search returned {len(semantic_results)} results")
 
         if not self._use_native_client:
@@ -659,9 +721,20 @@ class FlamehavenFileSearch:
             self.config.multimodal_text_weight,
             self.config.multimodal_image_weight,
         )
-        semantic_results = self.chronos_grid.seek_vector_resonance(
-            combined_vector, top_k=5
-        )
+        if self.vector_store:
+            try:
+                semantic_results = self.vector_store.query(
+                    store_name, combined_vector, top_k=5
+                )
+            except Exception as e:
+                logger.warning("Vector store query failed: %s", e)
+                semantic_results = self.chronos_grid.seek_vector_resonance(
+                    combined_vector, top_k=5
+                )
+        else:
+            semantic_results = self.chronos_grid.seek_vector_resonance(
+                combined_vector, top_k=5
+            )
 
         if not self._use_native_client:
             result = self._local_search(
@@ -780,6 +853,8 @@ class FlamehavenFileSearch:
             try:
                 self.client.file_search_stores.delete(name=self.stores[store_name])
                 del self.stores[store_name]
+                if self.vector_store:
+                    self.vector_store.delete_store(store_name)
                 logger.info("Deleted store: %s", store_name)
                 return {"status": "success", "store": store_name}
             except Exception as e:
@@ -791,6 +866,8 @@ class FlamehavenFileSearch:
         if self._metadata_store:
             self._metadata_store.delete_store(store_name)
         self._local_store_docs.pop(store_name, None)
+        if self.vector_store:
+            self.vector_store.delete_store(store_name)
         logger.info("Deleted local store: %s", store_name)
         return {"status": "success", "store": store_name}
 
@@ -805,6 +882,11 @@ class FlamehavenFileSearch:
             "stores_count": len(self.stores),
             "stores": list(self.stores.keys()),
             "config": self.config.to_dict(),
+            "vector_store": (
+                self.vector_store.get_stats()
+                if self.vector_store
+                else {"backend": "memory"}
+            ),
             "chronos_grid": {
                 "indexed_files": self.chronos_grid.total_lore_essences,
                 "stats": {

@@ -20,14 +20,18 @@ variables, and CLI flags. Use this document as the single source of truth.
 | `max_sources` | `int` | `5` | Number of citations returned. |
 | `cache_ttl_sec` | `int` | `600` | TTL for search result cache. |
 | `cache_max_size` | `int` | `1024` | Number of cached entries before eviction. |
+| `vector_backend` | `str` | `memory` | Vector store backend (`memory` or `postgres`). |
 | `vector_index_backend` | `str` | `brute` | Vector search backend (`brute` or `hnsw`). |
 | `vector_hnsw_m` | `int` | `16` | HNSW `M` parameter (when enabled). |
 | `vector_hnsw_ef_construction` | `int` | `200` | HNSW construction ef value. |
 | `vector_hnsw_ef_search` | `int` | `50` | HNSW search ef value. |
+| `vector_postgres_table` | `str` | `flamehaven_vectors` | Table name for PostgreSQL vector store. |
 | `multimodal_enabled` | `bool` | `False` | Enable text + image search. |
 | `multimodal_text_weight` | `float` | `1.0` | Weight for text vectors. |
 | `multimodal_image_weight` | `float` | `1.0` | Weight for image vectors. |
 | `multimodal_image_max_mb` | `int` | `10` | Max image size accepted by API. |
+| `vision_enabled` | `bool` | `False` | Enable vision delegate processing for image files. |
+| `vision_strategy` | `str` | `fast` | Vision strategy hint (`fast` or `detail`). |
 | `oauth_enabled` | `bool` | `False` | Enable OAuth2/OIDC JWT validation. |
 | `oauth_issuer` | `Optional[str]` | `None` | Expected issuer claim (`iss`). |
 | `oauth_audience` | `Optional[str]` | `None` | Expected audience claim (`aud`). |
@@ -48,8 +52,10 @@ variables, and CLI flags. Use this document as the single source of truth.
 - `api_key` must be non-empty when `require_api_key=True`.
 - `max_file_size_mb` > 0.
 - `0.0 ≤ temperature ≤ 1.0`.
+- `vector_backend` must be `memory` or `postgres`.
 - `vector_index_backend` must be `brute` or `hnsw`.
 - `multimodal_text_weight` and `multimodal_image_weight` must be > 0.
+- `vision_strategy` must be `fast` or `detail`.
 - Strings are stripped of whitespace during `__post_init__`.
 
 ---
@@ -71,14 +77,18 @@ variables, and CLI flags. Use this document as the single source of truth.
 | `SEARCH_RATE_LIMIT` | e.g. `200/minute` |  |
 | `FLAMEHAVEN_METRICS_ENABLED` | Enable `/metrics` + `/prometheus` (default: off) | `export FLAMEHAVEN_METRICS_ENABLED=1` |
 | `HOST`, `PORT`, `WORKERS`, `RELOAD` | CLI runtime options |  |
+| `VECTOR_BACKEND` | Vector store backend (`memory` or `postgres`) | `export VECTOR_BACKEND=postgres` |
 | `VECTOR_INDEX_BACKEND` | Vector backend (`brute` or `hnsw`) | `export VECTOR_INDEX_BACKEND=hnsw` |
 | `VECTOR_HNSW_M` | HNSW `M` parameter | `export VECTOR_HNSW_M=24` |
 | `VECTOR_HNSW_EF_CONSTRUCTION` | HNSW build ef | `export VECTOR_HNSW_EF_CONSTRUCTION=200` |
 | `VECTOR_HNSW_EF_SEARCH` | HNSW search ef | `export VECTOR_HNSW_EF_SEARCH=50` |
+| `VECTOR_POSTGRES_TABLE` | Vector table name | `export VECTOR_POSTGRES_TABLE=flamehaven_vectors` |
 | `MULTIMODAL_ENABLED` | Enable multimodal search | `export MULTIMODAL_ENABLED=1` |
 | `MULTIMODAL_TEXT_WEIGHT` | Text vector weight | `export MULTIMODAL_TEXT_WEIGHT=1.0` |
 | `MULTIMODAL_IMAGE_WEIGHT` | Image vector weight | `export MULTIMODAL_IMAGE_WEIGHT=1.0` |
 | `MULTIMODAL_IMAGE_MAX_MB` | Max image size | `export MULTIMODAL_IMAGE_MAX_MB=10` |
+| `VISION_ENABLED` | Enable vision delegate processing | `export VISION_ENABLED=1` |
+| `VISION_STRATEGY` | Vision strategy hint | `export VISION_STRATEGY=fast` |
 | `OAUTH_ENABLED` | Enable OAuth2/OIDC JWT validation | `export OAUTH_ENABLED=1` |
 | `OAUTH_ISSUER` | Expected issuer | `export OAUTH_ISSUER="https://issuer"` |
 | `OAUTH_AUDIENCE` | Expected audience | `export OAUTH_AUDIENCE="filesearch"` |
@@ -155,6 +165,8 @@ reset_all_caches()
 - To persist fallback metadata across restarts, enable the PostgreSQL backend
   with `POSTGRES_ENABLED=1` and `POSTGRES_DSN`.
   Install dependencies via `pip install flamehaven-filesearch[postgres]`.
+- To enable the PostgreSQL vector backend, set `VECTOR_BACKEND=postgres` and
+  ensure the `pgvector` extension is available on the database server.
 
 ---
 

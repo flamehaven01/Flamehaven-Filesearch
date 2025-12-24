@@ -33,6 +33,8 @@ that maps to `admin` (e.g., `filesearch:admin`).
 ### `POST /api/search`
 
 New parameters added in **v1.4.0** for **Gravitas DSP** control.
+Semantic search uses the in-process index by default and can be routed to the
+PostgreSQL vector backend when `VECTOR_BACKEND=postgres`.
 
 **Body (`application/json`):**
 
@@ -79,6 +81,8 @@ New parameters added in **v1.4.0** for **Gravitas DSP** control.
 Multimodal search with text + optional image input. Disabled by default.
 Enable with `MULTIMODAL_ENABLED=1`.
 Supported image types: `image/png`, `image/jpeg`, `image/gif`, `image/webp`, `image/bmp`.
+If `VISION_ENABLED=1`, image uploads can be pre-processed by a vision delegate
+before embedding (implementation is pluggable).
 
 **Body (`multipart/form-data`):**
 

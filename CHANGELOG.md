@@ -116,6 +116,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - OAuth2/OIDC JWT validation integrated into auth flow (API key compatible).
 - PostgreSQL metadata backend option for local fallback persistence.
 - Config flags for multimodal, vector index, OAuth/OIDC, and PostgreSQL backends.
+- PostgreSQL vector store option (pgvector + HNSW) for semantic search.
+- Vision delegate hook for optional image preprocessing.
 
 ### Changed
 - Chronos-Grid now supports optional HNSW indexing.

@@ -122,10 +122,11 @@ exhausting Gemini quota.
 
 ---
 
-## 7. PostgreSQL Metadata Backend (Optional)
+## 7. PostgreSQL Backend (Optional)
 
-Use PostgreSQL to persist local fallback metadata across restarts. This is only
-used in offline/local fallback mode (no external LLM).
+Use PostgreSQL to persist local fallback metadata across restarts and optionally
+back the vector store with pgvector. Metadata persistence is only used in
+offline/local fallback mode (no external LLM).
 
 **Environment variables**
 
@@ -133,11 +134,15 @@ used in offline/local fallback mode (no external LLM).
 POSTGRES_ENABLED=1
 POSTGRES_DSN=postgresql://user:pass@host:5432/flamehaven
 POSTGRES_SCHEMA=public
+VECTOR_BACKEND=postgres
+VECTOR_POSTGRES_TABLE=flamehaven_vectors
 ```
 
 **Notes**
 
 - Tables are auto-created on startup.
+- The vector backend requires the `pgvector` extension.
+- Set `VECTOR_BACKEND=memory` to keep vectors in-process.
 - Use a dedicated schema to isolate Flamehaven metadata.
 - Restrict network access to the database host only.
 

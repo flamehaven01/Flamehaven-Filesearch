@@ -65,7 +65,7 @@ Open source & MIT licensed</p>
 - **Multimodal Search** - Text + image search endpoint (disabled by default)
 - **HNSW Vector Index** - Optional HNSW backend with brute-force fallback
 - **OAuth2/OIDC Support** - JWT validation alongside API keys
-- **PostgreSQL Backend** - Optional metadata persistence in fallback mode
+- **PostgreSQL Backend** - Optional metadata persistence and vector store support
 
 ### Enterprise Features (v1.2.2+)
 
@@ -155,7 +155,7 @@ pip install flamehaven-filesearch[api]
 # With HNSW vector index
 pip install flamehaven-filesearch[vector]
 
-# With PostgreSQL metadata backend
+# With PostgreSQL backend (metadata + vector store)
 pip install flamehaven-filesearch[postgres]
 
 # Development setup
@@ -328,7 +328,7 @@ curl -X DELETE http://localhost:8000/api/admin/keys/old_key_id \
 - [ ] Multimodal search (image + text)
 - [ ] HNSW vector indexing for 10x faster search
 - [ ] OAuth2/OIDC integration
-- [ ] PostgreSQL backend option
+- [x] PostgreSQL backend option (metadata + vector store)
 
 ### v2.0.0 (Q2 2026)
 - [ ] Multi-language support (15+ languages)
