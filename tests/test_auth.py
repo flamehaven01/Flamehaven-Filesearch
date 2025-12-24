@@ -7,6 +7,7 @@ Tests:
 - Admin routes for key management
 """
 
+import jwt
 import pytest
 
 # Note: All fixtures (temp_db, key_manager, client, test_api_key, etc.)
@@ -271,6 +272,46 @@ class TestAdminRoutes:
         )
 
         assert response.status_code == 401
+
+    def test_admin_with_oauth_token(self, public_client, monkeypatch):
+        """Test admin endpoint with OAuth token and admin role"""
+        monkeypatch.setenv("OAUTH_ENABLED", "1")
+        monkeypatch.setenv("OAUTH_JWT_SECRET", "test-oauth-secret")
+        monkeypatch.setenv("OAUTH_REQUIRED_ROLES", "admin")
+
+        token = jwt.encode(
+            {"sub": "oauth-admin", "roles": ["admin"]},
+            "test-oauth-secret",
+            algorithm="HS256",
+        )
+
+        response = public_client.post(
+            "/api/admin/keys",
+            json={"name": "OAuth Admin Key"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+        assert response.status_code == 200
+
+    def test_admin_with_oauth_token_non_admin(self, public_client, monkeypatch):
+        """Test admin endpoint rejects OAuth token without admin role"""
+        monkeypatch.setenv("OAUTH_ENABLED", "1")
+        monkeypatch.setenv("OAUTH_JWT_SECRET", "test-oauth-secret")
+        monkeypatch.setenv("OAUTH_REQUIRED_ROLES", "admin")
+
+        token = jwt.encode(
+            {"sub": "oauth-user", "roles": ["viewer"]},
+            "test-oauth-secret",
+            algorithm="HS256",
+        )
+
+        response = public_client.post(
+            "/api/admin/keys",
+            json={"name": "OAuth User Key"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+        assert response.status_code == 403
 
 
 class TestUsageTracking:

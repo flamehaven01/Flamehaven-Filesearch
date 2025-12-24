@@ -16,6 +16,9 @@ Use `Authorization: Bearer <jwt_token>`.
 When both API keys and OAuth are enabled, prefer `X-API-Key` for API keys to
 avoid ambiguity with JWTs.
 
+Admin routes require an OAuth role listed in `OAUTH_REQUIRED_ROLES` or a scope
+that maps to `admin` (e.g., `filesearch:admin`).
+
 | Access Level | Required Permission |
 |--------------|---------------------|
 | Search       | `search`            |

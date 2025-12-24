@@ -16,7 +16,12 @@ from fastapi import Depends, HTTPException, Request, status
 
 from .auth import APIKeyInfo, get_key_manager
 from .config import Config
-from .oauth import OAuthTokenInfo, is_jwt_format, validate_oauth_token
+from .oauth import (
+    OAuthTokenInfo,
+    is_jwt_format,
+    oauth_permissions,
+    validate_oauth_token,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -204,12 +209,7 @@ async def optional_api_key(request: Request) -> Optional[APIKeyInfo]:
 
 
 def _oauth_to_api_key_info(oauth_info: OAuthTokenInfo, config: Config) -> APIKeyInfo:
-    roles = set(oauth_info.roles)
-    scopes = set(oauth_info.scopes)
-    permissions = sorted(roles | scopes)
-    if any(role in roles for role in config.oauth_required_roles):
-        if "admin" not in permissions:
-            permissions.append("admin")
+    permissions = oauth_permissions(oauth_info, config)
     return APIKeyInfo(
         key_id=f"oauth:{oauth_info.subject}",
         name="oauth",

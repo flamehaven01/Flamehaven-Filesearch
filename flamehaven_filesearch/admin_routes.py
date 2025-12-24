@@ -15,6 +15,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
 
 from .auth import get_iam_provider, get_key_manager
+from .config import Config
+from .oauth import is_jwt_format, oauth_has_admin, validate_oauth_token
 from .cache import get_all_cache_stats, reset_all_caches
 
 logger = logging.getLogger(__name__)
@@ -103,6 +105,16 @@ def _get_admin_user(request: Request) -> str:
         )
 
     key = parts[1]
+
+    config = Config.from_env()
+    if config.oauth_enabled and is_jwt_format(key):
+        oauth_info = validate_oauth_token(key, config=config)
+        if oauth_info and oauth_has_admin(oauth_info, config=config):
+            return oauth_info.subject
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin permission required",
+        )
 
     # Admin key validation (placeholder)
     # In production, should use separate admin key management

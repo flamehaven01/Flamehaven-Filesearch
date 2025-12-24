@@ -104,3 +104,37 @@ def validate_oauth_token(token: str, config: Optional[Config] = None) -> Optiona
         audience=config.oauth_audience,
         claims=payload,
     )
+
+
+def oauth_permissions(oauth_info: OAuthTokenInfo, config: Optional[Config] = None) -> List[str]:
+    config = config or Config.from_env()
+    permissions: List[str] = []
+
+    scope_map = {
+        "filesearch:search": "search",
+        "filesearch:upload": "upload",
+        "filesearch:stores": "stores",
+        "filesearch:admin": "admin",
+    }
+
+    for scope in oauth_info.scopes:
+        normalized = scope.strip().lower()
+        if normalized in scope_map:
+            permissions.append(scope_map[normalized])
+        elif normalized in {"search", "upload", "stores", "admin"}:
+            permissions.append(normalized)
+
+    for role in oauth_info.roles:
+        role_norm = role.strip().lower()
+        if role_norm in {"admin", "filesearch-admin", "fs-admin"}:
+            permissions.append("admin")
+        if role_norm in config.oauth_required_roles:
+            permissions.append("admin")
+
+    return sorted(set(permissions))
+
+
+def oauth_has_admin(oauth_info: OAuthTokenInfo, config: Optional[Config] = None) -> bool:
+    config = config or Config.from_env()
+    perms = oauth_permissions(oauth_info, config)
+    return "admin" in perms
