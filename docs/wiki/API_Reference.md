@@ -75,6 +75,7 @@ New parameters added in **v1.4.0** for **Gravitas DSP** control.
 
 Multimodal search with text + optional image input. Disabled by default.
 Enable with `MULTIMODAL_ENABLED=1`.
+Supported image types: `image/png`, `image/jpeg`, `image/gif`, `image/webp`, `image/bmp`.
 
 **Body (`multipart/form-data`):**
 

@@ -383,11 +383,29 @@ class FlamehavenFileSearch:
                 matches.append((doc, snippet))
 
         if not matches:
-            answer = "No matching content found in stored files."
-            sources = [
-                {"title": doc["title"], "uri": doc["uri"]}
-                for doc in docs[: self.config.max_sources]
-            ]
+            if search_mode == "multimodal" and semantic_results:
+                sources = []
+                for entry in semantic_results[: self.config.max_sources]:
+                    if isinstance(entry, tuple) and entry:
+                        essence = entry[0]
+                        title = essence.get("file_name")
+                        if not title and essence.get("file_path"):
+                            title = Path(essence.get("file_path")).name
+                        if not title:
+                            title = "local-file"
+                        sources.append(
+                            {
+                                "title": title,
+                                "uri": f"local://{store_name}/{title}",
+                            }
+                        )
+                answer = "Found related items based on multimodal similarity."
+            else:
+                answer = "No matching content found in stored files."
+                sources = [
+                    {"title": doc["title"], "uri": doc["uri"]}
+                    for doc in docs[: self.config.max_sources]
+                ]
         else:
             sources = [
                 {"title": doc["title"], "uri": doc["uri"]}

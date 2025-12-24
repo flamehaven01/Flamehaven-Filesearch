@@ -442,6 +442,27 @@ class MimeTypeValidator:
         return cls.ALLOWED_MIME_TYPES.copy()
 
 
+class ImageValidator:
+    """Validator for image MIME types"""
+
+    ALLOWED_IMAGE_TYPES = [
+        "image/png",
+        "image/jpeg",
+        "image/jpg",
+        "image/gif",
+        "image/webp",
+        "image/bmp",
+    ]
+
+    @classmethod
+    def validate_image_type(cls, mime_type: str) -> bool:
+        """Return True if MIME type is an allowed image type."""
+        if not mime_type:
+            return False
+        normalized = mime_type.lower().split(";")[0].strip()
+        return normalized in cls.ALLOWED_IMAGE_TYPES
+
+
 # Helper functions for common validation scenarios
 def validate_upload_file(
     filename: str, file_size: int, mime_type: str, max_size_mb: int

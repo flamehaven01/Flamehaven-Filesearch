@@ -70,7 +70,12 @@ from .middlewares import (
     get_request_id,
 )
 from .security import get_current_api_key, optional_api_key
-from .validators import FileSizeValidator, validate_search_request, validate_upload_file
+from .validators import (
+    FileSizeValidator,
+    ImageValidator,
+    validate_search_request,
+    validate_upload_file,
+)
 
 # Configure structured JSON logging for production
 # Use ENVIRONMENT=development for human-readable logs
@@ -827,6 +832,10 @@ async def search_multimodal(
 
         image_bytes = None
         if image:
+            if not ImageValidator.validate_image_type(image.content_type or ""):
+                raise HTTPException(
+                    status_code=400, detail="Unsupported image type"
+                )
             image_bytes = await image.read()
             FileSizeValidator.validate_file_size(
                 len(image_bytes),
