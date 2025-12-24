@@ -52,6 +52,12 @@ api = [
     "prometheus-client>=0.19.0",
     "PyJWT>=2.8.0",
 ]
+vector = [
+    "hnswlib>=0.8.0",
+]
+postgres = [
+    "psycopg[binary]>=3.1.0",
+]
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
@@ -71,7 +77,7 @@ security = [
     "safety>=3.0.0",
 ]
 all = [
-    "flamehaven-filesearch[api,dev,google]",
+    "flamehaven-filesearch[api,dev,google,vector,postgres]",
 ]
 
 [project.urls]

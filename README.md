@@ -152,13 +152,19 @@ pip install flamehaven-filesearch
 # With API server
 pip install flamehaven-filesearch[api]
 
+# With HNSW vector index
+pip install flamehaven-filesearch[vector]
+
+# With PostgreSQL metadata backend
+pip install flamehaven-filesearch[postgres]
+
 # Development setup
 pip install flamehaven-filesearch[all]
 
 # Build from source
 git clone https://github.com/flamehaven01/Flamehaven-Filesearch.git
 cd Flamehaven-Filesearch
-docker build -t flamehaven-filesearch:1.3.1 .
+docker build -t flamehaven-filesearch:1.4.0 .
 ```
 
 ---

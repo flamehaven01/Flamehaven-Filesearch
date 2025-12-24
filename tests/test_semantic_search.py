@@ -13,7 +13,11 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from flamehaven_filesearch.core import FlamehavenFileSearch
-from flamehaven_filesearch.engine.chronos_grid import ChronosConfig, ChronosGrid
+from flamehaven_filesearch.engine.chronos_grid import (
+    NUMPY_AVAILABLE,
+    ChronosConfig,
+    ChronosGrid,
+)
 from flamehaven_filesearch.engine.embedding_generator import (
     EmbeddingGenerator,
     get_embedding_generator,
@@ -221,6 +225,22 @@ class TestChronosGridIntegration:
         # If numpy available, the result should contain some match
         if hasattr(grid, "_vector_essences"):
             assert any(r[0] == {"id": 2} for r in results)  # Check for a specific match
+
+    def test_hnsw_backend_fallback(self):
+        """Ensure HNSW backend selection does not break vector search."""
+        config = ChronosConfig(vector_index_backend="hnsw")
+        grid = ChronosGrid(config=config)
+
+        embedding = [1.0] + [0.0] * 383
+        metadata = {"file": "hnsw_test.py", "size": 256}
+        grid.inject_essence(
+            glyph="hnsw_test.py", essence=metadata, vector_essence=embedding
+        )
+
+        results = grid.seek_vector_resonance(embedding, top_k_resonances=1)
+        assert isinstance(results, list)
+        if NUMPY_AVAILABLE:
+            assert results and results[0][0] == metadata
 
 
 @pytest.mark.fast
