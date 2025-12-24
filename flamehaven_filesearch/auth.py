@@ -14,7 +14,7 @@ import logging
 import os
 import sqlite3
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import List, Optional, Tuple
 
@@ -164,7 +164,7 @@ class APIKeyManager:
         plain_key = self._generate_key_secret()
         key_hash = self._hash_key(plain_key)
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         created_at = now.isoformat() + "Z"
         expires_at = None
 
@@ -261,7 +261,7 @@ class APIKeyManager:
                 # (expiration check can be added here)
 
                 # Update last_used timestamp
-                now = datetime.utcnow().isoformat() + "Z"
+                now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
                 cursor.execute(
                     "UPDATE api_keys SET last_used = ? WHERE id = ?",
                     (now, key_id),
@@ -383,7 +383,9 @@ class APIKeyManager:
         try:
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.cursor()
-                timestamp = datetime.utcnow().isoformat() + "Z"
+                timestamp = datetime.now(timezone.utc).isoformat().replace(
+                    "+00:00", "Z"
+                )
                 safe_request_id = encryption_service.encrypt(request_id)
 
                 cursor.execute(

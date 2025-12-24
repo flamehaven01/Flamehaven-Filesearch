@@ -24,6 +24,27 @@ from flamehaven_filesearch.engine.embedding_generator import (
     reset_embedding_generator,
 )
 
+
+class DummyVectorStore:
+    def __init__(self):
+        self.query_calls = 0
+
+    def ensure_store(self, name: str) -> None:
+        return None
+
+    def add_vector(self, store_name: str, glyph: str, vector, essence) -> None:
+        return None
+
+    def query(self, store_name: str, vector, top_k: int = 5):
+        self.query_calls += 1
+        return []
+
+    def delete_store(self, name: str) -> None:
+        return None
+
+    def get_stats(self):
+        return {"backend": "dummy"}
+
 # Create mock searcher at module level to prevent real initialization
 _mock_searcher_instance = MagicMock(spec=FlamehavenFileSearch)
 _mock_searcher_instance.search.return_value = {
@@ -356,6 +377,26 @@ class TestCoreSemanticSearch:
         assert "cache_hits" in metrics["embedding_generator"]
         assert "cache_misses" in metrics["embedding_generator"]
         assert metrics["embedding_generator"]["total_queries"] >= 3
+
+    def test_vector_backend_override_uses_memory(self):
+        searcher = FlamehavenFileSearch(allow_offline=True)
+        dummy_store = DummyVectorStore()
+        searcher.vector_store = dummy_store
+        searcher.search(
+            query="test query", search_mode="semantic", vector_backend="memory"
+        )
+        assert dummy_store.query_calls == 0
+
+    def test_vector_backend_override_uses_postgres(self):
+        searcher = FlamehavenFileSearch(allow_offline=True)
+        dummy_store = DummyVectorStore()
+        searcher.vector_store = dummy_store
+        searcher.search(
+            query="test query",
+            search_mode="semantic",
+            vector_backend="postgres",
+        )
+        assert dummy_store.query_calls == 1
 
 
 @pytest.mark.fast

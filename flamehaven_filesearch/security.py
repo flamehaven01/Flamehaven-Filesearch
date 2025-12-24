@@ -9,7 +9,7 @@ Provides:
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import Depends, HTTPException, Request, status
@@ -214,7 +214,7 @@ def _oauth_to_api_key_info(oauth_info: OAuthTokenInfo, config: Config) -> APIKey
         key_id=f"oauth:{oauth_info.subject}",
         name="oauth",
         user_id=oauth_info.subject,
-        created_at=datetime.utcnow().isoformat() + "Z",
+        created_at=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         last_used=None,
         is_active=True,
         rate_limit_per_minute=100,

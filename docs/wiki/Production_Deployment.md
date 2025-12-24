@@ -136,6 +136,8 @@ POSTGRES_DSN=postgresql://user:pass@host:5432/flamehaven
 POSTGRES_SCHEMA=public
 VECTOR_BACKEND=postgres
 VECTOR_POSTGRES_TABLE=flamehaven_vectors
+VISION_ENABLED=0
+VISION_PROVIDER=auto
 ```
 
 **Notes**

@@ -62,6 +62,7 @@ class Config:
     multimodal_image_max_mb: int = 10
     vision_enabled: bool = False
     vision_strategy: str = "fast"
+    vision_provider: str = "auto"
 
     # OAuth2/OIDC configuration
     oauth_enabled: bool = False
@@ -119,6 +120,10 @@ class Config:
 
         if self.vision_strategy not in {"fast", "detail"}:
             raise ValueError("vision_strategy must be 'fast' or 'detail'")
+        if self.vision_provider not in {"auto", "pillow", "tesseract", "none"}:
+            raise ValueError(
+                "vision_provider must be 'auto', 'pillow', 'tesseract', or 'none'"
+            )
 
         return True
 
@@ -143,6 +148,7 @@ class Config:
             "multimodal_image_max_mb": self.multimodal_image_max_mb,
             "vision_enabled": self.vision_enabled,
             "vision_strategy": self.vision_strategy,
+            "vision_provider": self.vision_provider,
             "oauth_enabled": self.oauth_enabled,
             "oauth_issuer": self.oauth_issuer,
             "oauth_audience": self.oauth_audience,
@@ -229,6 +235,7 @@ class Config:
             vision_enabled=os.getenv("VISION_ENABLED", "false").lower()
             in {"1", "true", "yes", "on"},
             vision_strategy=os.getenv("VISION_STRATEGY", "fast").strip().lower(),
+            vision_provider=os.getenv("VISION_PROVIDER", "auto").strip().lower(),
             oauth_enabled=os.getenv("OAUTH_ENABLED", "false").lower()
             in {"1", "true", "yes", "on"},
             oauth_issuer=os.getenv("OAUTH_ISSUER"),

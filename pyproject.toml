@@ -59,6 +59,10 @@ postgres = [
     "psycopg[binary]>=3.1.0",
     "pgvector>=0.2.5",
 ]
+vision = [
+    "pillow>=10.0.0",
+    "pytesseract>=0.3.10",
+]
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
@@ -78,7 +82,7 @@ security = [
     "safety>=3.0.0",
 ]
 all = [
-    "flamehaven-filesearch[api,dev,google,vector,postgres]",
+    "flamehaven-filesearch[api,dev,google,vector,postgres,vision]",
 ]
 
 [project.urls]
@@ -117,6 +121,11 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "-v --cov=flamehaven_filesearch --cov-report=term-missing"
+markers = [
+    "integration: integration tests requiring external services",
+    "slow: long-running tests",
+    "fast: quick unit tests",
+]
 
 [tool.coverage.run]
 source = ["flamehaven_filesearch"]

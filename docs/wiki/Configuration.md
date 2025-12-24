@@ -32,6 +32,7 @@ variables, and CLI flags. Use this document as the single source of truth.
 | `multimodal_image_max_mb` | `int` | `10` | Max image size accepted by API. |
 | `vision_enabled` | `bool` | `False` | Enable vision delegate processing for image files. |
 | `vision_strategy` | `str` | `fast` | Vision strategy hint (`fast` or `detail`). |
+| `vision_provider` | `str` | `auto` | Vision provider (`auto`, `pillow`, `tesseract`, `none`). |
 | `oauth_enabled` | `bool` | `False` | Enable OAuth2/OIDC JWT validation. |
 | `oauth_issuer` | `Optional[str]` | `None` | Expected issuer claim (`iss`). |
 | `oauth_audience` | `Optional[str]` | `None` | Expected audience claim (`aud`). |
@@ -56,6 +57,7 @@ variables, and CLI flags. Use this document as the single source of truth.
 - `vector_index_backend` must be `brute` or `hnsw`.
 - `multimodal_text_weight` and `multimodal_image_weight` must be > 0.
 - `vision_strategy` must be `fast` or `detail`.
+- `vision_provider` must be `auto`, `pillow`, `tesseract`, or `none`.
 - Strings are stripped of whitespace during `__post_init__`.
 
 ---
@@ -89,6 +91,7 @@ variables, and CLI flags. Use this document as the single source of truth.
 | `MULTIMODAL_IMAGE_MAX_MB` | Max image size | `export MULTIMODAL_IMAGE_MAX_MB=10` |
 | `VISION_ENABLED` | Enable vision delegate processing | `export VISION_ENABLED=1` |
 | `VISION_STRATEGY` | Vision strategy hint | `export VISION_STRATEGY=fast` |
+| `VISION_PROVIDER` | Vision provider selection | `export VISION_PROVIDER=auto` |
 | `OAUTH_ENABLED` | Enable OAuth2/OIDC JWT validation | `export OAUTH_ENABLED=1` |
 | `OAUTH_ISSUER` | Expected issuer | `export OAUTH_ISSUER="https://issuer"` |
 | `OAUTH_AUDIENCE` | Expected audience | `export OAUTH_AUDIENCE="filesearch"` |
@@ -167,6 +170,8 @@ reset_all_caches()
   Install dependencies via `pip install flamehaven-filesearch[postgres]`.
 - To enable the PostgreSQL vector backend, set `VECTOR_BACKEND=postgres` and
   ensure the `pgvector` extension is available on the database server.
+- To enable vision delegates, install `flamehaven-filesearch[vision]` and set
+  `VISION_ENABLED=1`.
 
 ---
 

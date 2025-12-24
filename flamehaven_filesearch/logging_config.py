@@ -6,6 +6,7 @@ Production-ready logging with JSON format for log aggregation systems.
 
 import logging
 import sys
+from datetime import datetime, timezone
 
 try:
     from pythonjsonlogger import jsonlogger
@@ -45,9 +46,9 @@ if _JSONLOGGER_AVAILABLE:
 
             # Ensure timestamp is present
             if "timestamp" not in log_record:
-                from datetime import datetime
-
-                log_record["timestamp"] = datetime.utcnow().isoformat() + "Z"
+                log_record["timestamp"] = (
+                    datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+                )
 
             # Add level name
             log_record["level"] = record.levelname

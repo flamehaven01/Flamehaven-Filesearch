@@ -20,7 +20,7 @@ import shutil
 import tempfile
 import time
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 import psutil
@@ -120,6 +120,20 @@ def _is_internal_request(request: Request) -> bool:
     return ip.is_private or ip.is_loopback
 
 
+def _normalize_vector_backend(value: Optional[str]) -> Optional[str]:
+    if value is None:
+        return None
+    normalized = value.strip().lower()
+    if not normalized:
+        return None
+    if normalized not in {"auto", "memory", "postgres", "chronos"}:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid vector_backend (use auto, memory, postgres, chronos)",
+        )
+    return normalized
+
+
 def _enforce_metrics_access(
     request: Request, api_key: Optional[APIKeyInfo]
 ) -> None:
@@ -210,6 +224,9 @@ class SearchRequest(BaseModel):
     search_mode: str = Field(
         default="keyword", description="Search mode: 'keyword', 'semantic', or 'hybrid'"
     )
+    vector_backend: Optional[str] = Field(
+        None, description="Vector backend override: auto, memory, postgres, chronos"
+    )
 
 
 class SearchResponse(BaseModel):
@@ -228,6 +245,7 @@ class SearchResponse(BaseModel):
     refined_query: Optional[str] = None
     corrections: Optional[List[str]] = None
     search_mode: Optional[str] = None
+    vector_backend: Optional[str] = None
     search_intent: Optional[dict] = None
     semantic_results: Optional[List] = None
     multimodal: Optional[dict] = None
@@ -424,7 +442,7 @@ async def health_check(request: Request):
         "uptime_formatted": format_uptime(uptime),
         "uptime": format_uptime(uptime),
         "searcher_initialized": searcher is not None,
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "system": get_system_info(),
     }
 
@@ -689,11 +707,14 @@ async def search(
         # Validate search request
         validated_query, _ = validate_search_request(search_request.query)
 
+        vector_backend = _normalize_vector_backend(search_request.vector_backend)
         # Check cache first
         cache_key_params = {
             "model": search_request.model,
             "max_tokens": search_request.max_tokens,
             "temperature": search_request.temperature,
+            "search_mode": search_request.search_mode,
+            "vector_backend": vector_backend or "auto",
         }
         cached_result = search_cache.get(
             validated_query, search_request.store_name, **cache_key_params
@@ -730,6 +751,7 @@ async def search(
             max_tokens=search_request.max_tokens,
             temperature=search_request.temperature,
             search_mode=search_request.search_mode,
+            vector_backend=vector_backend,
         )
 
         result["request_id"] = request_id
@@ -810,6 +832,9 @@ async def search_multimodal(
     model: Optional[str] = Form(None, description="Model to use"),
     max_tokens: Optional[int] = Form(None, description="Maximum output tokens"),
     temperature: Optional[float] = Form(None, description="Model temperature"),
+    vector_backend: Optional[str] = Form(
+        None, description="Vector backend override: auto, memory, postgres, chronos"
+    ),
     image: Optional[UploadFile] = File(None, description="Optional image file"),
     api_key: APIKeyInfo = Depends(get_current_api_key),
 ):
@@ -824,6 +849,7 @@ async def search_multimodal(
 
     try:
         validated_query, _ = validate_search_request(query)
+        vector_backend = _normalize_vector_backend(vector_backend)
 
         if not searcher.config.multimodal_enabled:
             raise HTTPException(
@@ -850,6 +876,7 @@ async def search_multimodal(
             model=model,
             max_tokens=max_tokens,
             temperature=temperature,
+            vector_backend=vector_backend,
         )
 
         result["request_id"] = request_id
@@ -916,6 +943,9 @@ async def search_get(
     q: str = Query(..., description="Search query", min_length=1),
     store: str = Query(default="default", description="Store name"),
     model: Optional[str] = Query(None, description="Model to use"),
+    vector_backend: Optional[str] = Query(
+        None, description="Vector backend override: auto, memory, postgres, chronos"
+    ),
     api_key: APIKeyInfo = Depends(get_current_api_key),
 ):
     """
@@ -929,7 +959,12 @@ async def search_get(
     Returns:
         Answer with citations
     """
-    search_request = SearchRequest(query=q, store_name=store, model=model)
+    search_request = SearchRequest(
+        query=q,
+        store_name=store,
+        model=model,
+        vector_backend=vector_backend,
+    )
     return await search(request, search_request, api_key)
 
 
@@ -951,11 +986,19 @@ async def search_get_legacy(
     q: str = Query(..., description="Search query", min_length=1),
     store: str = Query(default="default", description="Store name"),
     model: Optional[str] = Query(None, description="Model to use"),
+    vector_backend: Optional[str] = Query(
+        None, description="Vector backend override: auto, memory, postgres, chronos"
+    ),
     api_key: APIKeyInfo = Depends(get_current_api_key),
 ):
     """Legacy compatibility endpoint that proxies to /api/search (GET)."""
     return await search_get(
-        request, q=q, store=store, model=model, api_key=api_key
+        request,
+        q=q,
+        store=store,
+        model=model,
+        vector_backend=vector_backend,
+        api_key=api_key,
     )
 
 
@@ -1186,7 +1229,9 @@ async def filesearch_exception_handler(request: Request, exc: FileSearchExceptio
     request_id = get_request_id(request)
     error_dict = exc.to_dict()
     error_dict["request_id"] = request_id
-    error_dict["timestamp"] = datetime.utcnow().isoformat() + "Z"
+    error_dict["timestamp"] = datetime.now(timezone.utc).isoformat().replace(
+        "+00:00", "Z"
+    )
     error_dict.setdefault("detail", error_dict.get("message", ""))
 
     logger.warning(f"[{request_id}] FileSearchException: {exc.message}")
@@ -1207,7 +1252,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
             "detail": exc.detail,
             "status_code": exc.status_code,
             "request_id": request_id,
-            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         },
     )
 
@@ -1221,7 +1266,9 @@ async def general_exception_handler(request: Request, exc: Exception):
     # Convert to standardized response
     error_response = exception_to_response(exc)
     error_response["request_id"] = request_id
-    error_response["timestamp"] = datetime.utcnow().isoformat() + "Z"
+    error_response["timestamp"] = datetime.now(timezone.utc).isoformat().replace(
+        "+00:00", "Z"
+    )
 
     error_response.setdefault("detail", error_response.get("message", ""))
 
@@ -1253,7 +1300,7 @@ async def request_validation_exception_handler(
         "detail": detail_message,
         "status_code": 400,
         "request_id": request_id,
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
     }
     return JSONResponse(status_code=400, content=error_body)
 

@@ -54,6 +54,7 @@ PostgreSQL vector backend when `VECTOR_BACKEND=postgres`.
 | `search_mode` | `string` | `hybrid` | `keyword`, `semantic`, or `hybrid`. |
 | `top_k` | `int` | 5 | Number of semantic results to return. |
 | `threshold` | `float` | 0.5 | Similarity threshold for semantic results. |
+| `vector_backend` | `string` | `auto` | `auto`, `memory`, `postgres`, or `chronos`. |
 
 **Response (v1.4.0 Schema):**
 
@@ -63,6 +64,7 @@ PostgreSQL vector backend when `VECTOR_BACKEND=postgres`.
   "answer": "...",
   "refined_query": "SR9 resonance and DI2 capsule integrity check",
   "search_mode": "hybrid",
+  "vector_backend": "auto",
   "search_intent": "informational_technical",
   "semantic_results": [
     {
@@ -92,6 +94,7 @@ before embedding (implementation is pluggable).
 - `max_tokens` (optional)
 - `temperature` (optional)
 - `image` (optional file)
+- `vector_backend` (optional)
 
 **Response:**
 
@@ -100,6 +103,7 @@ before embedding (implementation is pluggable).
   "status": "success",
   "answer": "...",
   "search_mode": "multimodal",
+  "vector_backend": "auto",
   "semantic_results": [],
   "multimodal": {
     "image_provided": true,

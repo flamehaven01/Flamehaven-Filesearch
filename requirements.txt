@@ -34,3 +34,8 @@ prometheus-client>=0.19.0
 # Install with: pip install flamehaven-filesearch[postgres]
 # psycopg[binary]>=3.1.0
 # pgvector>=0.2.5
+
+# Optional: Vision provider dependencies
+# Install with: pip install flamehaven-filesearch[vision]
+# pillow>=10.0.0
+# pytesseract>=0.3.10

@@ -120,6 +120,16 @@ class FlamehavenFileSearch:
             "Intent-Refiner, Gravitas-Packer, EmbeddingGenerator"
         )
 
+    def _resolve_vector_backend(self, override: Optional[str]) -> str:
+        backend = (override or "auto").strip().lower()
+        if backend in {"auto", "default", ""}:
+            return "postgres" if self.vector_store else "memory"
+        if backend in {"memory", "chronos"}:
+            return "memory"
+        if backend == "postgres":
+            return "postgres" if self.vector_store else "memory"
+        return "memory"
+
     def create_store(self, name: str = "default") -> str:
         """
         Create file search store
@@ -386,6 +396,7 @@ class FlamehavenFileSearch:
         intent_info: Optional[Any] = None,
         search_mode: str = "keyword",
         semantic_results: Optional[List] = None,
+        vector_backend: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Simple local search fallback with intent awareness and semantic support."""
         if self._metadata_store:
@@ -412,6 +423,7 @@ class FlamehavenFileSearch:
                 "max_tokens": max_tokens,
                 "temperature": temperature,
                 "search_mode": search_mode,
+                "vector_backend": vector_backend,
                 "refined_query": intent_info.refined_query if intent_info else None,
                 "corrections": (
                     intent_info.correction_suggestions if intent_info else None
@@ -474,6 +486,7 @@ class FlamehavenFileSearch:
             "max_tokens": max_tokens,
             "temperature": temperature,
             "search_mode": search_mode,
+            "vector_backend": vector_backend,
             "refined_query": intent_info.refined_query if intent_info else None,
             "corrections": (
                 intent_info.correction_suggestions if intent_info else None
@@ -518,6 +531,7 @@ class FlamehavenFileSearch:
         max_tokens: Optional[int] = None,
         temperature: Optional[float] = None,
         search_mode: str = "keyword",
+        vector_backend: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Search with Intent-Refiner query optimization and optional semantic search
@@ -561,11 +575,12 @@ class FlamehavenFileSearch:
         if intent.is_corrected:
             logger.info(f"[>] Corrections applied: {intent.correction_suggestions}")
 
-        # [>] Semantic search via Chronos-Grid if requested
+        # [>] Semantic search via configured vector backend if requested
         semantic_results = []
+        backend_choice = self._resolve_vector_backend(vector_backend)
         if search_mode in ["semantic", "hybrid"]:
             query_embedding = self.embedding_generator.generate(optimized_query)
-            if self.vector_store:
+            if backend_choice == "postgres" and self.vector_store:
                 try:
                     semantic_results = self.vector_store.query(
                         store_name, query_embedding, top_k=5
@@ -591,6 +606,7 @@ class FlamehavenFileSearch:
                 intent_info=intent,
                 search_mode=search_mode,
                 semantic_results=semantic_results,
+                vector_backend=backend_choice,
             )
 
         try:
@@ -662,6 +678,7 @@ class FlamehavenFileSearch:
                 ),
                 "store": store_name,
                 "search_mode": search_mode,
+                "vector_backend": backend_choice,
                 "search_intent": {
                     "keywords": intent.keywords,
                     "file_extensions": intent.file_extensions,
@@ -684,6 +701,7 @@ class FlamehavenFileSearch:
         model: Optional[str] = None,
         max_tokens: Optional[int] = None,
         temperature: Optional[float] = None,
+        vector_backend: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Multimodal search combining text query with optional image bytes.
@@ -721,7 +739,8 @@ class FlamehavenFileSearch:
             self.config.multimodal_text_weight,
             self.config.multimodal_image_weight,
         )
-        if self.vector_store:
+        backend_choice = self._resolve_vector_backend(vector_backend)
+        if backend_choice == "postgres" and self.vector_store:
             try:
                 semantic_results = self.vector_store.query(
                     store_name, combined_vector, top_k=5
@@ -746,6 +765,7 @@ class FlamehavenFileSearch:
                 intent_info=intent,
                 search_mode="multimodal",
                 semantic_results=semantic_results,
+                vector_backend=backend_choice,
             )
             result["multimodal"] = {
                 "image_provided": bool(image_bytes),
@@ -817,6 +837,7 @@ class FlamehavenFileSearch:
                 ),
                 "store": store_name,
                 "search_mode": "multimodal",
+                "vector_backend": backend_choice,
                 "search_intent": {
                     "keywords": intent.keywords,
                     "file_extensions": intent.file_extensions,

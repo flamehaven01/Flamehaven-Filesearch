@@ -9,7 +9,7 @@ Provides web UI for:
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import HTMLResponse
@@ -80,7 +80,7 @@ async def dashboard(request: Request):
     stats = key_manager.get_usage_stats(user_id=user_id, days=7)
 
     # Format timestamps
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     keys_data = []
     for key in keys:
         last_used = "Never"
@@ -401,7 +401,7 @@ async def dashboard(request: Request):
 
         <footer>
             <p>FLAMEHAVEN FileSearch v1.2.0 •
-               Last updated: {datetime.utcnow().isoformat()}Z</p>
+              Last updated: {datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")}</p>
         </footer>
 
         <script>
@@ -463,7 +463,7 @@ async def health_check_page(request: Request):
     <body>
         <h1>FLAMEHAVEN FileSearch - Health Check</h1>
         <p>Timestamp: """
-        + datetime.utcnow().isoformat()
+        + datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         + """Z</p>
         <p class="status-ok">[OK] Admin dashboard is operational</p>
         <p class="status-ok">[OK] API key management enabled</p>

@@ -118,6 +118,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Config flags for multimodal, vector index, OAuth/OIDC, and PostgreSQL backends.
 - PostgreSQL vector store option (pgvector + HNSW) for semantic search.
 - Vision delegate hook for optional image preprocessing.
+- Vector backend override per request (`auto`, `memory`, `postgres`, `chronos`).
 
 ### Changed
 - Chronos-Grid now supports optional HNSW indexing.

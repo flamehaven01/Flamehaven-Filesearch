@@ -66,6 +66,7 @@ Open source & MIT licensed</p>
 - **HNSW Vector Index** - Optional HNSW backend with brute-force fallback
 - **OAuth2/OIDC Support** - JWT validation alongside API keys
 - **PostgreSQL Backend** - Optional metadata persistence and vector store support
+- **Vision Delegate** - Optional Pillow/Tesseract processing for image metadata
 
 ### Enterprise Features (v1.2.2+)
 
@@ -157,6 +158,9 @@ pip install flamehaven-filesearch[vector]
 
 # With PostgreSQL backend (metadata + vector store)
 pip install flamehaven-filesearch[postgres]
+
+# With vision delegate support
+pip install flamehaven-filesearch[vision]
 
 # Development setup
 pip install flamehaven-filesearch[all]
