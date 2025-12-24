@@ -18,6 +18,13 @@ try:
 except ImportError:
     NUMPY_AVAILABLE = False
 
+try:
+    import hnswlib
+
+    HNSW_AVAILABLE = True
+except ImportError:
+    HNSW_AVAILABLE = False
+
 
 @dataclass
 class ChronosConfig:
@@ -30,6 +37,10 @@ class ChronosConfig:
     enable_vector_essence: bool = True
     vector_essence_dimension: int = 384
     enable_vector_quantization: bool = True  # Phase 3.5: Memory optimization
+    vector_index_backend: str = "brute"  # "brute" or "hnsw"
+    hnsw_m: int = 16
+    hnsw_ef_construction: int = 200
+    hnsw_ef_search: int = 50
 
 
 @dataclass
@@ -83,6 +94,12 @@ class ChronosGrid:
         self._vector_essences: List[Any] = []
         self._essence_glyphs: List[Any] = []
 
+        # Optional HNSW index for vector search
+        self._hnsw_index = None
+        self._hnsw_labels = {}
+        self._hnsw_reverse_labels = {}
+        self._hnsw_next_label = 0
+
         # Phase 3.5: Vector Quantization Parameters
         self._quantization_scale: Optional[float] = None
         self._quantization_offset: Optional[float] = None
@@ -99,6 +116,47 @@ class ChronosGrid:
             f"time_shards={self._time_shards_count}, "
             f"quantization={quant_status}"
         )
+
+        if self._hnsw_enabled():
+            self._init_hnsw_index(self.config.vector_essence_dimension)
+
+    def _hnsw_enabled(self) -> bool:
+        return (
+            self.config.vector_index_backend == "hnsw"
+            and NUMPY_AVAILABLE
+            and HNSW_AVAILABLE
+        )
+
+    def _init_hnsw_index(self, dim: int) -> None:
+        if not self._hnsw_enabled():
+            if self.config.vector_index_backend == "hnsw" and not HNSW_AVAILABLE:
+                logger.warning("HNSW backend requested but hnswlib is not available")
+            return
+        self._hnsw_index = hnswlib.Index(space="cosine", dim=dim)
+        self._hnsw_index.init_index(
+            max_elements=max(1024, self._time_shards_count),
+            ef_construction=self.config.hnsw_ef_construction,
+            M=self.config.hnsw_m,
+        )
+        self._hnsw_index.set_ef(self.config.hnsw_ef_search)
+        self._hnsw_index.set_num_threads(1)
+        logger.info("[>] HNSW index initialized (dim=%d)", dim)
+
+    def _ensure_hnsw_capacity(self, desired: int) -> None:
+        if not self._hnsw_index:
+            return
+        current = self._hnsw_index.get_max_elements()
+        if desired <= current:
+            return
+        new_size = max(desired, current * 2)
+        self._hnsw_index.resize_index(new_size)
+
+    def _prepare_vector_for_index(self, vector: Any) -> Any:
+        if self.config.enable_vector_quantization:
+            vector = self._dequantize_vector(vector)
+        if not isinstance(vector, np.ndarray):
+            vector = np.array(vector, dtype=np.float32)
+        return vector.astype(np.float32)
 
     def _gravitas_hash(self, glyph: Any) -> int:
         """Gravitas-aware hashing function for temporal distribution."""
@@ -205,11 +263,13 @@ class ChronosGrid:
                         self._vector_essences[v_idx] = self._quantize_vector(
                             vector_essence
                         )
+                        self._maybe_update_hnsw(glyph, vector_essence)
                     except ValueError:
                         self._vector_essences.append(
                             self._quantize_vector(vector_essence)
                         )
                         self._essence_glyphs.append(glyph)
+                        self._maybe_update_hnsw(glyph, vector_essence)
                 return
 
         # Binary insertion for sorted state
@@ -228,6 +288,7 @@ class ChronosGrid:
         if vector_essence is not None and NUMPY_AVAILABLE:
             self._vector_essences.append(self._quantize_vector(vector_essence))
             self._essence_glyphs.append(glyph)
+            self._maybe_update_hnsw(glyph, vector_essence)
 
         # Update TimeShard boundaries
         if (
@@ -307,6 +368,23 @@ class ChronosGrid:
 
         self.stats.vector_essence_seeks += 1
 
+        # HNSW path (if enabled and index initialized)
+        if self._hnsw_enabled() and self._hnsw_index is not None:
+            query_vec = self._prepare_vector_for_index(query_vector_essence)
+            labels, distances = self._hnsw_index.knn_query(
+                query_vec, k=top_k_resonances
+            )
+            resonant_results = []
+            for label, dist in zip(labels[0], distances[0]):
+                glyph = self._hnsw_reverse_labels.get(int(label))
+                if glyph is None:
+                    continue
+                essence = self.seek_resonance(glyph)
+                if essence is not None:
+                    similarity = 1.0 - float(dist)
+                    resonant_results.append((essence, similarity))
+            return resonant_results
+
         # Convert to numpy array
         if not isinstance(query_vector_essence, np.ndarray):
             query_vector_essence = np.array(query_vector_essence, dtype=np.float32)
@@ -346,6 +424,28 @@ class ChronosGrid:
 
         return resonant_results
 
+    def _maybe_update_hnsw(self, glyph: Any, vector_essence: Any) -> None:
+        if not self._hnsw_enabled():
+            return
+        if self._hnsw_index is None:
+            self._init_hnsw_index(self.config.vector_essence_dimension)
+        if self._hnsw_index is None:
+            return
+        vector = self._prepare_vector_for_index(vector_essence)
+        if vector.ndim == 1:
+            vector = vector.reshape(1, -1)
+        label = self._hnsw_labels.get(glyph)
+        if label is None:
+            label = self._hnsw_next_label
+            self._hnsw_next_label += 1
+            self._hnsw_labels[glyph] = label
+            self._hnsw_reverse_labels[label] = glyph
+        self._ensure_hnsw_capacity(label + 1)
+        try:
+            self._hnsw_index.add_items(vector, [label])
+        except Exception as e:
+            logger.debug("HNSW add_items failed for glyph %s: %s", glyph, e)
+
     def _spark_inject(self, glyph: Any, essence: Any) -> None:
         """Inject glyph-essence pair into SparkBuffer with LRU eviction."""
         if glyph in self._spark_buffer:
@@ -372,6 +472,10 @@ class ChronosGrid:
         self._shard_max_glyph = [None] * self._time_shards_count
         self._vector_essences = []
         self._essence_glyphs = []
+        self._hnsw_index = None
+        self._hnsw_labels = {}
+        self._hnsw_reverse_labels = {}
+        self._hnsw_next_label = 0
         self.total_lore_essences = 0
         self.reset_stats()
         logger.info("[>] Chronos-Grid cleared")

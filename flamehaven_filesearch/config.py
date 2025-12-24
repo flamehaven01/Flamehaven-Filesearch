@@ -47,6 +47,32 @@ class Config:
     redis_password: Optional[str] = None
     redis_db: int = 1
 
+    # Vector index configuration
+    vector_index_backend: str = "brute"  # "brute" or "hnsw"
+    vector_hnsw_m: int = 16
+    vector_hnsw_ef_construction: int = 200
+    vector_hnsw_ef_search: int = 50
+
+    # Multimodal configuration
+    multimodal_enabled: bool = False
+    multimodal_text_weight: float = 1.0
+    multimodal_image_weight: float = 1.0
+    multimodal_image_max_mb: int = 10
+
+    # OAuth2/OIDC configuration
+    oauth_enabled: bool = False
+    oauth_issuer: Optional[str] = None
+    oauth_audience: Optional[str] = None
+    oauth_jwks_url: Optional[str] = None
+    oauth_jwt_secret: Optional[str] = None
+    oauth_required_roles: list = field(default_factory=lambda: ["admin"])
+    oauth_cache_ttl_sec: int = 300
+
+    # PostgreSQL backend configuration
+    postgres_enabled: bool = False
+    postgres_dsn: Optional[str] = None
+    postgres_schema: str = "public"
+
     # Driftlock configuration
     min_answer_length: int = 10
     max_answer_length: int = 4096
@@ -78,6 +104,12 @@ class Config:
         if not 0.0 <= self.temperature <= 1.0:
             raise ValueError("temperature must be between 0.0 and 1.0")
 
+        if self.vector_index_backend not in {"brute", "hnsw"}:
+            raise ValueError("vector_index_backend must be 'brute' or 'hnsw'")
+
+        if self.multimodal_text_weight <= 0 or self.multimodal_image_weight <= 0:
+            raise ValueError("multimodal weights must be positive")
+
         return True
 
     def to_dict(self) -> Dict[str, Any]:
@@ -92,6 +124,21 @@ class Config:
             "max_sources": self.max_sources,
             "cache_ttl_sec": self.cache_ttl_sec,
             "cache_max_size": self.cache_max_size,
+            "vector_index_backend": self.vector_index_backend,
+            "multimodal_enabled": self.multimodal_enabled,
+            "multimodal_text_weight": self.multimodal_text_weight,
+            "multimodal_image_weight": self.multimodal_image_weight,
+            "multimodal_image_max_mb": self.multimodal_image_max_mb,
+            "oauth_enabled": self.oauth_enabled,
+            "oauth_issuer": self.oauth_issuer,
+            "oauth_audience": self.oauth_audience,
+            "oauth_jwks_url": self.oauth_jwks_url,
+            "oauth_jwt_secret": "***" if self.oauth_jwt_secret else None,
+            "oauth_required_roles": self.oauth_required_roles,
+            "oauth_cache_ttl_sec": self.oauth_cache_ttl_sec,
+            "postgres_enabled": self.postgres_enabled,
+            "postgres_dsn": "***" if self.postgres_dsn else None,
+            "postgres_schema": self.postgres_schema,
         }
 
     def create_search_cache(self) -> "AbstractSearchCache":
@@ -150,4 +197,31 @@ class Config:
             redis_port=int(os.getenv("REDIS_PORT", "6379")),
             redis_password=os.getenv("REDIS_PASSWORD"),
             redis_db=int(os.getenv("REDIS_DB", "1")),
+            vector_index_backend=os.getenv("VECTOR_INDEX_BACKEND", "brute"),
+            vector_hnsw_m=int(os.getenv("VECTOR_HNSW_M", "16")),
+            vector_hnsw_ef_construction=int(
+                os.getenv("VECTOR_HNSW_EF_CONSTRUCTION", "200")
+            ),
+            vector_hnsw_ef_search=int(os.getenv("VECTOR_HNSW_EF_SEARCH", "50")),
+            multimodal_enabled=os.getenv("MULTIMODAL_ENABLED", "false").lower()
+            in {"1", "true", "yes", "on"},
+            multimodal_text_weight=float(os.getenv("MULTIMODAL_TEXT_WEIGHT", "1.0")),
+            multimodal_image_weight=float(os.getenv("MULTIMODAL_IMAGE_WEIGHT", "1.0")),
+            multimodal_image_max_mb=int(os.getenv("MULTIMODAL_IMAGE_MAX_MB", "10")),
+            oauth_enabled=os.getenv("OAUTH_ENABLED", "false").lower()
+            in {"1", "true", "yes", "on"},
+            oauth_issuer=os.getenv("OAUTH_ISSUER"),
+            oauth_audience=os.getenv("OAUTH_AUDIENCE"),
+            oauth_jwks_url=os.getenv("OAUTH_JWKS_URL"),
+            oauth_jwt_secret=os.getenv("OAUTH_JWT_SECRET"),
+            oauth_required_roles=[
+                role.strip()
+                for role in os.getenv("OAUTH_REQUIRED_ROLES", "admin").split(",")
+                if role.strip()
+            ],
+            oauth_cache_ttl_sec=int(os.getenv("OAUTH_CACHE_TTL_SEC", "300")),
+            postgres_enabled=os.getenv("POSTGRES_ENABLED", "false").lower()
+            in {"1", "true", "yes", "on"},
+            postgres_dsn=os.getenv("POSTGRES_DSN"),
+            postgres_schema=os.getenv("POSTGRES_SCHEMA", "public"),
         )

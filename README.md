@@ -7,7 +7,7 @@
 ### Self-hosted RAG search engine. Production-ready in 3 minutes.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.3.1-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)](CHANGELOG.md)
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/docker-ready-brightgreen.svg)](https://hub.docker.com/r/flamehaven/filesearch)
 
@@ -23,7 +23,7 @@ Stop sending your sensitive documents to third-party services. Get enterprise-gr
 
 ```bash
 # One command. Three minutes. Done.
-docker run -d -p 8000:8000 -e GEMINI_API_KEY="your_key" flamehaven-filesearch:1.3.1
+docker run -d -p 8000:8000 -e GEMINI_API_KEY="your_key" flamehaven-filesearch:1.4.0
 ```
 
 <table>
@@ -56,16 +56,16 @@ Open source & MIT licensed</p>
 ### Core Capabilities
 
 - **🔍 Smart Search Modes** - Keyword, semantic, and hybrid search with automatic typo correction
-- **📄 Multi-Format Support** - PDF, DOCX, TXT, MD files up to 50MB
+- **📄 Multi-Format Support** - PDF, DOCX, TXT, MD, and common image formats
 - **⚡ Ultra-Fast Vectors** - DSP v2.0 algorithm generates embeddings in <1ms without ML frameworks
 - **🎯 Source Attribution** - Every answer includes links back to source documents
 
-### What's New in v1.3.1
+### What's New in v1.4.0
 
-- **🗜️ 75% Memory Reduction** - Int8 vector quantization
-- **📦 90% Metadata Compression** - Gravitas-Pack algorithm
-- **✅ Full Test Coverage** - 19/19 tests passing in 0.33s
-- **🪶 Zero Heavy Dependencies** - No torch, transformers, or tensorflow required
+- **Multimodal Search** - Text + image search endpoint (disabled by default)
+- **HNSW Vector Index** - Optional HNSW backend with brute-force fallback
+- **OAuth2/OIDC Support** - JWT validation alongside API keys
+- **PostgreSQL Backend** - Optional metadata persistence in fallback mode
 
 ### Enterprise Features (v1.2.2+)
 
@@ -89,7 +89,7 @@ docker run -d \
   -e GEMINI_API_KEY="your_gemini_api_key" \
   -e FLAMEHAVEN_ADMIN_KEY="secure_admin_password" \
   -v $(pwd)/data:/app/data \
-  flamehaven-filesearch:1.3.1
+  flamehaven-filesearch:1.4.0
 ```
 
 ✅ Server running at `http://localhost:8000`

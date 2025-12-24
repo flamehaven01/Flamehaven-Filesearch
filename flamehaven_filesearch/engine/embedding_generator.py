@@ -190,6 +190,66 @@ class EmbeddingGenerator:
 
         return vector
 
+    def generate_image_bytes(self, image_bytes: bytes) -> Any:
+        """
+        Generate deterministic vector from image bytes.
+        Uses a byte-hash projection to stay dependency-free.
+        """
+        if not image_bytes:
+            return (
+                np.zeros(self.VECTOR_DIM)
+                if NUMPY_AVAILABLE
+                else [0.0] * self.VECTOR_DIM
+            )
+
+        if not NUMPY_AVAILABLE:
+            return [0.0] * self.VECTOR_DIM
+
+        vector = np.zeros(self.VECTOR_DIM, dtype=np.float32)
+        seed = hashlib.sha256(image_bytes).digest()
+        idx = 0
+        while idx < self.VECTOR_DIM:
+            for b in seed:
+                if idx >= self.VECTOR_DIM:
+                    break
+                vector[idx] = (b - 128) / 128.0
+                idx += 1
+            seed = hashlib.sha256(seed + image_bytes[:16]).digest()
+
+        norm = np.linalg.norm(vector)
+        if norm > 1e-10:
+            vector = vector / norm
+        return vector
+
+    def generate_multimodal(
+        self,
+        text: str,
+        image_bytes: Optional[bytes],
+        text_weight: float,
+        image_weight: float,
+    ) -> Any:
+        """
+        Generate a weighted multimodal vector from text + optional image bytes.
+        """
+        text_vector = self.generate(text)
+        if not image_bytes:
+            return text_vector
+
+        image_vector = self.generate_image_bytes(image_bytes)
+
+        if not NUMPY_AVAILABLE:
+            return text_vector
+
+        text_vector = np.array(text_vector, dtype=np.float32)
+        image_vector = np.array(image_vector, dtype=np.float32)
+        combined = (text_vector * float(text_weight)) + (
+            image_vector * float(image_weight)
+        )
+        norm = np.linalg.norm(combined)
+        if norm > 1e-10:
+            combined = combined / norm
+        return combined
+
     def batch_generate(self, texts: List[str]) -> List[Any]:
         """Generate vectors for batch of texts."""
         return [self.generate(text) for text in texts]

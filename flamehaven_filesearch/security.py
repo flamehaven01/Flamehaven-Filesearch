@@ -9,11 +9,14 @@ Provides:
 """
 
 import logging
+from datetime import datetime
 from typing import Optional
 
 from fastapi import Depends, HTTPException, Request, status
 
 from .auth import APIKeyInfo, get_key_manager
+from .config import Config
+from .oauth import OAuthTokenInfo, is_jwt_format, validate_oauth_token
 
 logger = logging.getLogger(__name__)
 
@@ -28,12 +31,14 @@ class RequestContext:
         key_name: str,
         permissions: list,
         rate_limit: int,
+        auth_type: str = "api_key",
     ):
         self.api_key_id = api_key_id
         self.user_id = user_id
         self.key_name = key_name
         self.permissions = permissions
         self.rate_limit = rate_limit
+        self.auth_type = auth_type
 
     def has_permission(self, permission: str) -> bool:
         """Check if context has specific permission"""
@@ -82,6 +87,20 @@ async def get_current_api_key(
 
     Used as FastAPI dependency on protected routes
     """
+    config = Config.from_env()
+    if config.oauth_enabled and is_jwt_format(key):
+        oauth_info = validate_oauth_token(key, config=config)
+        if not oauth_info:
+            logger.warning("Invalid OAuth token attempted")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid OAuth token",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        api_key_info = _oauth_to_api_key_info(oauth_info, config)
+        _store_request_context(request, api_key_info, auth_type="oauth")
+        return api_key_info
+
     key_manager = get_key_manager()
     api_key_info = key_manager.validate_key(key)
 
@@ -93,15 +112,7 @@ async def get_current_api_key(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Store in request state for later use
-    request.state.api_key_info = api_key_info
-    request.state.request_context = RequestContext(
-        api_key_id=api_key_info.id,
-        user_id=api_key_info.user_id,
-        key_name=api_key_info.name,
-        permissions=api_key_info.permissions,
-        rate_limit=api_key_info.rate_limit_per_minute,
-    )
+    _store_request_context(request, api_key_info, auth_type="api_key")
 
     logger.debug(
         "API key validated: %s (user=%s)", api_key_info.id, api_key_info.user_id
@@ -170,21 +181,56 @@ async def optional_api_key(request: Request) -> Optional[APIKeyInfo]:
     if not key:
         return None
 
+    config = Config.from_env()
+    if config.oauth_enabled and is_jwt_format(key):
+        oauth_info = validate_oauth_token(key, config=config)
+        if oauth_info:
+            api_key_info = _oauth_to_api_key_info(oauth_info, config)
+            _store_request_context(request, api_key_info, auth_type="oauth")
+            return api_key_info
+        return None
+
     try:
         key_manager = get_key_manager()
         api_key_info = key_manager.validate_key(key)
 
         if api_key_info:
-            request.state.api_key_info = api_key_info
-            request.state.request_context = RequestContext(
-                api_key_id=api_key_info.id,
-                user_id=api_key_info.user_id,
-                key_name=api_key_info.name,
-                permissions=api_key_info.permissions,
-                rate_limit=api_key_info.rate_limit_per_minute,
-            )
+            _store_request_context(request, api_key_info, auth_type="api_key")
             return api_key_info
     except Exception as e:
         logger.debug("Error validating optional API key: %s", e)
 
     return None
+
+
+def _oauth_to_api_key_info(oauth_info: OAuthTokenInfo, config: Config) -> APIKeyInfo:
+    roles = set(oauth_info.roles)
+    scopes = set(oauth_info.scopes)
+    permissions = sorted(roles | scopes)
+    if any(role in roles for role in config.oauth_required_roles):
+        if "admin" not in permissions:
+            permissions.append("admin")
+    return APIKeyInfo(
+        key_id=f"oauth:{oauth_info.subject}",
+        name="oauth",
+        user_id=oauth_info.subject,
+        created_at=datetime.utcnow().isoformat() + "Z",
+        last_used=None,
+        is_active=True,
+        rate_limit_per_minute=100,
+        permissions=permissions,
+    )
+
+
+def _store_request_context(
+    request: Request, api_key_info: APIKeyInfo, auth_type: str
+) -> None:
+    request.state.api_key_info = api_key_info
+    request.state.request_context = RequestContext(
+        api_key_id=api_key_info.id,
+        user_id=api_key_info.user_id,
+        key_name=api_key_info.name,
+        permissions=api_key_info.permissions,
+        rate_limit=api_key_info.rate_limit_per_minute,
+        auth_type=auth_type,
+    )

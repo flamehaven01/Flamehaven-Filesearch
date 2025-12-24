@@ -1,5 +1,5 @@
 """
-FastAPI server for FLAMEHAVEN FileSearch v1.2.2
+FastAPI server for FLAMEHAVEN FileSearch v1.4.0
 
 Production-ready API with:
 - Rate limiting
@@ -70,7 +70,7 @@ from .middlewares import (
     get_request_id,
 )
 from .security import get_current_api_key, optional_api_key
-from .validators import validate_search_request, validate_upload_file
+from .validators import FileSizeValidator, validate_search_request, validate_upload_file
 
 # Configure structured JSON logging for production
 # Use ENVIRONMENT=development for human-readable logs
@@ -148,9 +148,9 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="FLAMEHAVEN FileSearch API",
     description=(
-        "Open source semantic document search powered by Google Gemini " "- v1.2.2"
+        "Open source semantic document search powered by Google Gemini " "- v1.4.0"
     ),
-    version="1.3.1",
+    version="1.4.0",
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan,
@@ -225,6 +225,7 @@ class SearchResponse(BaseModel):
     search_mode: Optional[str] = None
     search_intent: Optional[dict] = None
     semantic_results: Optional[List] = None
+    multimodal: Optional[dict] = None
 
 
 class UploadResponse(BaseModel):
@@ -309,7 +310,7 @@ def initialize_services(force: bool = False) -> None:
 
     try:
         searcher = FlamehavenFileSearch(config=config, allow_offline=True)
-        logger.info("FLAMEHAVEN FileSearch v1.2.2 initialized successfully")
+        logger.info("FLAMEHAVEN FileSearch v1.4.0 initialized successfully")
         # Ensure default store exists for ready-to-use search endpoints
         try:
             searcher.create_store("default")
@@ -413,7 +414,7 @@ async def health_check(request: Request):
 
     return {
         "status": "healthy" if searcher else "unhealthy",
-        "version": "1.1.0",
+        "version": "1.4.0",
         "uptime_seconds": round(uptime, 2),
         "uptime_formatted": format_uptime(uptime),
         "uptime": format_uptime(uptime),
@@ -795,6 +796,110 @@ async def search(
         raise _internal_error(request_id)
 
 
+@app.post("/api/search/multimodal", response_model=SearchResponse, tags=["Search"])
+@limiter.limit("60/minute")
+async def search_multimodal(
+    request: Request,
+    query: str = Form(..., description="Search query"),
+    store_name: str = Form(default="default", description="Store name"),
+    model: Optional[str] = Form(None, description="Model to use"),
+    max_tokens: Optional[int] = Form(None, description="Maximum output tokens"),
+    temperature: Optional[float] = Form(None, description="Model temperature"),
+    image: Optional[UploadFile] = File(None, description="Optional image file"),
+    api_key: APIKeyInfo = Depends(get_current_api_key),
+):
+    """
+    Multimodal search combining text and optional image input.
+    """
+    request_id = get_request_id(request)
+    start_time = time.time()
+
+    if not searcher:
+        raise ServiceUnavailableError("FileSearch", "Service not initialized")
+
+    try:
+        validated_query, _ = validate_search_request(query)
+
+        if not searcher.config.multimodal_enabled:
+            raise HTTPException(
+                status_code=400, detail="Multimodal search is disabled"
+            )
+
+        image_bytes = None
+        if image:
+            image_bytes = await image.read()
+            FileSizeValidator.validate_file_size(
+                len(image_bytes),
+                searcher.config.multimodal_image_max_mb,
+                image.filename,
+            )
+
+        result = searcher.search_multimodal(
+            query=validated_query,
+            image_bytes=image_bytes,
+            store_name=store_name,
+            model=model,
+            max_tokens=max_tokens,
+            temperature=temperature,
+        )
+
+        result["request_id"] = request_id
+
+        if result["status"] == "error":
+            duration = time.time() - start_time
+            MetricsCollector.record_search(
+                store=store_name,
+                duration=duration,
+                results_count=0,
+                success=False,
+            )
+            MetricsCollector.record_error(
+                error_type="MultimodalSearchError",
+                endpoint="/api/search/multimodal",
+            )
+            status_code = 400
+            raise HTTPException(status_code=status_code, detail=result["message"])
+
+        duration = time.time() - start_time
+        results_count = len(result.get("sources", []))
+        MetricsCollector.record_search(
+            store=store_name,
+            duration=duration,
+            results_count=results_count,
+            success=True,
+        )
+
+        return result
+
+    except FileSearchException as e:
+        duration = time.time() - start_time
+        MetricsCollector.record_search(
+            store=store_name,
+            duration=duration,
+            results_count=0,
+            success=False,
+        )
+        MetricsCollector.record_error(
+            error_type=e.__class__.__name__, endpoint="/api/search/multimodal"
+        )
+        raise
+    except HTTPException:
+        raise
+    except Exception as e:
+        duration = time.time() - start_time
+        MetricsCollector.record_search(
+            store=store_name,
+            duration=duration,
+            results_count=0,
+            success=False,
+        )
+        MetricsCollector.record_error(
+            error_type="UnexpectedError", endpoint="/api/search/multimodal"
+        )
+        logger.error(f"[{request_id}] Multimodal search failed: {e}")
+        raise _internal_error(request_id)
+
+
 @app.get("/api/search", response_model=SearchResponse, tags=["Search"])
 @limiter.limit("100/minute")
 async def search_get(
@@ -1036,7 +1141,7 @@ async def root():
     """
     return {
         "name": "FLAMEHAVEN FileSearch API",
-        "version": "1.1.0",
+        "version": "1.4.0",
         "description": "Open source semantic document search powered by Google Gemini",
         "docs": "/docs",
         "health": "/health",
@@ -1044,6 +1149,7 @@ async def root():
             "upload_single": "POST /api/upload/single (10/min)",
             "upload_multiple": "POST /api/upload/multiple (5/min)",
             "search": "POST /api/search or GET /api/search?q=... (100/min)",
+            "search_multimodal": "POST /api/search/multimodal (60/min)",
             "stores": "GET /api/stores (100/min)",
             "metrics": "GET /metrics (admin-only, 100/min, disabled by default)",
             "prometheus": "GET /prometheus (admin-only, 100/min, disabled by default)",
@@ -1053,6 +1159,7 @@ async def root():
             "monitoring": "Prometheus metrics at /prometheus (admin-only, disabled by default)",
             "logging": "Structured JSON logging",
             "security": "Rate limiting, request tracing, OWASP headers",
+            "multimodal": "Text + image search (disabled by default)",
         },
         "rate_limits": {
             "upload_single": "10 requests per minute",
@@ -1157,7 +1264,7 @@ def main():
 
     # Check for --help
     if "--help" in sys.argv or "-h" in sys.argv:
-        print("FLAMEHAVEN FileSearch API Server v1.1.0")
+        print("FLAMEHAVEN FileSearch API Server v1.4.0")
         print("\nUsage: flamehaven-api [options]")
         print("\nOptions via environment variables:")
         print("  HOST=0.0.0.0        - Server host")
@@ -1170,7 +1277,7 @@ def main():
         print("  flamehaven-api")
         print("\nDocs: http://localhost:8000/docs")
         print("Prometheus: http://localhost:8000/prometheus (disabled by default)")
-        print("\nNew in v1.1.0:")
+        print("\nNew in v1.4.0:")
         print("  [*] Security:")
         print("      - Path traversal vulnerability fixed")
         print("      - Rate limiting (slowapi): 10/min uploads, 100/min searches")
@@ -1195,7 +1302,7 @@ def main():
         print("Example: export GEMINI_API_KEY='your-api-key'")
         sys.exit(1)
 
-    print(f"Starting FLAMEHAVEN FileSearch API v1.1.0 on {host}:{port}")
+    print(f"Starting FLAMEHAVEN FileSearch API v1.4.0 on {host}:{port}")
     print(f"Workers: {workers}, Reload: {reload}")
     print("\nEndpoints:")
     print(f"  - Docs:       http://{host}:{port}/docs")

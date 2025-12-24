@@ -1,4 +1,4 @@
-# API Reference (v1.3.1)
+# API Reference (v1.4.0)
 
 All endpoints return JSON unless otherwise noted. Default base URL:
 `http://localhost:8000`.
@@ -7,9 +7,14 @@ All endpoints return JSON unless otherwise noted. Default base URL:
 
 ## 🔐 Authentication
 
-As of **v1.2.0**, all protected endpoints require **API Key Authentication**.
+Protected endpoints require API key authentication by default.
 
 **Header:** `Authorization: Bearer <your_api_key>`
+
+OAuth2/OIDC JWTs are supported when `OAUTH_ENABLED=1`.
+Use `Authorization: Bearer <jwt_token>`.
+When both API keys and OAuth are enabled, prefer `X-API-Key` for API keys to
+avoid ambiguity with JWTs.
 
 | Access Level | Required Permission |
 |--------------|---------------------|
@@ -24,7 +29,7 @@ As of **v1.2.0**, all protected endpoints require **API Key Authentication**.
 
 ### `POST /api/search`
 
-New parameters added in **v1.3.1** for **Gravitas DSP** control.
+New parameters added in **v1.4.0** for **Gravitas DSP** control.
 
 **Body (`application/json`):**
 
@@ -45,7 +50,7 @@ New parameters added in **v1.3.1** for **Gravitas DSP** control.
 | `top_k` | `int` | 5 | Number of semantic results to return. |
 | `threshold` | `float` | 0.5 | Similarity threshold for semantic results. |
 
-**Response (v1.3.1 Schema):**
+**Response (v1.4.0 Schema):**
 
 ```json
 {
@@ -62,6 +67,40 @@ New parameters added in **v1.3.1** for **Gravitas DSP** control.
       "snippet": "..."
     }
   ],
+  "request_id": "..."
+}
+```
+
+### `POST /api/search/multimodal`
+
+Multimodal search with text + optional image input. Disabled by default.
+Enable with `MULTIMODAL_ENABLED=1`.
+
+**Body (`multipart/form-data`):**
+
+- `query` (required)
+- `store_name` (optional)
+- `model` (optional)
+- `max_tokens` (optional)
+- `temperature` (optional)
+- `image` (optional file)
+
+**Response:**
+
+```json
+{
+  "status": "success",
+  "answer": "...",
+  "search_mode": "multimodal",
+  "semantic_results": [],
+  "multimodal": {
+    "image_provided": true,
+    "image_ignored": false,
+    "weights": {
+      "text": 1.0,
+      "image": 1.0
+    }
+  },
   "request_id": "..."
 }
 ```
@@ -110,7 +149,7 @@ Notes:
 
 ---
 
-## 🏗️ SDK Usage (v1.3.1)
+## 🏗️ SDK Usage (v1.4.0)
 
 ```python
 from flamehaven_filesearch import FlamehavenFileSearch

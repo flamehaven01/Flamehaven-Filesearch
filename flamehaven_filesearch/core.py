@@ -22,6 +22,7 @@ except ImportError:  # pragma: no cover - optional dependency
 from .config import Config
 from .engine import ChronosConfig, ChronosGrid, GravitasPacker, IntentRefiner
 from .engine.embedding_generator import get_embedding_generator
+from .storage import MemoryMetadataStore, create_metadata_store
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +61,7 @@ class FlamehavenFileSearch:
         self.config.validate(require_api_key=not allow_offline)
 
         self._local_store_docs: Dict[str, List[Dict[str, str]]] = {}
+        self._metadata_store = None
         self.client = None
 
         if self._use_native_client:
@@ -74,11 +76,26 @@ class FlamehavenFileSearch:
 
         self.stores: Dict[str, str] = {}  # Track remote IDs or local handles
 
-        # [>] Initialize SAIQL-Engine components
-        self.chronos_grid = ChronosGrid(config=ChronosConfig())
+        if not self._use_native_client:
+            if self.config.postgres_enabled:
+                self._metadata_store = create_metadata_store(self.config)
+                for store_name in self._metadata_store.list_store_names():
+                    self.stores[store_name] = f"local://{store_name}"
+            else:
+                self._metadata_store = MemoryMetadataStore(self._local_store_docs)
+
+        # [>] Initialize engine components
+        self.embedding_generator = get_embedding_generator()
+        chronos_config = ChronosConfig(
+            vector_index_backend=self.config.vector_index_backend,
+            hnsw_m=self.config.vector_hnsw_m,
+            hnsw_ef_construction=self.config.vector_hnsw_ef_construction,
+            hnsw_ef_search=self.config.vector_hnsw_ef_search,
+            vector_essence_dimension=self.embedding_generator.vector_dim,
+        )
+        self.chronos_grid = ChronosGrid(config=chronos_config)
         self.intent_refiner = IntentRefiner()
         self.gravitas_packer = GravitasPacker()
-        self.embedding_generator = get_embedding_generator()
 
         # Ensure a default store exists in offline mode to keep search paths consistent
         if not self._use_native_client and "default" not in self.stores:
@@ -122,6 +139,8 @@ class FlamehavenFileSearch:
         store_id = f"local://{name}"
         self.stores[name] = store_id
         self._local_store_docs.setdefault(name, [])
+        if self._metadata_store:
+            self._metadata_store.ensure_store(name)
         logger.info("Created local store '%s' (fallback mode)", name)
         return store_id
 
@@ -133,6 +152,10 @@ class FlamehavenFileSearch:
             Dictionary of store names to resource names
         """
         return self.stores.copy()
+
+    @staticmethod
+    def _image_extensions() -> set:
+        return {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"}
 
     def upload_file(
         self,
@@ -168,6 +191,7 @@ class FlamehavenFileSearch:
         # Check file extension
         ext = Path(file_path).suffix.lower()
         supported_exts = [".pdf", ".docx", ".md", ".txt"]
+        supported_exts.extend(sorted(self._image_extensions()))
         if ext not in supported_exts:
             logger.warning("File extension '%s' may not be supported", ext)
 
@@ -190,9 +214,17 @@ class FlamehavenFileSearch:
         # Compress metadata with Gravitas-Pack (side-effect: updates packer stats)
         self.gravitas_packer.compress_metadata(file_metadata)
 
-        # Generate vector essence from file metadata for semantic search
-        metadata_text = f"{file_metadata['file_name']} {file_metadata['file_type']}"
-        vector_essence = self.embedding_generator.generate(metadata_text)
+        # Generate vector essence from file metadata or image bytes for semantic search
+        if ext in self._image_extensions():
+            try:
+                with open(file_path, "rb") as source:
+                    image_bytes = source.read()
+            except OSError:
+                image_bytes = b""
+            vector_essence = self.embedding_generator.generate_image_bytes(image_bytes)
+        else:
+            metadata_text = f"{file_metadata['file_name']} {file_metadata['file_type']}"
+            vector_essence = self.embedding_generator.generate(metadata_text)
 
         # Inject into Chronos-Grid index with vector essence
         self.chronos_grid.inject_essence(
@@ -265,19 +297,26 @@ class FlamehavenFileSearch:
         self, file_path: str, store_name: str, size_mb: float
     ) -> Dict[str, Any]:
         """Store file metadata/content locally when google-genai is unavailable."""
-        try:
-            with open(file_path, "r", encoding="utf-8", errors="ignore") as source:
-                content = source.read()
-        except OSError:
+        ext = Path(file_path).suffix.lower()
+        if ext in self._image_extensions():
             content = ""
+        else:
+            try:
+                with open(file_path, "r", encoding="utf-8", errors="ignore") as source:
+                    content = source.read()
+            except OSError:
+                content = ""
 
-        self._local_store_docs.setdefault(store_name, []).append(
-            {
-                "title": Path(file_path).name,
-                "uri": f"local://{store_name}/{Path(file_path).name}",
-                "content": content,
-            }
-        )
+        doc = {
+            "title": Path(file_path).name,
+            "uri": f"local://{store_name}/{Path(file_path).name}",
+            "content": content,
+            "metadata": {"file_type": ext},
+        }
+        if self._metadata_store:
+            self._metadata_store.add_doc(store_name, doc)
+        else:
+            self._local_store_docs.setdefault(store_name, []).append(doc)
         logger.info("Stored file locally for fallback mode: %s", file_path)
         return {
             "status": "success",
@@ -298,7 +337,10 @@ class FlamehavenFileSearch:
         semantic_results: Optional[List] = None,
     ) -> Dict[str, Any]:
         """Simple local search fallback with intent awareness and semantic support."""
-        docs = self._local_store_docs.get(store_name, [])
+        if self._metadata_store:
+            docs = self._metadata_store.get_docs(store_name)
+        else:
+            docs = self._local_store_docs.get(store_name, [])
         intent_keywords = None
         intent_file_exts = None
         intent_filters = None
@@ -330,7 +372,7 @@ class FlamehavenFileSearch:
                 },
             }
             # Only include semantic_results for semantic/hybrid modes
-            if search_mode in ["semantic", "hybrid"]:
+            if search_mode in ["semantic", "hybrid", "multimodal"]:
                 result["semantic_results"] = semantic_results or []
             return result
 
@@ -376,7 +418,7 @@ class FlamehavenFileSearch:
                 "filters": intent_filters or {},
             }
 
-        if search_mode in ["semantic", "hybrid"]:
+        if search_mode in ["semantic", "hybrid", "multimodal"]:
             result["semantic_results"] = semantic_results or []
 
         return result
@@ -554,6 +596,155 @@ class FlamehavenFileSearch:
             logger.error("Search failed: %s", e)
             return {"status": "error", "message": str(e)}
 
+    def search_multimodal(
+        self,
+        query: str,
+        image_bytes: Optional[bytes] = None,
+        store_name: str = "default",
+        model: Optional[str] = None,
+        max_tokens: Optional[int] = None,
+        temperature: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        """
+        Multimodal search combining text query with optional image bytes.
+        """
+        if not self.config.multimodal_enabled:
+            return {"status": "error", "message": "Multimodal search is disabled"}
+
+        model = model or self.config.default_model
+        max_tokens = max_tokens or self.config.max_output_tokens
+        temperature = (
+            temperature if temperature is not None else self.config.temperature
+        )
+
+        if store_name not in self.stores:
+            if not self._use_native_client:
+                self.create_store(store_name)
+            else:
+                return {
+                    "status": "error",
+                    "message": (
+                        "Store '"
+                        f"{store_name}"
+                        "' not found. Create it first or upload files."
+                    ),
+                }
+
+        intent = self.intent_refiner.refine_intent(query)
+        optimized_query = intent.refined_query
+
+        logger.info("[>] Multimodal query: %s", optimized_query)
+
+        combined_vector = self.embedding_generator.generate_multimodal(
+            optimized_query,
+            image_bytes,
+            self.config.multimodal_text_weight,
+            self.config.multimodal_image_weight,
+        )
+        semantic_results = self.chronos_grid.seek_vector_resonance(
+            combined_vector, top_k=5
+        )
+
+        if not self._use_native_client:
+            result = self._local_search(
+                store_name=store_name,
+                query=optimized_query,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                model=model,
+                intent_info=intent,
+                search_mode="multimodal",
+                semantic_results=semantic_results,
+            )
+            result["multimodal"] = {
+                "image_provided": bool(image_bytes),
+                "image_ignored": False,
+                "weights": {
+                    "text": self.config.multimodal_text_weight,
+                    "image": self.config.multimodal_image_weight,
+                },
+            }
+            return result
+
+        if image_bytes:
+            logger.warning("Multimodal image input ignored in remote mode")
+
+        try:
+            response = self.client.models.generate_content(
+                model=model,
+                contents=optimized_query,
+                config=google_genai_types.GenerateContentConfig(
+                    tools=[
+                        google_genai_types.Tool(
+                            file_search=google_genai_types.FileSearch(
+                                file_search_store_names=[self.stores[store_name]]
+                            )
+                        )
+                    ],
+                    max_output_tokens=max_tokens,
+                    temperature=temperature,
+                    response_modalities=["TEXT"],
+                ),
+            )
+
+            answer = response.text
+
+            if len(answer) < self.config.min_answer_length:
+                logger.warning("Answer too short: %d chars", len(answer))
+            if len(answer) > self.config.max_answer_length:
+                logger.warning("Answer too long: %d chars, truncating", len(answer))
+                answer = answer[: self.config.max_answer_length]
+
+            for term in self.config.banned_terms:
+                if term.lower() in answer.lower():
+                    logger.error("Banned term detected: %s", term)
+                    return {
+                        "status": "error",
+                        "message": f"Response contains banned term: {term}",
+                    }
+
+            grounding = response.candidates[0].grounding_metadata
+            sources = []
+            if grounding:
+                sources = [
+                    {
+                        "title": c.retrieved_context.title,
+                        "uri": c.retrieved_context.uri,
+                    }
+                    for c in grounding.grounding_chunks
+                ]
+
+            return {
+                "status": "success",
+                "answer": answer,
+                "sources": sources[: self.config.max_sources],
+                "model": model,
+                "query": query,
+                "refined_query": optimized_query if intent.is_corrected else None,
+                "corrections": (
+                    intent.correction_suggestions if intent.is_corrected else None
+                ),
+                "store": store_name,
+                "search_mode": "multimodal",
+                "search_intent": {
+                    "keywords": intent.keywords,
+                    "file_extensions": intent.file_extensions,
+                    "filters": intent.metadata_filters,
+                },
+                "semantic_results": semantic_results,
+                "multimodal": {
+                    "image_provided": bool(image_bytes),
+                    "image_ignored": bool(image_bytes),
+                    "weights": {
+                        "text": self.config.multimodal_text_weight,
+                        "image": self.config.multimodal_image_weight,
+                    },
+                },
+            }
+        except Exception as e:
+            logger.error("Multimodal search failed: %s", e)
+            return {"status": "error", "message": str(e)}
+
     def delete_store(self, store_name: str) -> Dict[str, Any]:
         """
         Delete a store
@@ -579,6 +770,8 @@ class FlamehavenFileSearch:
 
         # Local fallback deletion
         del self.stores[store_name]
+        if self._metadata_store:
+            self._metadata_store.delete_store(store_name)
         self._local_store_docs.pop(store_name, None)
         logger.info("Deleted local store: %s", store_name)
         return {"status": "success", "store": store_name}

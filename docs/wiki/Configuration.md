@@ -20,6 +20,24 @@ variables, and CLI flags. Use this document as the single source of truth.
 | `max_sources` | `int` | `5` | Number of citations returned. |
 | `cache_ttl_sec` | `int` | `600` | TTL for search result cache. |
 | `cache_max_size` | `int` | `1024` | Number of cached entries before eviction. |
+| `vector_index_backend` | `str` | `brute` | Vector search backend (`brute` or `hnsw`). |
+| `vector_hnsw_m` | `int` | `16` | HNSW `M` parameter (when enabled). |
+| `vector_hnsw_ef_construction` | `int` | `200` | HNSW construction ef value. |
+| `vector_hnsw_ef_search` | `int` | `50` | HNSW search ef value. |
+| `multimodal_enabled` | `bool` | `False` | Enable text + image search. |
+| `multimodal_text_weight` | `float` | `1.0` | Weight for text vectors. |
+| `multimodal_image_weight` | `float` | `1.0` | Weight for image vectors. |
+| `multimodal_image_max_mb` | `int` | `10` | Max image size accepted by API. |
+| `oauth_enabled` | `bool` | `False` | Enable OAuth2/OIDC JWT validation. |
+| `oauth_issuer` | `Optional[str]` | `None` | Expected issuer claim (`iss`). |
+| `oauth_audience` | `Optional[str]` | `None` | Expected audience claim (`aud`). |
+| `oauth_jwks_url` | `Optional[str]` | `None` | JWKS endpoint for RS256 validation. |
+| `oauth_jwt_secret` | `Optional[str]` | `None` | Shared secret for HS256 validation. |
+| `oauth_required_roles` | `list[str]` | `["admin"]` | Roles treated as admin. |
+| `oauth_cache_ttl_sec` | `int` | `300` | Token cache TTL for validators. |
+| `postgres_enabled` | `bool` | `False` | Enable PostgreSQL metadata backend. |
+| `postgres_dsn` | `Optional[str]` | `None` | DSN for PostgreSQL connection. |
+| `postgres_schema` | `str` | `public` | Schema for metadata tables. |
 | **Driftlock** |  |  |  |
 | `min_answer_length` | `int` | `10` | Log warnings if answer shorter than this. |
 | `max_answer_length` | `int` | `4096` | Truncate longer outputs. |
@@ -30,6 +48,8 @@ variables, and CLI flags. Use this document as the single source of truth.
 - `api_key` must be non-empty when `require_api_key=True`.
 - `max_file_size_mb` > 0.
 - `0.0 ≤ temperature ≤ 1.0`.
+- `vector_index_backend` must be `brute` or `hnsw`.
+- `multimodal_text_weight` and `multimodal_image_weight` must be > 0.
 - Strings are stripped of whitespace during `__post_init__`.
 
 ---
@@ -51,6 +71,24 @@ variables, and CLI flags. Use this document as the single source of truth.
 | `SEARCH_RATE_LIMIT` | e.g. `200/minute` |  |
 | `FLAMEHAVEN_METRICS_ENABLED` | Enable `/metrics` + `/prometheus` (default: off) | `export FLAMEHAVEN_METRICS_ENABLED=1` |
 | `HOST`, `PORT`, `WORKERS`, `RELOAD` | CLI runtime options |  |
+| `VECTOR_INDEX_BACKEND` | Vector backend (`brute` or `hnsw`) | `export VECTOR_INDEX_BACKEND=hnsw` |
+| `VECTOR_HNSW_M` | HNSW `M` parameter | `export VECTOR_HNSW_M=24` |
+| `VECTOR_HNSW_EF_CONSTRUCTION` | HNSW build ef | `export VECTOR_HNSW_EF_CONSTRUCTION=200` |
+| `VECTOR_HNSW_EF_SEARCH` | HNSW search ef | `export VECTOR_HNSW_EF_SEARCH=50` |
+| `MULTIMODAL_ENABLED` | Enable multimodal search | `export MULTIMODAL_ENABLED=1` |
+| `MULTIMODAL_TEXT_WEIGHT` | Text vector weight | `export MULTIMODAL_TEXT_WEIGHT=1.0` |
+| `MULTIMODAL_IMAGE_WEIGHT` | Image vector weight | `export MULTIMODAL_IMAGE_WEIGHT=1.0` |
+| `MULTIMODAL_IMAGE_MAX_MB` | Max image size | `export MULTIMODAL_IMAGE_MAX_MB=10` |
+| `OAUTH_ENABLED` | Enable OAuth2/OIDC JWT validation | `export OAUTH_ENABLED=1` |
+| `OAUTH_ISSUER` | Expected issuer | `export OAUTH_ISSUER="https://issuer"` |
+| `OAUTH_AUDIENCE` | Expected audience | `export OAUTH_AUDIENCE="filesearch"` |
+| `OAUTH_JWKS_URL` | JWKS endpoint | `export OAUTH_JWKS_URL="https://issuer/.well-known/jwks.json"` |
+| `OAUTH_JWT_SECRET` | HS256 secret | `export OAUTH_JWT_SECRET="secret"` |
+| `OAUTH_REQUIRED_ROLES` | Comma-delimited admin roles | `export OAUTH_REQUIRED_ROLES="admin,ops"` |
+| `OAUTH_CACHE_TTL_SEC` | Token cache TTL | `export OAUTH_CACHE_TTL_SEC=300` |
+| `POSTGRES_ENABLED` | Enable PostgreSQL backend | `export POSTGRES_ENABLED=1` |
+| `POSTGRES_DSN` | PostgreSQL DSN | `export POSTGRES_DSN="postgresql://user:pass@host:5432/db"` |
+| `POSTGRES_SCHEMA` | PostgreSQL schema | `export POSTGRES_SCHEMA=public` |
 
 > All numeric values accept strings (parsed via `int()`/`float()`).
 
@@ -114,6 +152,8 @@ reset_all_caches()
 - When `google-genai` SDK is missing, the fallback in-memory store
   `_local_store_docs` keeps contents in-process. Use `allow_offline=True` for
   unit tests.
+- To persist fallback metadata across restarts, enable the PostgreSQL backend
+  with `POSTGRES_ENABLED=1` and `POSTGRES_DSN`.
 
 ---
 
