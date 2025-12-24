@@ -107,7 +107,7 @@ exhausting Gemini quota.
 
 ## 6. Observability
 
-1. **Metrics** – Scrape `/prometheus`. Example configuration for Prometheus:
+1. **Metrics** – Scrape `/prometheus` (requires `FLAMEHAVEN_METRICS_ENABLED=1` and admin access unless internal). Example configuration for Prometheus:
    ```yaml
    - job_name: flamehaven
      scrape_interval: 15s

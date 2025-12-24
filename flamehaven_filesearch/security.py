@@ -157,26 +157,33 @@ async def optional_api_key(request: Request) -> Optional[APIKeyInfo]:
     """
     auth_header = request.headers.get("Authorization", "")
 
-    if not auth_header:
-        return None
+    key = None
 
-    try:
+    if auth_header:
         parts = auth_header.split()
         if len(parts) == 2 and parts[0].lower() == "bearer":
             key = parts[1]
-            key_manager = get_key_manager()
-            api_key_info = key_manager.validate_key(key)
 
-            if api_key_info:
-                request.state.api_key_info = api_key_info
-                request.state.request_context = RequestContext(
-                    api_key_id=api_key_info.id,
-                    user_id=api_key_info.user_id,
-                    key_name=api_key_info.name,
-                    permissions=api_key_info.permissions,
-                    rate_limit=api_key_info.rate_limit_per_minute,
-                )
-                return api_key_info
+    if not key:
+        key = request.headers.get("X-API-Key")
+
+    if not key:
+        return None
+
+    try:
+        key_manager = get_key_manager()
+        api_key_info = key_manager.validate_key(key)
+
+        if api_key_info:
+            request.state.api_key_info = api_key_info
+            request.state.request_context = RequestContext(
+                api_key_id=api_key_info.id,
+                user_id=api_key_info.user_id,
+                key_name=api_key_info.name,
+                permissions=api_key_info.permissions,
+                rate_limit=api_key_info.rate_limit_per_minute,
+            )
+            return api_key_info
     except Exception as e:
         logger.debug("Error validating optional API key: %s", e)
 

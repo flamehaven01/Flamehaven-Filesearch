@@ -174,7 +174,7 @@ async def batch_search(
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e),
+            detail=f"Internal server error (request_id={request_id})",
         )
 
 

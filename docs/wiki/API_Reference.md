@@ -104,6 +104,10 @@ Exposes 25+ metrics, including:
 - `gravitas_compression_ratio`
 - `semantic_search_threshold_drops_total`
 
+Notes:
+- Disabled by default. Enable with `FLAMEHAVEN_METRICS_ENABLED=1`.
+- Requires admin permission unless the request originates from an internal network.
+
 ---
 
 ## 🏗️ SDK Usage (v1.3.1)

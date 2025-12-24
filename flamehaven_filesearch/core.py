@@ -274,7 +274,7 @@ class FlamehavenFileSearch:
         self._local_store_docs.setdefault(store_name, []).append(
             {
                 "title": Path(file_path).name,
-                "uri": os.path.abspath(file_path),
+                "uri": f"local://{store_name}/{Path(file_path).name}",
                 "content": content,
             }
         )

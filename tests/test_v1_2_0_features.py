@@ -218,7 +218,10 @@ class TestRedisCacheBackend:
     @pytest.mark.skipif(not HAS_REDIS_CACHE, reason="redis package not installed")
     def test_redis_cache_basic_operations(self):
         """Test basic Redis cache operations"""
-        cache = RedisCache(host="localhost", port=6379, password=None)
+        try:
+            cache = RedisCache(host="localhost", port=6379, password=None)
+        except Exception:
+            pytest.skip("Redis not available")
 
         # Test set/get (may fail if Redis not running, but that's ok for this test)
         try:
@@ -234,7 +237,10 @@ class TestRedisCacheBackend:
     @pytest.mark.skipif(not HAS_REDIS_CACHE, reason="redis package not installed")
     def test_redis_cache_has_namespace_isolation(self):
         """Test that Redis cache uses namespace isolation"""
-        cache = RedisCache(host="localhost", port=6379, password=None)
+        try:
+            cache = RedisCache(host="localhost", port=6379, password=None)
+        except Exception:
+            pytest.skip("Redis not available")
 
         try:
             # Should use flamehaven: prefix for keys
@@ -296,9 +302,9 @@ class TestV120Integration:
         response = client.get("/docs")
         assert response.status_code == 200
 
-        # Prometheus should be public
+        # Prometheus should be disabled by default
         response = client.get("/prometheus")
-        assert response.status_code == 200
+        assert response.status_code == 404
 
 
 # ============================================================================

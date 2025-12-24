@@ -108,7 +108,7 @@ Default limits: `10/minute` for uploads, `100/minute` for searches/metrics.
 | Structured logs | `ENVIRONMENT=production flamehaven-api` (default) |
 | Human-readable logs | `ENVIRONMENT=development flamehaven-api` |
 | Trace request IDs | `curl -H "X-Request-ID: debug-123" ...` |
-| Export Prometheus snapshot | `curl http://localhost:8000/prometheus > metrics.prom` |
+| Export Prometheus snapshot | `FLAMEHAVEN_METRICS_ENABLED=1 curl http://localhost:8000/prometheus > metrics.prom` |
 
 If logs are missing, ensure your container runtime pipes STDOUT/STDERR to the
 host (e.g., `docker logs`).

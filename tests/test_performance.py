@@ -22,8 +22,9 @@ class TestResponseTimes:
         # Health check should be very fast (<100ms)
         assert elapsed < 0.1, f"Health check took {elapsed:.3f}s (expected <0.1s)"
 
-    def test_metrics_endpoint_response_time(self, client):
+    def test_metrics_endpoint_response_time(self, client, monkeypatch):
         """Test metrics endpoint responds quickly"""
+        monkeypatch.setenv("FLAMEHAVEN_METRICS_ENABLED", "1")
         start = time.time()
         response = client.get("/metrics")
         elapsed = time.time() - start

@@ -31,7 +31,6 @@ class AuthenticatedTestClient(TestClient):
         self.public_endpoints = [
             "/",
             "/health",
-            "/prometheus",
             "/docs",
             "/openapi.json",
             "/admin/dashboard",
@@ -168,6 +167,7 @@ def test_search_endpoint_surfacing_backend_errors(api_client, monkeypatch):
 
 
 def test_prometheus_metrics_updates_store_count(api_client, monkeypatch):
+    monkeypatch.setenv("FLAMEHAVEN_METRICS_ENABLED", "1")
     initialize_services(force=True)
     monkeypatch.setattr(api.searcher, "list_stores", lambda: ["default", "reports"])
     response = api_client.get("/prometheus")
@@ -176,6 +176,7 @@ def test_prometheus_metrics_updates_store_count(api_client, monkeypatch):
 
 
 def test_metrics_endpoint_requires_searcher(api_client, monkeypatch):
+    monkeypatch.setenv("FLAMEHAVEN_METRICS_ENABLED", "1")
     monkeypatch.setattr(api, "searcher", None, raising=False)
     resp = api_client.get("/metrics")
     assert resp.status_code == 503

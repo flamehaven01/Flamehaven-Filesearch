@@ -124,7 +124,6 @@ class AuthenticatedTestClient(TestClient):
         self.public_endpoints = [
             "/",
             "/health",
-            "/prometheus",
             "/docs",
             "/openapi.json",
             "/admin/dashboard",

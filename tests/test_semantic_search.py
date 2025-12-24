@@ -375,8 +375,11 @@ class TestAPIIntegration:
         assert data.get("corrections") == ["mock correction"]
 
     @pytest.mark.asyncio
-    async def test_metrics_endpoint_includes_new_engine_stats(self, client, api_key):
+    async def test_metrics_endpoint_includes_new_engine_stats(
+        self, client, api_key, monkeypatch
+    ):
         """Verify /metrics endpoint includes Chronos, IntentRefiner, Gravitas, Embedding stats"""  # noqa: E501
+        monkeypatch.setenv("FLAMEHAVEN_METRICS_ENABLED", "1")
         response = client.get("/metrics", headers={"X-API-Key": api_key})
         assert response.status_code == 200
         data = response.json()
@@ -472,7 +475,7 @@ def client(mock_searcher_for_api):
 
     from flamehaven_filesearch.api import app
     from flamehaven_filesearch.auth import APIKeyInfo
-    from flamehaven_filesearch.security import get_current_api_key
+    from flamehaven_filesearch.security import get_current_api_key, optional_api_key
 
     # Override auth dependency for testing with a mock APIKeyInfo
     # Note: No parameters needed for dependency override
@@ -489,6 +492,7 @@ def client(mock_searcher_for_api):
         )
 
     app.dependency_overrides[get_current_api_key] = mock_get_current_api_key
+    app.dependency_overrides[optional_api_key] = mock_get_current_api_key
 
     # Patch FlamehavenFileSearch class WHERE IT'S USED (in api module)
     # This ensures initialize_services creates our mock instead of the real one

@@ -49,6 +49,7 @@ variables, and CLI flags. Use this document as the single source of truth.
 | `ENVIRONMENT` | Logging mode (`production` / `development`) | `export ENVIRONMENT=development` |
 | `UPLOAD_RATE_LIMIT` | e.g. `30/minute` | `export UPLOAD_RATE_LIMIT="30/minute"` |
 | `SEARCH_RATE_LIMIT` | e.g. `200/minute` |  |
+| `FLAMEHAVEN_METRICS_ENABLED` | Enable `/metrics` + `/prometheus` (default: off) | `export FLAMEHAVEN_METRICS_ENABLED=1` |
 | `HOST`, `PORT`, `WORKERS`, `RELOAD` | CLI runtime options |  |
 
 > All numeric values accept strings (parsed via `int()`/`float()`).
@@ -82,6 +83,10 @@ HOST=0.0.0.0 PORT=9000 WORKERS=4 RELOAD=false flamehaven-api
 
 Rate limits follow SlowAPI syntax (`N/period`). Supported units: `second`,
 `minute`, `hour`, `day`.
+
+> `/metrics` and `/prometheus` are disabled by default. Enable with
+> `FLAMEHAVEN_METRICS_ENABLED=1`. When enabled, access requires admin
+> permission unless the request originates from an internal network.
 
 ---
 

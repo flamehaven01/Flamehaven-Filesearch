@@ -145,8 +145,9 @@ class TestAPIIntegration:
         assert timing.endswith("s")
         assert float(timing[:-1]) >= 0
 
-    def test_metrics_endpoint_enhanced(self, client):
+    def test_metrics_endpoint_enhanced(self, client, monkeypatch):
         """Test enhanced metrics endpoint"""
+        monkeypatch.setenv("FLAMEHAVEN_METRICS_ENABLED", "1")
         response = client.get("/metrics")
 
         assert response.status_code in [

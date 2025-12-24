@@ -364,7 +364,7 @@ curl -X POST http://localhost:8000/api/admin/keys \
 **Problem:** Searches taking >5 seconds.
 
 **Solutions:**
-1. Check cache hit rate: `curl http://localhost:8000/metrics`
+1. Check cache hit rate: `FLAMEHAVEN_METRICS_ENABLED=1 curl http://localhost:8000/metrics`
 2. Enable Redis for distributed caching
 3. Verify Gemini API latency (should be <1.5s)
 

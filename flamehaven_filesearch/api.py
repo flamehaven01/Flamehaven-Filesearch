@@ -13,6 +13,7 @@ Production-ready API with:
 - Structured JSON logging
 """
 
+import ipaddress
 import logging
 import os
 import shutil
@@ -31,6 +32,7 @@ from fastapi import (
     HTTPException,
     Query,
     Request,
+    status,
     UploadFile,
 )
 from fastapi.exception_handlers import (
@@ -67,7 +69,7 @@ from .middlewares import (
     SecurityHeadersMiddleware,
     get_request_id,
 )
-from .security import get_current_api_key
+from .security import get_current_api_key, optional_api_key
 from .validators import validate_search_request, validate_upload_file
 
 # Configure structured JSON logging for production
@@ -93,6 +95,45 @@ def rate_limit_key(request: Request) -> str:
 
 # Initialize rate limiter
 limiter = Limiter(key_func=rate_limit_key)
+
+
+def _metrics_enabled() -> bool:
+    value = os.getenv("FLAMEHAVEN_METRICS_ENABLED", "")
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _is_internal_request(request: Request) -> bool:
+    if not request.client:
+        return False
+    host = request.client.host
+    if host in {"127.0.0.1", "::1", "localhost"}:
+        return True
+    try:
+        ip = ipaddress.ip_address(host)
+    except ValueError:
+        return False
+    return ip.is_private or ip.is_loopback
+
+
+def _enforce_metrics_access(
+    request: Request, api_key: Optional[APIKeyInfo]
+) -> None:
+    if not _metrics_enabled():
+        raise HTTPException(status_code=404, detail="Not found")
+    if _is_internal_request(request):
+        return
+    if not api_key or "admin" not in (api_key.permissions or []):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin permission required",
+        )
+
+
+def _internal_error(request_id: str) -> HTTPException:
+    return HTTPException(
+        status_code=500,
+        detail=f"Internal server error (request_id={request_id})",
+    )
 
 
 @asynccontextmanager
@@ -311,7 +352,12 @@ def initialize_services(force: bool = False) -> None:
 
     try:
         MetricsCollector.update_system_metrics()
-        logger.info("Prometheus metrics enabled at /prometheus")
+        if _metrics_enabled():
+            logger.info("Prometheus metrics enabled at /prometheus")
+        else:
+            logger.info(
+                "Prometheus metrics disabled (set FLAMEHAVEN_METRICS_ENABLED=1)"
+            )
     except Exception as exc:  # pragma: no cover - defensive guard
         logger.warning("Failed to initialize metrics collector: %s", exc)
 
@@ -464,7 +510,7 @@ async def upload_single_file(
             error_type="UnexpectedError", endpoint="/api/upload/single"
         )
         logger.error(f"[{request_id}] Upload failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise _internal_error(request_id)
     finally:
         # Cleanup temp file
         try:
@@ -479,9 +525,10 @@ async def upload_single_file_legacy(
     request: Request,
     file: UploadFile = File(..., description="File to upload"),
     store: str = Form(default="default", description="Store name"),
+    api_key: APIKeyInfo = Depends(get_current_api_key),
 ):
     """Legacy compatibility endpoint that proxies to /api/upload/single."""
-    return await upload_single_file(request, file, store)
+    return await upload_single_file(request, file, store, api_key)
 
 
 @app.post("/api/upload/multiple", response_model=MultipleUploadResponse, tags=["Files"])
@@ -578,7 +625,7 @@ async def upload_multiple_files(
 
     except Exception as e:
         logger.error(f"[{request_id}] Multiple upload failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise _internal_error(request_id)
     finally:
         try:
             shutil.rmtree(temp_dir)
@@ -596,9 +643,10 @@ async def upload_multiple_files_legacy(
     request: Request,
     files: List[UploadFile] = File(..., description="Files to upload"),
     store: str = Form(default="default", description="Store name"),
+    api_key: APIKeyInfo = Depends(get_current_api_key),
 ):
     """Legacy compatibility endpoint that proxies to /api/upload/multiple."""
-    return await upload_multiple_files(request, files, store)
+    return await upload_multiple_files(request, files, store, api_key)
 
 
 # Search endpoints
@@ -744,7 +792,7 @@ async def search(
             error_type="UnexpectedError", endpoint="/api/search"
         )
         logger.error(f"[{request_id}] Search failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise _internal_error(request_id)
 
 
 @app.get("/api/search", response_model=SearchResponse, tags=["Search"])
@@ -768,14 +816,18 @@ async def search_get(
         Answer with citations
     """
     search_request = SearchRequest(query=q, store_name=store, model=model)
-    return await search(request, search_request)
+    return await search(request, search_request, api_key)
 
 
 @app.post("/search", response_model=SearchResponse, include_in_schema=False)
 @limiter.limit("100/minute")
-async def search_post_legacy(request: Request, search_request: SearchRequest):
+async def search_post_legacy(
+    request: Request,
+    search_request: SearchRequest,
+    api_key: APIKeyInfo = Depends(get_current_api_key),
+):
     """Legacy compatibility endpoint that proxies to /api/search (POST)."""
-    return await search(request, search_request)
+    return await search(request, search_request, api_key)
 
 
 @app.get("/search", response_model=SearchResponse, include_in_schema=False)
@@ -785,9 +837,12 @@ async def search_get_legacy(
     q: str = Query(..., description="Search query", min_length=1),
     store: str = Query(default="default", description="Store name"),
     model: Optional[str] = Query(None, description="Model to use"),
+    api_key: APIKeyInfo = Depends(get_current_api_key),
 ):
     """Legacy compatibility endpoint that proxies to /api/search (GET)."""
-    return await search_get(request, q=q, store=store, model=model)
+    return await search_get(
+        request, q=q, store=store, model=model, api_key=api_key
+    )
 
 
 # Store management endpoints
@@ -822,14 +877,18 @@ async def create_store(
         }
     except Exception as e:
         logger.error(f"[{request_id}] Store creation failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise _internal_error(request_id)
 
 
 @app.post("/stores", include_in_schema=False)
 @limiter.limit("20/minute")
-async def create_store_legacy(request: Request, store_request: StoreRequest):
+async def create_store_legacy(
+    request: Request,
+    store_request: StoreRequest,
+    api_key: APIKeyInfo = Depends(get_current_api_key),
+):
     """Legacy compatibility endpoint that proxies to /api/stores."""
-    return await create_store(request, store_request)
+    return await create_store(request, store_request, api_key)
 
 
 @app.get("/api/stores", tags=["Stores"])
@@ -859,9 +918,12 @@ async def list_stores(
 
 @app.get("/stores", include_in_schema=False)
 @limiter.limit("100/minute")
-async def list_stores_legacy(request: Request):
+async def list_stores_legacy(
+    request: Request,
+    api_key: APIKeyInfo = Depends(get_current_api_key),
+):
     """Legacy compatibility endpoint that proxies to /api/stores."""
-    return await list_stores(request)
+    return await list_stores(request, api_key)
 
 
 @app.delete("/api/stores/{store_name}", tags=["Stores"])
@@ -897,7 +959,9 @@ async def delete_store(
 # Metrics endpoints
 @app.get("/prometheus", tags=["Monitoring"])
 @limiter.limit("100/minute")
-async def prometheus_metrics(request: Request):
+async def prometheus_metrics(
+    request: Request, api_key: Optional[APIKeyInfo] = Depends(optional_api_key)
+):
     """
     Prometheus metrics endpoint (Rate limited: 100/min)
 
@@ -913,6 +977,8 @@ async def prometheus_metrics(request: Request):
         - Error metrics
         - System metrics (CPU, memory, disk)
     """
+    _enforce_metrics_access(request, api_key)
+
     # Update stores count
     if searcher:
         stores = searcher.list_stores()
@@ -925,13 +991,17 @@ async def prometheus_metrics(request: Request):
 
 @app.get("/metrics", response_model=MetricsResponse, tags=["Monitoring"])
 @limiter.limit("100/minute")
-async def get_metrics(request: Request):
+async def get_metrics(
+    request: Request, api_key: Optional[APIKeyInfo] = Depends(optional_api_key)
+):
     """
     Get enhanced service metrics with cache statistics (Rate limited: 100/min)
 
     Returns:
         Current metrics, configuration, system info, and cache statistics
     """
+    _enforce_metrics_access(request, api_key)
+
     if not searcher:
         raise ServiceUnavailableError("FileSearch", "Service not initialized")
 
@@ -975,12 +1045,12 @@ async def root():
             "upload_multiple": "POST /api/upload/multiple (5/min)",
             "search": "POST /api/search or GET /api/search?q=... (100/min)",
             "stores": "GET /api/stores (100/min)",
-            "metrics": "GET /metrics (100/min)",
-            "prometheus": "GET /prometheus (100/min)",
+            "metrics": "GET /metrics (admin-only, 100/min, disabled by default)",
+            "prometheus": "GET /prometheus (admin-only, 100/min, disabled by default)",
         },
         "features": {
             "caching": "LRU cache with 1-hour TTL (1000 items)",
-            "monitoring": "Prometheus metrics at /prometheus",
+            "monitoring": "Prometheus metrics at /prometheus (admin-only, disabled by default)",
             "logging": "Structured JSON logging",
             "security": "Rate limiting, request tracing, OWASP headers",
         },
@@ -1099,7 +1169,7 @@ def main():
         print("  export GEMINI_API_KEY='your-key'")
         print("  flamehaven-api")
         print("\nDocs: http://localhost:8000/docs")
-        print("Prometheus: http://localhost:8000/prometheus")
+        print("Prometheus: http://localhost:8000/prometheus (disabled by default)")
         print("\nNew in v1.1.0:")
         print("  [*] Security:")
         print("      - Path traversal vulnerability fixed")
@@ -1114,7 +1184,7 @@ def main():
             "(set ENVIRONMENT=development for readable logs)"
         )
         print("  [*] Monitoring:")
-        print("      - Prometheus metrics at /prometheus")
+        print("      - Prometheus metrics at /prometheus (disabled by default)")
         print("      - System metrics (CPU, memory, disk)")
         print("      - Cache hit/miss tracking")
         return
@@ -1130,14 +1200,14 @@ def main():
     print("\nEndpoints:")
     print(f"  - Docs:       http://{host}:{port}/docs")
     print(f"  - Health:     http://{host}:{port}/health")
-    print(f"  - Metrics:    http://{host}:{port}/metrics")
-    print(f"  - Prometheus: http://{host}:{port}/prometheus")
+    print(f"  - Metrics:    http://{host}:{port}/metrics (disabled by default)")
+    print(f"  - Prometheus: http://{host}:{port}/prometheus (disabled by default)")
     print("\nFeatures:")
     print("  - Rate limiting: 10/min uploads, 100/min searches")
     print("  - Request tracing with X-Request-ID header")
     print("  - Security headers (OWASP compliant)")
     print("  - LRU caching with 1-hour TTL (1000 items)")
-    print("  - Prometheus metrics export")
+    print("  - Prometheus metrics export (disabled by default)")
     print("  - Structured JSON logging")
 
     uvicorn.run(

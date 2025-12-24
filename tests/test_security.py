@@ -236,8 +236,9 @@ class TestAuthenticationAndAuthorization:
         data = response.json()
         assert "status" in data
 
-    def test_metrics_endpoint_accessible(self, client):
+    def test_metrics_endpoint_accessible(self, client, monkeypatch):
         """Test that metrics endpoint is accessible"""
+        monkeypatch.setenv("FLAMEHAVEN_METRICS_ENABLED", "1")
         response = client.get("/metrics")
 
         # Should return metrics data

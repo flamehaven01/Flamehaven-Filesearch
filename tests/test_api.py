@@ -153,8 +153,9 @@ class TestSearchEndpoints:
 class TestMetricsEndpoints:
     """Test metrics endpoints"""
 
-    def test_get_metrics(self, client, mock_api_key):
+    def test_get_metrics(self, client, mock_api_key, monkeypatch):
         """Test getting metrics"""
+        monkeypatch.setenv("FLAMEHAVEN_METRICS_ENABLED", "1")
         response = client.get("/metrics")
         if response.status_code == 200:
             data = response.json()
@@ -213,8 +214,9 @@ class TestAPIIntegration:
         assert search_result["status"] == "success"
         assert "answer" in search_result
 
-    def test_metrics_after_operations(self, authenticated_client):
+    def test_metrics_after_operations(self, authenticated_client, monkeypatch):
         """Test metrics after performing operations"""
+        monkeypatch.setenv("FLAMEHAVEN_METRICS_ENABLED", "1")
         # Get metrics
         response = authenticated_client.get("/metrics")
         assert response.status_code == 200
