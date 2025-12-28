@@ -110,11 +110,28 @@ class UsageTracker:
                     total_bytes INTEGER DEFAULT 0,
                     duration_ms REAL DEFAULT 0.0,
                     status_code INTEGER DEFAULT 200,
-                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    INDEX (api_key_id),
-                    INDEX (timestamp),
-                    INDEX (api_key_id, timestamp)
+                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
+                """
+            )
+
+            # Create indexes for usage_records
+            conn.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_usage_api_key
+                ON usage_records(api_key_id)
+                """
+            )
+            conn.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_usage_timestamp
+                ON usage_records(timestamp)
+                """
+            )
+            conn.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_usage_api_key_timestamp
+                ON usage_records(api_key_id, timestamp)
                 """
             )
 
@@ -143,10 +160,22 @@ class UsageTracker:
                     threshold_pct REAL NOT NULL,
                     current_usage INTEGER NOT NULL,
                     quota_limit INTEGER NOT NULL,
-                    triggered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    INDEX (api_key_id),
-                    INDEX (triggered_at)
+                    triggered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
+                """
+            )
+
+            # Create indexes for usage_alerts
+            conn.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_alerts_api_key
+                ON usage_alerts(api_key_id)
+                """
+            )
+            conn.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_alerts_timestamp
+                ON usage_alerts(triggered_at)
                 """
             )
 
