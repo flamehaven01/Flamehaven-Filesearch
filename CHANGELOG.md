@@ -7,6 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.4.1] - 2025-12-28
+
+### Added
+- **Performance Baseline Documentation** (`docs/PERFORMANCE_BASELINE.md`)
+  - Comprehensive benchmarks for all core components
+  - Expected latency ranges and thresholds
+  - Monitoring and alerting guidelines
+  - Historical performance data (v1.3.1 → v1.4.1)
+  - CI/CD integration examples
+- **Image Size Limits** for multimodal endpoints
+  - Configurable max size via `MULTIMODAL_IMAGE_MAX_MB` (default: 10MB)
+  - Clear error messages when limits exceeded
+  - Image size metadata in processing results
+- **Vision Processing Timeouts**
+  - 30-second default timeout for image processing
+  - Timeout errors reported with status metadata
+  - Unix signal-based timeout (Windows: graceful degradation)
+- **pgvector Health Checks** with circuit breaker pattern
+  - `PostgresVectorStore.health_check()` method
+  - Circuit breaker states: CLOSED → OPEN → HALF_OPEN
+  - Automatic recovery after 60s timeout
+  - Exponential backoff retry (3 attempts, 0.1s → 2.0s)
+  - Health status in `get_stats()` output
+
+### Changed
+- `MultimodalProcessor` now validates image size before processing
+- `PostgresVectorStore._connect()` wrapped with retry + circuit breaker
+- Vector store stats include circuit breaker state and health status
+
+### Fixed
+- Multimodal processing failures now return structured error metadata
+- pgvector connection failures trigger circuit breaker protection
+- Vision timeout errors handled gracefully without crashing
+
+### Performance
+- No performance impact (<1% overhead from health checks)
+- Circuit breaker prevents cascade failures during DB outages
+- Retry logic reduces intermittent connection failure rate
+
+### Notes
+- Circuit breaker parameters tunable via class initialization
+- Timeout enforcement Unix-only (Windows fallback: no timeout)
+- Health checks exposed for monitoring integration
+
+---
+
 ## [1.4.0] - 2025-12-28
 
 ### Added

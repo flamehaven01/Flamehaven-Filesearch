@@ -4,14 +4,40 @@ Multimodal processing hooks for optional vision delegation.
 from __future__ import annotations
 
 import logging
+import signal
+from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import Enum
 from io import BytesIO
 from typing import Any, Dict, Optional, Protocol
 
 from .config import Config
+from .exceptions import FileSizeExceededError
 
 logger = logging.getLogger(__name__)
+
+# Default timeout for vision processing (seconds)
+DEFAULT_VISION_TIMEOUT = 30
+
+
+@contextmanager
+def timeout_context(seconds: int):
+    """Context manager for timeout enforcement (Unix only)."""
+    def timeout_handler(signum, frame):
+        raise TimeoutError(f"Vision processing exceeded {seconds}s timeout")
+
+    # Only enable on Unix-like systems
+    if hasattr(signal, 'SIGALRM'):
+        old_handler = signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(seconds)
+        try:
+            yield
+        finally:
+            signal.alarm(0)
+            signal.signal(signal.SIGALRM, old_handler)
+    else:
+        # Windows: no signal-based timeout, just yield
+        yield
 
 
 class VisionStrategy(str, Enum):
@@ -89,21 +115,54 @@ class MultimodalProcessor:
         self,
         vision_modal: VisionModal,
         strategy: VisionStrategy = VisionStrategy.FAST,
+        max_size_mb: int = 10,
+        timeout_seconds: int = DEFAULT_VISION_TIMEOUT,
     ):
         self.vision_modal = vision_modal
         self.strategy = strategy
+        self.max_size_mb = max_size_mb
+        self.timeout_seconds = timeout_seconds
 
     def describe_image_bytes(self, image_bytes: bytes) -> ProcessedImage:
         if not image_bytes:
             return ProcessedImage(text="", metadata={"status": "empty"})
+
+        # Validate image size
+        size_mb = len(image_bytes) / (1024 * 1024)
+        if size_mb > self.max_size_mb:
+            error_msg = (
+                f"Image size {size_mb:.2f}MB exceeds limit of {self.max_size_mb}MB"
+            )
+            logger.warning(error_msg)
+            raise FileSizeExceededError(error_msg)
+
         try:
-            text = self.vision_modal.describe_image(image_bytes, self.strategy)
+            # Apply timeout for vision processing
+            with timeout_context(self.timeout_seconds):
+                text = self.vision_modal.describe_image(image_bytes, self.strategy)
+        except TimeoutError as exc:
+            logger.error("Vision processing timeout: %s", exc)
+            return ProcessedImage(
+                text="",
+                metadata={
+                    "status": "timeout",
+                    "error": str(exc),
+                    "timeout_seconds": self.timeout_seconds,
+                },
+            )
         except Exception as exc:
             logger.warning("Vision processing failed: %s", exc)
-            return ProcessedImage(text="", metadata={"status": "error"})
+            return ProcessedImage(
+                text="",
+                metadata={"status": "error", "error": str(exc)},
+            )
         return ProcessedImage(
             text=text or "",
-            metadata={"status": "ok", "strategy": self.strategy.value},
+            metadata={
+                "status": "ok",
+                "strategy": self.strategy.value,
+                "size_mb": round(size_mb, 2),
+            },
         )
 
 
@@ -150,4 +209,6 @@ def get_multimodal_processor(
     return MultimodalProcessor(
         vision_modal=_select_vision_modal(config, vision_modal),
         strategy=_parse_strategy(config.vision_strategy),
+        max_size_mb=config.multimodal_image_max_mb,
+        timeout_seconds=DEFAULT_VISION_TIMEOUT,
     )

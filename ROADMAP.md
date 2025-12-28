@@ -22,6 +22,14 @@ pressure reduction before expanding surface area.
 - [x] OAuth2/OIDC integration.
 - [x] PostgreSQL backend option (metadata + vector store).
 - [x] Vector backend override per request.
+
+## v1.4.1 (Target: Q1 2026)
+
+**Focus:** Stability and observability improvements for "Next Steps (Now)" items.
+
+- [ ] Performance baseline documentation (docs/PERFORMANCE_BASELINE.md).
+- [ ] Image size limits and timeout controls for multimodal endpoints.
+- [ ] pgvector health checks with circuit breaker pattern.
 - [ ] Budget-aware rate limits (global + per-key).
 - [ ] Usage dashboards (weekly/monthly trends).
 - [ ] Vector store maintenance tasks (reindex, vacuum, and stats export).
