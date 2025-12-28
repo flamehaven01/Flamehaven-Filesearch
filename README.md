@@ -7,7 +7,7 @@
 ### Self-hosted RAG search engine. Production-ready in 3 minutes.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.4.1-blue.svg)](CHANGELOG.md)
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/docker-ready-brightgreen.svg)](https://hub.docker.com/r/flamehaven/filesearch)
 
@@ -23,7 +23,7 @@ Stop sending your sensitive documents to third-party services. Get enterprise-gr
 
 ```bash
 # One command. Three minutes. Done.
-docker run -d -p 8000:8000 -e GEMINI_API_KEY="your_key" flamehaven-filesearch:1.4.0
+docker run -d -p 8000:8000 -e GEMINI_API_KEY="your_key" flamehaven-filesearch:1.4.1
 ```
 
 <table>
@@ -60,27 +60,22 @@ Open source & MIT licensed</p>
 - **⚡ Ultra-Fast Vectors** - DSP v2.0 algorithm generates embeddings in <1ms without ML frameworks
 - **🎯 Source Attribution** - Every answer includes links back to source documents
 
-### What's New in v1.4.0
+### What's New in v1.4.1
 
-- **Multimodal Search** - Text + image search endpoint (disabled by default)    
-- **HNSW Vector Index** - Optional HNSW backend with brute-force fallback       
+- **Usage Tracking & Quotas** - Per-API-key request/token tracking with daily/monthly limits
+- **Admin Usage APIs** - Detailed usage stats, quota management, and alert monitoring
+- **pgvector Maintenance** - HNSW reindexing, VACUUM ANALYZE, and index statistics
+- **pgvector Tuning Guide** - Comprehensive production tuning and optimization documentation
+- **Circuit Breaker** - Automatic failure recovery for database connections
+- **Performance Monitoring** - Complete observability with health checks and metrics
+
+### Production Features (v1.4.0+)
+
+- **Multimodal Search** - Text + image search endpoint (optional)
+- **HNSW Vector Index** - High-performance similarity search with pgvector
 - **OAuth2/OIDC Support** - JWT validation alongside API keys
-- **PostgreSQL Backend** - Optional metadata persistence and vector store support
-- **Vision Delegate** - Optional Pillow/Tesseract processing for image metadata
-
-### Next Steps (usage limit focus)
-
-Current weekly usage budget is ~2%. Priorities below target cost and quota
-pressure before new surface area:
-
-- Reduce external LLM calls (better cache hit rate, batching, stricter request
-  validation, and local fallback defaults).
-- Ship usage-aware controls (per-key budgets, alerts, and usage reporting in
-  admin endpoints).
-- Strengthen pgvector path (index tuning, recall/perf benchmarks, and optional
-  background reindex).
-- Improve multimodal pipeline stability (vision provider selection, size limits,
-  and clearer error messages).
+- **PostgreSQL Backend** - Enterprise-grade persistence and vector store
+- **Vision Processing** - Image metadata extraction with size limits and timeouts
 
 ### Enterprise Features (v1.2.2+)
 
@@ -104,7 +99,7 @@ docker run -d \
   -e GEMINI_API_KEY="your_gemini_api_key" \
   -e FLAMEHAVEN_ADMIN_KEY="secure_admin_password" \
   -v $(pwd)/data:/app/data \
-  flamehaven-filesearch:1.4.0
+  flamehaven-filesearch:1.4.1
 ```
 
 ✅ Server running at `http://localhost:8000`
@@ -182,7 +177,7 @@ pip install flamehaven-filesearch[all]
 # Build from source
 git clone https://github.com/flamehaven01/Flamehaven-Filesearch.git
 cd Flamehaven-Filesearch
-docker build -t flamehaven-filesearch:1.4.0 .
+docker build -t flamehaven-filesearch:1.4.1 .
 ```
 
 ---

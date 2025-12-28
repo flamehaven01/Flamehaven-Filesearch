@@ -72,6 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Multimodal processing failures now return structured error metadata
 - pgvector connection failures trigger circuit breaker protection
 - Vision timeout errors handled gracefully without crashing
+- SQLite INDEX syntax error in usage_tracker.py (separated CREATE INDEX statements)
 
 ### Performance
 - No performance impact (<1% overhead from health checks)
