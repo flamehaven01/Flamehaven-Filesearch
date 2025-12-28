@@ -15,7 +15,7 @@ pressure reduction before expanding surface area.
       errors).
 - [ ] Performance baseline (stabilize benchmarks and document expected ranges).
 
-## v1.4.x (Q1 2026)
+## v1.4.0 (Released: 2025-12-28)
 
 - [x] Multimodal search (image + text).
 - [x] HNSW vector indexing.

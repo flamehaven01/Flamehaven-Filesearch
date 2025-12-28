@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.4.0] - 2025-12-28
+
+### Added
+- Multimodal search endpoint (`/api/search/multimodal`) with text + optional image input.
+- Optional HNSW vector index path (auto-fallback to brute-force if unavailable).
+- OAuth2/OIDC JWT validation integrated into auth flow (API key compatible).
+- PostgreSQL metadata backend option for local fallback persistence.
+- Config flags for multimodal, vector index, OAuth/OIDC, and PostgreSQL backends.
+- PostgreSQL vector store option (pgvector + HNSW) for semantic search.
+- Vision delegate hook for optional image preprocessing.
+- Vector backend override per request (`auto`, `memory`, `postgres`, `chronos`).
+
+### Changed
+- Chronos-Grid now supports optional HNSW indexing.
+- Embedding generator adds deterministic image vectorization for multimodal search.
+- Local fallback uses a metadata store abstraction (memory or PostgreSQL).
+- API search response includes optional `multimodal` metadata.
+
+### Notes
+- All v1.4.0 features are disabled by default and must be enabled via env config.
+
+---
+
 ## [1.3.1] - 2025-12-16
 
 ### Added - Phase 2 & 3: Semantic Search + Gravitas-Pack Integration
@@ -106,29 +129,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Prevent admin access with non-admin API keys (returns 403).
-
----
-## [1.4.0] - 2025-12-24
-
-### Added
-- Multimodal search endpoint (`/api/search/multimodal`) with text + optional image input.
-- Optional HNSW vector index path (auto-fallback to brute-force if unavailable).
-- OAuth2/OIDC JWT validation integrated into auth flow (API key compatible).
-- PostgreSQL metadata backend option for local fallback persistence.
-- Config flags for multimodal, vector index, OAuth/OIDC, and PostgreSQL backends.
-- PostgreSQL vector store option (pgvector + HNSW) for semantic search.
-- Vision delegate hook for optional image preprocessing.
-- Vector backend override per request (`auto`, `memory`, `postgres`, `chronos`).
-
-### Changed
-- Chronos-Grid now supports optional HNSW indexing.
-- Embedding generator adds deterministic image vectorization for multimodal search.
-- Local fallback uses a metadata store abstraction (memory or PostgreSQL).
-- API search response includes optional `multimodal` metadata.
-
-### Notes
-- All v1.4.0 features are disabled by default and must be enabled via env config.
-
 
 ## [1.2.0] - 2025-11-16
 
