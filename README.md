@@ -51,7 +51,7 @@ Open source & MIT licensed</p>
 
 ---
 
-## ✨ Features
+## Features ✨
 
 ### Core Capabilities
 
@@ -92,7 +92,7 @@ pressure before new surface area:
 
 ---
 
-## 🚀 Quick Start
+## Quick Start 🚀
 
 ### Option 1: Docker (Recommended)
 
@@ -187,7 +187,7 @@ docker build -t flamehaven-filesearch:1.4.0 .
 
 ---
 
-## ⚙️ Configuration
+## Configuration ⚙️
 
 ### Required Environment Variables
 
@@ -276,7 +276,7 @@ Upload (50MB file):     3,200ms  (with indexing)
 
 ---
 
-## 🏗️ Architecture
+## Architecture 🏗️
 
 ```
 ┌─────────────────┐
@@ -313,7 +313,7 @@ Upload (50MB file):     3,200ms  (with indexing)
 
 ---
 
-## 🔒 Security
+## Security 🔒
 
 FLAMEHAVEN takes security seriously:
 
@@ -340,7 +340,7 @@ curl -X DELETE http://localhost:8000/api/admin/keys/old_key_id \
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap 🗺️
 
 Full roadmap lives in `ROADMAP.md`. Summary below:
 
@@ -363,7 +363,7 @@ See `ROADMAP.md` for backlog curation and request intake.
 
 ---
 
-## 🐛 Troubleshooting
+## Troubleshooting 🐛
 
 <details>
 <summary><b>❌ 401 Unauthorized Error</b></summary>
@@ -423,11 +423,11 @@ docker run -d \
 ```
 </details>
 
-More solutions in our [Wiki Troubleshooting Guide](docs/wiki/troubleshooting.md).
+More solutions in our [Wiki Troubleshooting Guide](docs/wiki/Troubleshooting.md).
 
 ---
 
-## 📚 Documentation
+## Documentation 📚
 
 - **[API Reference](http://localhost:8000/docs)** - Interactive OpenAPI documentation
 - **[Wiki](docs/wiki/README.md)** - Comprehensive guides and tutorials
@@ -437,7 +437,7 @@ More solutions in our [Wiki Troubleshooting Guide](docs/wiki/troubleshooting.md)
 
 ---
 
-## 🤝 Contributing
+## Contributing 🤝
 
 We love contributions! FLAMEHAVEN is better because of developers like you.
 
@@ -457,7 +457,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
 
 ---
 
-## 💬 Community & Support
+## Community & Support 💬
 
 - **💬 Discussions:** [GitHub Discussions](https://github.com/flamehaven01/Flamehaven-Filesearch/discussions)
 - **🐛 Bug Reports:** [GitHub Issues](https://github.com/flamehaven01/Flamehaven-Filesearch/issues)
@@ -466,7 +466,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
 
 ---
 
-## 📄 License
+## License 📄
 
 Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
 
