@@ -30,11 +30,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automatic recovery after 60s timeout
   - Exponential backoff retry (3 attempts, 0.1s → 2.0s)
   - Health status in `get_stats()` output
+- **Usage Tracking and Quota Management** (`usage_tracker.py`, `usage_middleware.py`)
+  - Per-API-key request and token tracking with SQLite database
+  - Daily and monthly quota enforcement (requests + tokens)
+  - Alert system with configurable thresholds (default: 80%)
+  - Alert deduplication (1-hour cooldown)
+  - Automatic cleanup of old records (90+ days)
+  - Default quotas: 10k req/day, 1M tokens/day, 300k req/month, 30M tokens/month
+  - Quota enforcement BEFORE request processing to prevent overuse
+  - Middleware enabled by default, configurable via `USAGE_TRACKING_ENABLED`
+- **Admin Usage Reporting APIs** (`admin_routes.py`)
+  - `GET /api/admin/usage/detailed` - Detailed usage stats for time period
+  - `GET /api/admin/usage/quota/{api_key_id}` - Get quota status with percentages
+  - `POST /api/admin/usage/quota/{api_key_id}` - Configure quota limits
+  - `GET /api/admin/usage/alerts` - Recent usage threshold alerts
+  - Ownership verification for all quota operations
+  - Comprehensive usage metrics: requests, tokens, bytes, duration, success rate
+- **pgvector Maintenance Operations** (`vector_store.py`)
+  - `reindex_hnsw()` - Rebuild HNSW index for optimal performance
+  - `vacuum_analyze()` - Reclaim space and update query planner statistics
+  - `get_index_stats()` - Detailed index size and table size information
+  - `export_stats()` - Comprehensive monitoring statistics (health, vectors, activity)
+  - Production-ready maintenance procedures with error handling
+- **pgvector Tuning Guide** (`docs/PGVECTOR_TUNING.md`)
+  - HNSW parameter tuning (m, ef_construction, ef_search)
+  - Performance optimization strategies
+  - Maintenance scheduling recommendations
+  - Monitoring and observability best practices
+  - Scaling strategies (vertical + horizontal + partitioning)
+  - Comprehensive troubleshooting guide
+  - Reference benchmarks and performance numbers
 
 ### Changed
 - `MultimodalProcessor` now validates image size before processing
 - `PostgresVectorStore._connect()` wrapped with retry + circuit breaker
 - Vector store stats include circuit breaker state and health status
+- FastAPI application (`api.py`) updated to v1.4.1 with usage tracking middleware
+- All package version references updated from 1.4.0 to 1.4.1
 
 ### Fixed
 - Multimodal processing failures now return structured error metadata
@@ -45,11 +77,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - No performance impact (<1% overhead from health checks)
 - Circuit breaker prevents cascade failures during DB outages
 - Retry logic reduces intermittent connection failure rate
+- Usage tracking uses efficient SQLite database with indexed queries
+- Token estimation lightweight (1 token ≈ 4 characters approximation)
 
 ### Notes
 - Circuit breaker parameters tunable via class initialization
 - Timeout enforcement Unix-only (Windows fallback: no timeout)
 - Health checks exposed for monitoring integration
+- Usage tracking enabled by default, disable via `USAGE_TRACKING_ENABLED=false`
+- Quota limits are per-API-key and configurable via admin API
+- pgvector maintenance operations safe for production use
+- Tuning guide provides production-ready parameter recommendations
 
 ---
 

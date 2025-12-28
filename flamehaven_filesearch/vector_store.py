@@ -384,6 +384,129 @@ class PostgresVectorStore(VectorStore):
 
         return stats
 
+    def reindex_hnsw(self) -> Dict[str, Any]:
+        """Rebuild HNSW index for optimal performance."""
+        logger.info("[Maintenance] Starting HNSW reindex...")
+
+        try:
+            with self._connect() as conn:
+                # Drop existing index
+                conn.execute(
+                    f"DROP INDEX IF EXISTS {self._schema}.{self._table}_hnsw_idx"
+                )
+
+                # Recreate with current parameters
+                conn.execute(
+                    f"""
+                    CREATE INDEX {self._table}_hnsw_idx
+                    ON {self._schema}.{self._table}
+                    USING hnsw (embedding vector_cosine_ops)
+                    WITH (m = {self._hnsw_m}, ef_construction = {self._hnsw_ef_construction})
+                    """
+                )
+
+            logger.info("[Maintenance] HNSW reindex completed")
+            return {"status": "ok", "message": "HNSW index rebuilt"}
+
+        except Exception as exc:
+            logger.error(f"[Maintenance] HNSW reindex failed: {exc}")
+            return {"status": "error", "error": str(exc)}
+
+    def vacuum_analyze(self) -> Dict[str, Any]:
+        """Run VACUUM ANALYZE to reclaim space and update statistics."""
+        logger.info("[Maintenance] Starting VACUUM ANALYZE...")
+
+        try:
+            with self._connect() as conn:
+                # VACUUM cannot run inside a transaction block
+                conn.autocommit = True
+                conn.execute(f"VACUUM ANALYZE {self._schema}.{self._table}")
+
+            logger.info("[Maintenance] VACUUM ANALYZE completed")
+            return {"status": "ok", "message": "VACUUM ANALYZE completed"}
+
+        except Exception as exc:
+            logger.error(f"[Maintenance] VACUUM ANALYZE failed: {exc}")
+            return {"status": "error", "error": str(exc)}
+
+    def get_index_stats(self) -> Dict[str, Any]:
+        """Get detailed index statistics."""
+        try:
+            with self._connect() as conn:
+                # Get index sizes
+                index_stats = conn.execute(
+                    f"""
+                    SELECT
+                        indexname,
+                        pg_size_pretty(pg_relation_size(indexname::regclass)) as size
+                    FROM pg_indexes
+                    WHERE schemaname = '{self._schema}'
+                    AND tablename = '{self._table}'
+                    """
+                ).fetchall()
+
+                # Get table size
+                table_size = conn.execute(
+                    f"""
+                    SELECT pg_size_pretty(pg_total_relation_size('{self._schema}.{self._table}'))
+                    """
+                ).fetchone()[0]
+
+            return {
+                "table_size": table_size,
+                "indexes": [
+                    {"name": idx[0], "size": idx[1]} for idx in index_stats
+                ],
+            }
+
+        except Exception as exc:
+            logger.error(f"[Stats] Failed to get index stats: {exc}")
+            return {"error": str(exc)}
+
+    def export_stats(self) -> Dict[str, Any]:
+        """Export comprehensive statistics for monitoring."""
+        try:
+            with self._connect() as conn:
+                # Vector count by store
+                store_counts = conn.execute(
+                    f"""
+                    SELECT store_name, COUNT(*) as count
+                    FROM {self._schema}.{self._table}
+                    GROUP BY store_name
+                    ORDER BY count DESC
+                    """
+                ).fetchall()
+
+                # Recent activity
+                recent_count = conn.execute(
+                    f"""
+                    SELECT COUNT(*) FROM {self._schema}.{self._table}
+                    WHERE created_at > NOW() - INTERVAL '24 hours'
+                    """
+                ).fetchone()[0]
+
+            health = self.health_check()
+            index_stats = self.get_index_stats()
+
+            return {
+                "health": health,
+                "total_vectors": sum(count for _, count in store_counts),
+                "stores": [
+                    {"name": name, "vectors": count}
+                    for name, count in store_counts
+                ],
+                "recent_24h": recent_count,
+                "index_stats": index_stats,
+                "circuit_breaker": {
+                    "state": self._circuit_breaker.state.value,
+                    "failure_count": self._circuit_breaker.failure_count,
+                },
+            }
+
+        except Exception as exc:
+            logger.error(f"[Stats] Failed to export stats: {exc}")
+            return {"error": str(exc)}
+
 
 def create_vector_store(
     config: Optional[Config],

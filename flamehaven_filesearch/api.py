@@ -1,5 +1,5 @@
 """
-FastAPI server for FLAMEHAVEN FileSearch v1.4.0
+FastAPI server for FLAMEHAVEN FileSearch v1.4.1
 
 Production-ready API with:
 - Rate limiting
@@ -11,6 +11,8 @@ Production-ready API with:
 - LRU caching with TTL
 - Prometheus metrics
 - Structured JSON logging
+- Usage tracking and quota management (v1.4.1)
+- pgvector maintenance operations (v1.4.1)
 """
 
 import ipaddress
@@ -70,6 +72,7 @@ from .middlewares import (
     get_request_id,
 )
 from .security import get_current_api_key, optional_api_key
+from .usage_middleware import UsageTrackingMiddleware
 from .validators import (
     FileSizeValidator,
     ImageValidator,
@@ -167,9 +170,9 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="FLAMEHAVEN FileSearch API",
     description=(
-        "Open source semantic document search powered by Google Gemini " "- v1.4.0"
+        "Open source semantic document search powered by Google Gemini " "- v1.4.1"
     ),
-    version="1.4.0",
+    version="1.4.1",
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan,
@@ -196,6 +199,11 @@ app.add_middleware(RequestLoggingMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RequestIDMiddleware)
 app.add_middleware(CORSHeadersMiddleware)
+
+# Add usage tracking middleware (v1.4.1)
+# Enabled by default, can be disabled via USAGE_TRACKING_ENABLED=false
+usage_tracking_enabled = os.getenv("USAGE_TRACKING_ENABLED", "true").lower() in {"1", "true", "yes", "on"}
+app.add_middleware(UsageTrackingMiddleware, enabled=usage_tracking_enabled)
 
 # Include routers (API key management, batch search, dashboard)
 app.include_router(admin_router)

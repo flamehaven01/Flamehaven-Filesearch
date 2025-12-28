@@ -18,6 +18,7 @@ from .auth import get_iam_provider, get_key_manager
 from .config import Config
 from .oauth import is_jwt_format, oauth_has_admin, validate_oauth_token
 from .cache import get_all_cache_stats, reset_all_caches
+from .usage_tracker import QuotaConfig, get_usage_tracker
 
 logger = logging.getLogger(__name__)
 
@@ -323,4 +324,231 @@ async def flush_caches(current_user: str = Depends(_get_admin_user)):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to flush caches",
+        )
+
+# ===== Usage Tracking & Quota Management (v1.4.1) =====
+
+
+class QuotaConfigRequest(BaseModel):
+    """Request to set quota configuration"""
+
+    daily_requests: int = Field(default=10000, description="Daily request limit")
+    daily_tokens: int = Field(default=1000000, description="Daily token limit")
+    monthly_requests: int = Field(default=300000, description="Monthly request limit")
+    monthly_tokens: int = Field(default=30000000, description="Monthly token limit")
+    alert_threshold_pct: float = Field(
+        default=80.0, description="Alert threshold percentage"
+    )
+
+
+class QuotaStatusResponse(BaseModel):
+    """Response with quota status"""
+
+    api_key_id: str
+    exceeded: bool
+    daily: dict
+    monthly: dict
+
+
+class UsageStatsResponse(BaseModel):
+    """Response with usage statistics"""
+
+    total_requests: int
+    total_tokens: int
+    total_bytes: int
+    avg_duration_ms: float
+    success_rate: float
+    top_endpoints: List[tuple]
+
+
+@router.get("/usage/detailed")
+async def get_detailed_usage(
+    api_key_id: Optional[str] = None,
+    hours: int = 24,
+    current_user: str = Depends(_get_admin_user),
+):
+    """
+    Get detailed usage statistics for the past N hours
+
+    Parameters:
+        api_key_id: Optional API key ID to filter by
+        hours: Number of hours to look back (default: 24)
+    """
+    tracker = get_usage_tracker()
+    key_manager = get_key_manager()
+
+    try:
+        # Verify user owns the key if specified
+        if api_key_id:
+            keys = key_manager.list_keys(current_user)
+            if not any(k.id == api_key_id for k in keys):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You don't own this API key",
+                )
+
+        from datetime import datetime, timedelta, timezone
+
+        end_time = datetime.now(timezone.utc)
+        start_time = end_time - timedelta(hours=hours)
+
+        stats = tracker.get_usage_stats(
+            api_key_id=api_key_id, start_time=start_time, end_time=end_time
+        )
+
+        return {
+            "period": f"last_{hours}_hours",
+            "start_time": start_time.isoformat(),
+            "end_time": end_time.isoformat(),
+            "total_requests": stats.total_requests,
+            "total_tokens": stats.total_tokens,
+            "total_bytes": stats.total_bytes,
+            "avg_duration_ms": stats.avg_duration_ms,
+            "success_rate": stats.success_rate,
+            "top_endpoints": stats.top_endpoints,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Failed to get detailed usage: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get usage statistics",
+        )
+
+
+@router.get("/usage/quota/{api_key_id}", response_model=QuotaStatusResponse)
+async def get_quota_status(
+    api_key_id: str,
+    current_user: str = Depends(_get_admin_user),
+):
+    """
+    Get quota status for an API key
+
+    Shows current usage against configured quotas
+    """
+    tracker = get_usage_tracker()
+    key_manager = get_key_manager()
+
+    try:
+        # Verify user owns the key
+        keys = key_manager.list_keys(current_user)
+        if not any(k.id == api_key_id for k in keys):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You don't own this API key",
+            )
+
+        quota_status = tracker.check_quota_exceeded(api_key_id)
+        quota_status["api_key_id"] = api_key_id
+
+        return quota_status
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Failed to get quota status: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get quota status",
+        )
+
+
+@router.post("/usage/quota/{api_key_id}")
+async def set_quota_config(
+    api_key_id: str,
+    quota_request: QuotaConfigRequest,
+    current_user: str = Depends(_get_admin_user),
+):
+    """
+    Set quota configuration for an API key
+
+    Configure daily/monthly limits and alert thresholds
+    """
+    tracker = get_usage_tracker()
+    key_manager = get_key_manager()
+
+    try:
+        # Verify user owns the key
+        keys = key_manager.list_keys(current_user)
+        if not any(k.id == api_key_id for k in keys):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You don't own this API key",
+            )
+
+        quota_config = QuotaConfig(
+            daily_requests=quota_request.daily_requests,
+            daily_tokens=quota_request.daily_tokens,
+            monthly_requests=quota_request.monthly_requests,
+            monthly_tokens=quota_request.monthly_tokens,
+            alert_threshold_pct=quota_request.alert_threshold_pct,
+        )
+
+        tracker.set_quota(api_key_id, quota_config)
+
+        return {
+            "status": "ok",
+            "message": f"Quota configured for {api_key_id}",
+            "config": {
+                "daily_requests": quota_config.daily_requests,
+                "daily_tokens": quota_config.daily_tokens,
+                "monthly_requests": quota_config.monthly_requests,
+                "monthly_tokens": quota_config.monthly_tokens,
+                "alert_threshold_pct": quota_config.alert_threshold_pct,
+            },
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Failed to set quota config: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to set quota configuration",
+        )
+
+
+@router.get("/usage/alerts")
+async def get_usage_alerts(
+    api_key_id: Optional[str] = None,
+    hours: int = 24,
+    current_user: str = Depends(_get_admin_user),
+):
+    """
+    Get recent usage alerts
+
+    Parameters:
+        api_key_id: Optional API key ID to filter by
+        hours: Number of hours to look back (default: 24)
+    """
+    tracker = get_usage_tracker()
+    key_manager = get_key_manager()
+
+    try:
+        # Verify user owns the key if specified
+        if api_key_id:
+            keys = key_manager.list_keys(current_user)
+            if not any(k.id == api_key_id for k in keys):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You don't own this API key",
+                )
+
+        alerts = tracker.get_recent_alerts(api_key_id=api_key_id, hours=hours)
+
+        return {
+            "period": f"last_{hours}_hours",
+            "total_alerts": len(alerts),
+            "alerts": alerts,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Failed to get usage alerts: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get usage alerts",
         )
