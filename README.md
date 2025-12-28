@@ -424,8 +424,24 @@ More solutions in our [Wiki Troubleshooting Guide](docs/wiki/Troubleshooting.md)
 
 ## Documentation 📚
 
-- **[API Reference](http://localhost:8000/docs)** - Interactive OpenAPI documentation
-- **[Wiki](docs/wiki/README.md)** - Comprehensive guides and tutorials
+### Documentation Hub
+
+Use the links below to jump to the most relevant guide.
+
+| Topic | Description |
+|-------|-------------|
+| [Troubleshooting](docs/wiki/Troubleshooting.md) | Step-by-step debugging playbook |
+| [Configuration Reference](docs/wiki/Configuration.md) | Full list of environment variables and config fields |
+| [Production Deployment](docs/wiki/Production_Deployment.md) | Docker, systemd, reverse proxy, scaling tips |
+| [API Reference](docs/wiki/API_Reference.md) | REST endpoints, payloads, rate limits |
+| [Architecture](docs/wiki/Architecture.md) | How the FastAPI, cache, metrics, and validation layers fit together |
+| [Benchmarks](docs/wiki/Benchmarks.md) | Performance measurements and methodology |
+
+These Markdown files live inside the repository so they stay versioned alongside the code. Feel free to contribute improvements via pull requests.
+
+### Additional Resources
+
+- **[Interactive API Docs](http://localhost:8000/docs)** - OpenAPI/Swagger interface (when server is running)
 - **[CHANGELOG](CHANGELOG.md)** - Version history and breaking changes
 - **[CONTRIBUTING](CONTRIBUTING.md)** - How to contribute code
 - **[Examples](examples/)** - Sample integrations and use cases
@@ -484,6 +500,6 @@ Built with amazing open source tools:
 
 Built with 🔥 by the Flamehaven Core Team
 
-*Last updated: December 19, 2025 • Version 1.3.1*
+*Last updated: December 28, 2025 • Version 1.4.1*
 
 </div>
