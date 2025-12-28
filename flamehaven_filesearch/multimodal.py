@@ -1,6 +1,7 @@
 """
 Multimodal processing hooks for optional vision delegation.
 """
+
 from __future__ import annotations
 
 import logging
@@ -23,11 +24,12 @@ DEFAULT_VISION_TIMEOUT = 30
 @contextmanager
 def timeout_context(seconds: int):
     """Context manager for timeout enforcement (Unix only)."""
+
     def timeout_handler(signum, frame):
         raise TimeoutError(f"Vision processing exceeded {seconds}s timeout")
 
     # Only enable on Unix-like systems
-    if hasattr(signal, 'SIGALRM'):
+    if hasattr(signal, "SIGALRM"):
         old_handler = signal.signal(signal.SIGALRM, timeout_handler)
         signal.alarm(seconds)
         try:
@@ -52,8 +54,7 @@ class ProcessedImage:
 
 
 class VisionModal(Protocol):
-    def describe_image(self, image_bytes: bytes, strategy: VisionStrategy) -> str:
-        ...
+    def describe_image(self, image_bytes: bytes, strategy: VisionStrategy) -> str: ...
 
 
 class NoopVisionModal:

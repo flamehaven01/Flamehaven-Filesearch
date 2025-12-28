@@ -1,6 +1,7 @@
 """
 OAuth2/OIDC token validation helpers for FLAMEHAVEN FileSearch.
 """
+
 from dataclasses import dataclass
 import logging
 from typing import Any, Dict, List, Optional
@@ -48,7 +49,9 @@ def _normalize_list(value: Any) -> List[str]:
     return []
 
 
-def validate_oauth_token(token: str, config: Optional[Config] = None) -> Optional[OAuthTokenInfo]:
+def validate_oauth_token(
+    token: str, config: Optional[Config] = None
+) -> Optional[OAuthTokenInfo]:
     config = config or Config.from_env()
     if not config.oauth_enabled:
         return None
@@ -106,7 +109,9 @@ def validate_oauth_token(token: str, config: Optional[Config] = None) -> Optiona
     )
 
 
-def oauth_permissions(oauth_info: OAuthTokenInfo, config: Optional[Config] = None) -> List[str]:
+def oauth_permissions(
+    oauth_info: OAuthTokenInfo, config: Optional[Config] = None
+) -> List[str]:
     config = config or Config.from_env()
     permissions: List[str] = []
 
@@ -134,7 +139,9 @@ def oauth_permissions(oauth_info: OAuthTokenInfo, config: Optional[Config] = Non
     return sorted(set(permissions))
 
 
-def oauth_has_admin(oauth_info: OAuthTokenInfo, config: Optional[Config] = None) -> bool:
+def oauth_has_admin(
+    oauth_info: OAuthTokenInfo, config: Optional[Config] = None
+) -> bool:
     config = config or Config.from_env()
     perms = oauth_permissions(oauth_info, config)
     return "admin" in perms

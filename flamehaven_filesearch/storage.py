@@ -1,6 +1,7 @@
 """
 Metadata storage backends for local fallback mode.
 """
+
 import json
 import logging
 import re
@@ -168,6 +169,8 @@ def create_metadata_store(config: Optional[Config] = None) -> MetadataStore:
     config = config or Config.from_env()
     if config.postgres_enabled:
         if not config.postgres_dsn:
-            raise RuntimeError("POSTGRES_DSN is required when postgres backend is enabled")
+            raise RuntimeError(
+                "POSTGRES_DSN is required when postgres backend is enabled"
+            )
         return PostgresMetadataStore(config.postgres_dsn, schema=config.postgres_schema)
     return MemoryMetadataStore()

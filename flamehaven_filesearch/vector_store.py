@@ -1,6 +1,7 @@
 """
 Vector store backends for semantic search.
 """
+
 from __future__ import annotations
 
 import json
@@ -17,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 class CircuitState(str, Enum):
     """Circuit breaker states."""
+
     CLOSED = "closed"  # Normal operation
     OPEN = "open"  # Failing, reject requests
     HALF_OPEN = "half_open"  # Testing recovery
@@ -173,7 +175,9 @@ class PostgresVectorStore(VectorStore):
         try:
             from pgvector.psycopg import register_vector
         except Exception as e:
-            raise RuntimeError("pgvector is required for PostgreSQL vector store") from e
+            raise RuntimeError(
+                "pgvector is required for PostgreSQL vector store"
+            ) from e
 
         self._psycopg = psycopg
         self._register_vector = register_vector
@@ -205,6 +209,7 @@ class PostgresVectorStore(VectorStore):
     @retry_with_backoff(max_retries=3, initial_delay=0.1, max_delay=2.0)
     def _connect(self):
         """Connect to PostgreSQL with retry and circuit breaker protection."""
+
         def _do_connect():
             conn = self._psycopg.connect(self._dsn)
             self._register_vector(conn)
@@ -454,9 +459,7 @@ class PostgresVectorStore(VectorStore):
 
             return {
                 "table_size": table_size,
-                "indexes": [
-                    {"name": idx[0], "size": idx[1]} for idx in index_stats
-                ],
+                "indexes": [{"name": idx[0], "size": idx[1]} for idx in index_stats],
             }
 
         except Exception as exc:
@@ -492,8 +495,7 @@ class PostgresVectorStore(VectorStore):
                 "health": health,
                 "total_vectors": sum(count for _, count in store_counts),
                 "stores": [
-                    {"name": name, "vectors": count}
-                    for name, count in store_counts
+                    {"name": name, "vectors": count} for name, count in store_counts
                 ],
                 "recent_24h": recent_count,
                 "index_stats": index_stats,

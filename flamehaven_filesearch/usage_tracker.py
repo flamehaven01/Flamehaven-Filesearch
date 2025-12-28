@@ -276,17 +276,21 @@ class UsageTracker:
                     "current": daily_stats.total_requests,
                     "limit": quota.daily_requests,
                     "exceeded": daily_stats.total_requests >= quota.daily_requests,
-                    "pct": (daily_stats.total_requests / quota.daily_requests * 100)
-                    if quota.daily_requests > 0
-                    else 0,
+                    "pct": (
+                        (daily_stats.total_requests / quota.daily_requests * 100)
+                        if quota.daily_requests > 0
+                        else 0
+                    ),
                 },
                 "tokens": {
                     "current": daily_stats.total_tokens,
                     "limit": quota.daily_tokens,
                     "exceeded": daily_stats.total_tokens >= quota.daily_tokens,
-                    "pct": (daily_stats.total_tokens / quota.daily_tokens * 100)
-                    if quota.daily_tokens > 0
-                    else 0,
+                    "pct": (
+                        (daily_stats.total_tokens / quota.daily_tokens * 100)
+                        if quota.daily_tokens > 0
+                        else 0
+                    ),
                 },
             },
             "monthly": {
@@ -294,17 +298,21 @@ class UsageTracker:
                     "current": monthly_stats.total_requests,
                     "limit": quota.monthly_requests,
                     "exceeded": monthly_stats.total_requests >= quota.monthly_requests,
-                    "pct": (monthly_stats.total_requests / quota.monthly_requests * 100)
-                    if quota.monthly_requests > 0
-                    else 0,
+                    "pct": (
+                        (monthly_stats.total_requests / quota.monthly_requests * 100)
+                        if quota.monthly_requests > 0
+                        else 0
+                    ),
                 },
                 "tokens": {
                     "current": monthly_stats.total_tokens,
                     "limit": quota.monthly_tokens,
                     "exceeded": monthly_stats.total_tokens >= quota.monthly_tokens,
-                    "pct": (monthly_stats.total_tokens / quota.monthly_tokens * 100)
-                    if quota.monthly_tokens > 0
-                    else 0,
+                    "pct": (
+                        (monthly_stats.total_tokens / quota.monthly_tokens * 100)
+                        if quota.monthly_tokens > 0
+                        else 0
+                    ),
                 },
             },
         }
@@ -345,9 +353,7 @@ class UsageTracker:
                 where_clauses.append("timestamp <= ?")
                 params.append(end_time.isoformat())
 
-            where_sql = (
-                "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
-            )
+            where_sql = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
 
             # Get aggregate stats
             row = conn.execute(
@@ -504,9 +510,7 @@ class UsageTracker:
             )
             deleted = cursor.rowcount
 
-            conn.execute(
-                "DELETE FROM usage_alerts WHERE triggered_at < ?", (cutoff,)
-            )
+            conn.execute("DELETE FROM usage_alerts WHERE triggered_at < ?", (cutoff,))
 
             conn.commit()
 

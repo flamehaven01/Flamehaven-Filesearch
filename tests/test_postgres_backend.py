@@ -2,6 +2,7 @@
 PostgreSQL metadata backend integration tests.
 Skipped unless POSTGRES_DSN is configured and psycopg is available.
 """
+
 from __future__ import annotations
 
 import os

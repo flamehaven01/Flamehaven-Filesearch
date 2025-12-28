@@ -45,6 +45,7 @@ class DummyVectorStore:
     def get_stats(self):
         return {"backend": "dummy"}
 
+
 # Create mock searcher at module level to prevent real initialization
 _mock_searcher_instance = MagicMock(spec=FlamehavenFileSearch)
 _mock_searcher_instance.search.return_value = {

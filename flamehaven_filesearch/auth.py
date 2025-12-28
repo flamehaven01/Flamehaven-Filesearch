@@ -383,8 +383,8 @@ class APIKeyManager:
         try:
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.cursor()
-                timestamp = datetime.now(timezone.utc).isoformat().replace(
-                    "+00:00", "Z"
+                timestamp = (
+                    datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
                 )
                 safe_request_id = encryption_service.encrypt(request_id)
 

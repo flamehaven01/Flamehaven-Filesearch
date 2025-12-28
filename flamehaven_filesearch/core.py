@@ -246,9 +246,7 @@ class FlamehavenFileSearch:
             except OSError:
                 image_bytes = b""
             if self.multimodal_processor:
-                processed = self.multimodal_processor.describe_image_bytes(
-                    image_bytes
-                )
+                processed = self.multimodal_processor.describe_image_bytes(image_bytes)
                 vision_text = processed.text
                 file_metadata["vision"] = processed.metadata
                 if vision_text:
@@ -317,7 +315,9 @@ class FlamehavenFileSearch:
                 logger.error("Upload failed: %s", e)
                 return {"status": "error", "message": str(e)}
 
-        return self._local_upload(file_path, store_name, size_mb, vision_text=vision_text)
+        return self._local_upload(
+            file_path, store_name, size_mb, vision_text=vision_text
+        )
 
     def upload_files(
         self, file_paths: List[str], store_name: str = "default"

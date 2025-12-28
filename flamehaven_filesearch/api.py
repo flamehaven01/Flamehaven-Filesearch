@@ -137,9 +137,7 @@ def _normalize_vector_backend(value: Optional[str]) -> Optional[str]:
     return normalized
 
 
-def _enforce_metrics_access(
-    request: Request, api_key: Optional[APIKeyInfo]
-) -> None:
+def _enforce_metrics_access(request: Request, api_key: Optional[APIKeyInfo]) -> None:
     if not _metrics_enabled():
         raise HTTPException(status_code=404, detail="Not found")
     if _is_internal_request(request):
@@ -202,7 +200,12 @@ app.add_middleware(CORSHeadersMiddleware)
 
 # Add usage tracking middleware (v1.4.1)
 # Enabled by default, can be disabled via USAGE_TRACKING_ENABLED=false
-usage_tracking_enabled = os.getenv("USAGE_TRACKING_ENABLED", "true").lower() in {"1", "true", "yes", "on"}
+usage_tracking_enabled = os.getenv("USAGE_TRACKING_ENABLED", "true").lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
 app.add_middleware(UsageTrackingMiddleware, enabled=usage_tracking_enabled)
 
 # Include routers (API key management, batch search, dashboard)
@@ -445,7 +448,7 @@ async def health_check(request: Request):
 
     return {
         "status": "healthy" if searcher else "unhealthy",
-        "version": "1.4.0",
+        "version": "1.4.1",
         "uptime_seconds": round(uptime, 2),
         "uptime_formatted": format_uptime(uptime),
         "uptime": format_uptime(uptime),
@@ -860,16 +863,12 @@ async def search_multimodal(
         vector_backend = _normalize_vector_backend(vector_backend)
 
         if not searcher.config.multimodal_enabled:
-            raise HTTPException(
-                status_code=400, detail="Multimodal search is disabled"
-            )
+            raise HTTPException(status_code=400, detail="Multimodal search is disabled")
 
         image_bytes = None
         if image:
             if not ImageValidator.validate_image_type(image.content_type or ""):
-                raise HTTPException(
-                    status_code=400, detail="Unsupported image type"
-                )
+                raise HTTPException(status_code=400, detail="Unsupported image type")
             image_bytes = await image.read()
             FileSizeValidator.validate_file_size(
                 len(image_bytes),
@@ -1201,7 +1200,7 @@ async def root():
     """
     return {
         "name": "FLAMEHAVEN FileSearch API",
-        "version": "1.4.0",
+        "version": "1.4.1",
         "description": "Open source semantic document search powered by Google Gemini",
         "docs": "/docs",
         "health": "/health",
@@ -1237,8 +1236,8 @@ async def filesearch_exception_handler(request: Request, exc: FileSearchExceptio
     request_id = get_request_id(request)
     error_dict = exc.to_dict()
     error_dict["request_id"] = request_id
-    error_dict["timestamp"] = datetime.now(timezone.utc).isoformat().replace(
-        "+00:00", "Z"
+    error_dict["timestamp"] = (
+        datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     )
     error_dict.setdefault("detail", error_dict.get("message", ""))
 
@@ -1274,8 +1273,8 @@ async def general_exception_handler(request: Request, exc: Exception):
     # Convert to standardized response
     error_response = exception_to_response(exc)
     error_response["request_id"] = request_id
-    error_response["timestamp"] = datetime.now(timezone.utc).isoformat().replace(
-        "+00:00", "Z"
+    error_response["timestamp"] = (
+        datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     )
 
     error_response.setdefault("detail", error_response.get("message", ""))
