@@ -9,8 +9,8 @@ from flamehaven_filesearch.config import Config
 from flamehaven_filesearch.vector_store import create_vector_store
 
 try:
-    import psycopg  # type: ignore
     import pgvector  # type: ignore
+    import psycopg  # type: ignore
 except Exception:
     psycopg = None
     pgvector = None

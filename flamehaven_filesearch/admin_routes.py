@@ -15,9 +15,9 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
 
 from .auth import get_iam_provider, get_key_manager
+from .cache import get_all_cache_stats, reset_all_caches
 from .config import Config
 from .oauth import is_jwt_format, oauth_has_admin, validate_oauth_token
-from .cache import get_all_cache_stats, reset_all_caches
 from .usage_tracker import QuotaConfig, get_usage_tracker
 
 logger = logging.getLogger(__name__)

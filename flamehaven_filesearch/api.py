@@ -34,8 +34,8 @@ from fastapi import (
     HTTPException,
     Query,
     Request,
-    status,
     UploadFile,
+    status,
 )
 from fastapi.exception_handlers import (
     request_validation_exception_handler as fastapi_validation_handler,
