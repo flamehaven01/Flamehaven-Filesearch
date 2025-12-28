@@ -1,7 +1,11 @@
 # Architecture Overview
 
 Flamehaven FileSearch balances simplicity with production-grade safeguards. This
-document describes the moving parts, including the **v1.3.1 OMEGA updates** featuring the **Gravitas DSP Engine**.
+document describes the moving parts, including the **v1.4.1 updates** featuring:
+- **Gravitas DSP Engine** (v1.3.1+)
+- **Multimodal Search** (v1.4.0+)
+- **pgvector with HNSW** (v1.4.0+)
+- **Circuit Breaker & Health Checks** (v1.4.1+)
 
 ---
 
@@ -34,7 +38,7 @@ Request → │ FastAPI Router│ ─────> │ Middleware  │ ──┐
 
 ---
 
-## 2. Core Search Engine (v1.3.1)
+## 2. Core Search Engine (v1.4.1)
 
 `FlamehavenFileSearch` (in `core.py`) now supports three primary search modes:
 

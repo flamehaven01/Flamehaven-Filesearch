@@ -9,11 +9,11 @@ pressure reduction before expanding surface area.
 - [ ] Usage-budget controls (per-key quotas, alerts, and admin usage reporting).
 - [ ] Cache + cost improvements (cache hit tracking by search mode/backend,
       tighter invalidation, and default safe limits).
-- [ ] pgvector reliability (health checks, retry/backoff, and index tuning
+- [x] pgvector reliability (health checks, retry/backoff, and index tuning
       guidance).
-- [ ] Multimodal stability (vision provider selection, size/timeouts, clearer
+- [x] Multimodal stability (vision provider selection, size/timeouts, clearer
       errors).
-- [ ] Performance baseline (stabilize benchmarks and document expected ranges).
+- [x] Performance baseline (stabilize benchmarks and document expected ranges).
 
 ## v1.4.0 (Released: 2025-12-28)
 
@@ -23,13 +23,13 @@ pressure reduction before expanding surface area.
 - [x] PostgreSQL backend option (metadata + vector store).
 - [x] Vector backend override per request.
 
-## v1.4.1 (Target: Q1 2026)
+## v1.4.1 (Released: 2025-12-28)
 
 **Focus:** Stability and observability improvements for "Next Steps (Now)" items.
 
-- [ ] Performance baseline documentation (docs/PERFORMANCE_BASELINE.md).
-- [ ] Image size limits and timeout controls for multimodal endpoints.
-- [ ] pgvector health checks with circuit breaker pattern.
+- [x] Performance baseline documentation (docs/PERFORMANCE_BASELINE.md).
+- [x] Image size limits and timeout controls for multimodal endpoints.
+- [x] pgvector health checks with circuit breaker pattern.
 - [ ] Budget-aware rate limits (global + per-key).
 - [ ] Usage dashboards (weekly/monthly trends).
 - [ ] Vector store maintenance tasks (reindex, vacuum, and stats export).

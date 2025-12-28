@@ -82,9 +82,14 @@ PostgreSQL vector backend when `VECTOR_BACKEND=postgres`.
 
 Multimodal search with text + optional image input. Disabled by default.
 Enable with `MULTIMODAL_ENABLED=1`.
-Supported image types: `image/png`, `image/jpeg`, `image/gif`, `image/webp`, `image/bmp`.
+
+**Image Constraints (v1.4.1+):**
+- **Max Size:** 10MB (configurable via `MULTIMODAL_IMAGE_MAX_MB`)
+- **Timeout:** 30s for vision processing (configurable)
+- **Supported Types:** `image/png`, `image/jpeg`, `image/gif`, `image/webp`, `image/bmp`
+
 If `VISION_ENABLED=1`, image uploads can be pre-processed by a vision delegate
-before embedding (implementation is pluggable).
+before embedding (implementation is pluggable: Pillow, Tesseract, or Noop).
 
 **Body (`multipart/form-data`):**
 

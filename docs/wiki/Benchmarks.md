@@ -1,6 +1,9 @@
-# Benchmark Report (v1.3.1)
+# Benchmark Report (v1.4.1)
 
-Performance metrics for **Flamehaven FileSearch v1.3.1** featuring the **Gravitas DSP Engine**.
+Performance metrics for **Flamehaven FileSearch v1.4.1** featuring the **Gravitas DSP Engine**.
+
+> **📊 For comprehensive performance baselines, see:** [`docs/PERFORMANCE_BASELINE.md`](../PERFORMANCE_BASELINE.md)
+> This document provides detailed benchmarks, monitoring guidelines, and historical performance data.
 
 ---
 
@@ -62,8 +65,30 @@ Results of **GravitasPacker** symbolic compression on metadata.
 
 ---
 
-## 6. Recommendations (v1.3.1)
+## 6. v1.4.1 Enhancements
+
+### Multimodal Search Performance
+- **Image Processing Overhead:** +100-200ms (Pillow/Tesseract)
+- **Timeout Protection:** 30s default (configurable)
+- **Size Limits:** 10MB default (configurable via `MULTIMODAL_IMAGE_MAX_MB`)
+
+### pgvector + HNSW Indexing
+- **HNSW Search (100k vectors):** 10-20ms (vs 5-8s brute-force)
+- **Circuit Breaker:** <1% overhead, prevents cascade failures
+- **Retry Logic:** 3 attempts with exponential backoff (0.1s → 2.0s)
+
+### Stability Improvements
+- **Performance Baseline:** Comprehensive docs at `docs/PERFORMANCE_BASELINE.md`
+- **Health Checks:** `PostgresVectorStore.health_check()` method
+- **Error Handling:** Structured metadata for all failure modes
+
+---
+
+## 7. Recommendations (v1.4.1)
 
 1. **Use `int8` quantization** for high-volume stores to save memory without sacrificing accuracy.
 2. **Prefer `hybrid` mode** for production to combine exact match reliability with semantic recall.
 3. **Monitor Cache Hit Rate**: With GravitasPacker, larger caches are feasible within the same memory budget.
+4. **Enable HNSW indexing** for vector stores >10k items to maintain sub-100ms latency.
+5. **Configure multimodal timeouts** based on your vision provider (Tesseract slower than Pillow).
+6. **Set up health check monitoring** for pgvector to detect connection issues early.
