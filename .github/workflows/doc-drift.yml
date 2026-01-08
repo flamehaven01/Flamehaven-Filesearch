@@ -16,6 +16,15 @@ on:
       - 'flamehaven_filesearch/**'
   workflow_dispatch:
 
+env:
+  # Metric Thresholds
+  README_SCORE_THRESHOLD: '0.6'
+  MAX_BROKEN_LINKS: '3'
+  MAX_WARNINGS: '20'
+  # Slop Detection Settings
+  SLOP_DETECTION_ENABLED: 'true'
+  MAX_SLOP_TERMS: '0' # Zero tolerance for hype terms
+
 jobs:
   validate-drift:
     runs-on: ubuntu-latest
@@ -25,10 +34,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1  # Optimized: only need current state for file scanning
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
@@ -36,111 +45,105 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          # No external dependencies needed for drift validator
 
       - name: Run document drift validation
+        id: run_validation
         run: |
+          set +e  # Continue on error
           python tools/drift_validator.py \
             --project-root . \
             --report .audit/doc_drift_report.json
+          exit_code=$?
+          echo "validator_exit_code=$exit_code" >> $GITHUB_OUTPUT
+          
+          if [ $exit_code -ne 0 ]; then
+            echo "::warning::Drift validator exited with code $exit_code"
+          fi
+          
+          # Ensure report file exists
+          if [ ! -f .audit/doc_drift_report.json ]; then
+            echo "::error::Report file not generated"
+            mkdir -p .audit
+            echo '{"metrics":{"readme_score":0,"coherence_score":0,"errors":["Report generation failed"],"warnings":[]}}' > .audit/doc_drift_report.json
+          fi
+
+      - name: Run Slop Detection (Sanity Enforcer)
+        id: run_slop_check
+        if: env.SLOP_DETECTION_ENABLED == 'true'
+        run: |
+          python tools/slop_detector.py \
+            --project-root . \
+            --input-report .audit/doc_drift_report.json \
+            --output-report .audit/doc_drift_report.json
 
       - name: Check documentation health
         id: check_health
         run: |
-          python << 'EOF'
-          import json
-          import sys
-
-          # Read the report
-          with open('.audit/doc_drift_report.json', 'r') as f:
-              report = json.load(f)
-
-          metrics = report['metrics']
-          readme_score = metrics['readme_score']
-          coherence_score = metrics['coherence_score']
-          errors = len(metrics['errors'])
-          warnings = len(metrics['warnings'])
-
-          # Print metrics for display
-          print(f"::notice title=Documentation Metrics::README Score: {readme_score:.1%}")
-          print(f"::notice title=Documentation Metrics::Coherence Score: {coherence_score:.1%}")
-
-          # Fail if thresholds not met
-          failed = False
-
-          if readme_score < 0.6:
-              print(f"::error::README score {readme_score:.1%} below 60% threshold")
-              failed = True
-
-          if errors > 3:
-              print(f"::error::Too many broken links ({errors} > 3)")
-              failed = True
-
-          if warnings > 20:
-              print(f"::warning::Documentation has {warnings} warnings (threshold: 20)")
-
-          # Set output for next steps
-          import os
-          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
-              f.write(f"readme_score={readme_score:.2%}\n")
-              f.write(f"coherence_score={coherence_score:.2%}\n")
-              f.write(f"failed={failed}\n")
-
-          sys.exit(1 if failed else 0)
-          EOF
+          python tools/report_health_checker.py \
+            --report .audit/doc_drift_report.json \
+            --readme-threshold ${{ env.README_SCORE_THRESHOLD }} \
+            --max-broken-links ${{ env.MAX_BROKEN_LINKS }} \
+            --max-warnings ${{ env.MAX_WARNINGS }} \
+            --max-slop-errors ${{ env.MAX_SLOP_TERMS }} \
+            --slop-severity error
 
       - name: Upload report artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: doc-drift-report
+          name: doc-drift-report-${{ github.run_number }}
           path: .audit/doc_drift_report.json
-          retention-days: 30
+          retention-days: 90
+
+      - name: Generate summary
+        if: always()
+        run: |
+          python tools/report_summary_generator.py \
+            --report .audit/doc_drift_report.json \
+            --output-format step-summary
+
+      - name: Generate PR comment body
+        if: github.event_name == 'pull_request' && always()
+        run: |
+          python tools/report_summary_generator.py \
+            --report .audit/doc_drift_report.json \
+            --output-format pr-comment \
+            --output .audit/pr_comment.md
 
       - name: Comment PR with report
         if: github.event_name == 'pull_request' && always()
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
-            const report = JSON.parse(fs.readFileSync('.audit/doc_drift_report.json', 'utf8'));
-            const metrics = report.metrics;
 
-            const body = `## Documentation Drift Validation
+            try {
+              const body = fs.readFileSync('.audit/pr_comment.md', 'utf8');
 
-            **Metrics:**
-            - README Score: \`${(metrics.readme_score * 100).toFixed(1)}%\`
-            - Coherence Score: \`${(metrics.coherence_score * 100).toFixed(1)}%\`
-            - Broken Links: \`${metrics.errors.length}\`
-            - Warnings: \`${metrics.warnings.length}\`
-
-            **Thresholds:**
-            - README Score: \`≥ 60%\`
-            - Broken Links: \`≤ 3\`
-            - Warnings: \`≤ 20\`
-
-            ${ metrics.errors.length > 0 ? `\n**Errors:**\n${metrics.errors.map(e => `- ${e}`).join('\n')}` : '' }
-            `;
-
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: body
-            });
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: body
+              });
+            } catch (error) {
+              console.error('Failed to post PR comment:', error);
+              core.warning('Could not post PR comment');
+            }
 
   summary:
     runs-on: ubuntu-latest
-    name: Documentation Validation Summary
+    name: Validation Summary
     if: always()
     needs: validate-drift
 
     steps:
       - name: Check validation results
         run: |
-          if [ "${{ needs.validate-drift.result }}" = "failure" ]; then
-            echo "::error::Document drift validation failed"
+          result="${{ needs.validate-drift.result }}"
+          if [ "$result" = "failure" ]; then
+            echo "::error::Validation failed"
             exit 1
           else
-            echo "::notice::Document drift validation passed"
+            echo "::notice::✅ Validation passed"
           fi
