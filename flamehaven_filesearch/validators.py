@@ -396,6 +396,11 @@ class MimeTypeValidator:
         # RTF documents
         "text/rtf",
         "application/rtf",
+        # HWP (Hangul Word Processor)
+        "application/x-hwp",
+        "application/haansofthwp",
+        "application/vnd.hancom.hwp",
+        "application/vnd.hancom.hwpx",
         # Other
         "application/octet-stream",  # Generic binary
     ]

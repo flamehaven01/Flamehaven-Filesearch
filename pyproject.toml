@@ -78,9 +78,13 @@ google = [
     "google-genai>=0.2.0",
 ]
 parsers = [
-    "openpyxl>=3.1.0",
-    "python-pptx>=0.6.23",
-    "striprtf>=0.0.26",
+    "pymupdf>=1.23.0",        # PDF extraction (primary)
+    "pypdf>=4.0.0",           # PDF extraction (fallback, pure Python)
+    "python-docx>=1.1.0",     # DOCX extraction
+    "olefile>=0.47",          # HWP 5.x extraction (OLE container)
+    "openpyxl>=3.1.0",        # XLSX extraction
+    "python-pptx>=0.6.23",    # PPTX extraction
+    "striprtf>=0.0.26",       # RTF extraction
 ]
 multilingual = [
     "langdetect>=1.0.9",

@@ -216,6 +216,9 @@ class FlamehavenFileSearch:
         supported_exts = [
             ".pdf",
             ".docx",
+            ".doc",
+            ".hwp",
+            ".hwpx",
             ".md",
             ".txt",
             ".xlsx",
@@ -273,8 +276,20 @@ class FlamehavenFileSearch:
                     image_bytes
                 )
         else:
-            metadata_text = f"{file_metadata['file_name']} {file_metadata['file_type']}"
-            vector_essence = self.embedding_generator.generate(metadata_text)
+            # Extract file content for content-based vector embedding.
+            # Limit to first 2000 chars to keep embedding fast and focused.
+            from .engine.file_parser import extract_text as _extract_text
+
+            _file_content = _extract_text(file_path)
+            if _file_content.strip():
+                embed_text = _file_content[:2000]
+            else:
+                embed_text = (
+                    f"{file_metadata['file_name']} {file_metadata['file_type']}"
+                )
+            vector_essence = self.embedding_generator.generate(embed_text)
+            # Cache content to avoid re-reading in _local_upload
+            file_metadata["_extracted_content"] = _file_content
 
         if self.vector_store:
             try:
@@ -326,7 +341,11 @@ class FlamehavenFileSearch:
                 return {"status": "error", "message": str(e)}
 
         return self._local_upload(
-            file_path, store_name, size_mb, vision_text=vision_text
+            file_path,
+            store_name,
+            size_mb,
+            vision_text=vision_text,
+            extracted_content=file_metadata.pop("_extracted_content", None),
         )
 
     def upload_files(
@@ -362,15 +381,20 @@ class FlamehavenFileSearch:
         store_name: str,
         size_mb: float,
         vision_text: str = "",
+        extracted_content: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Store file metadata/content locally when google-genai is unavailable."""
         ext = Path(file_path).suffix.lower()
         if ext in self._image_extensions():
             content = vision_text or ""
         else:
-            from .engine.file_parser import extract_text
+            # Reuse content extracted during vector embedding if available
+            if extracted_content is not None:
+                content = extracted_content
+            else:
+                from .engine.file_parser import extract_text
 
-            content = extract_text(file_path)
+                content = extract_text(file_path)
 
         metadata = {"file_type": ext}
         if vision_text:
