@@ -8,6 +8,7 @@ import json
 import logging
 import re
 import time
+from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
@@ -131,29 +132,29 @@ def retry_with_backoff(
     return decorator
 
 
-class VectorStore:
-    def ensure_store(self, name: str) -> None:
-        raise NotImplementedError
+class VectorStore(ABC):
+    @abstractmethod
+    def ensure_store(self, name: str) -> None: ...
 
+    @abstractmethod
     def add_vector(
         self,
         store_name: str,
         glyph: str,
         vector: Any,
         essence: Dict[str, Any],
-    ) -> None:
-        raise NotImplementedError
+    ) -> None: ...
 
+    @abstractmethod
     def query(
         self, store_name: str, vector: Any, top_k: int = 5
-    ) -> List[Tuple[Dict[str, Any], float]]:
-        raise NotImplementedError
+    ) -> List[Tuple[Dict[str, Any], float]]: ...
 
-    def delete_store(self, name: str) -> None:
-        raise NotImplementedError
+    @abstractmethod
+    def delete_store(self, name: str) -> None: ...
 
-    def get_stats(self) -> Dict[str, Any]:
-        raise NotImplementedError
+    @abstractmethod
+    def get_stats(self) -> Dict[str, Any]: ...
 
 
 class PostgresVectorStore(VectorStore):
@@ -333,8 +334,10 @@ class PostgresVectorStore(VectorStore):
                     "SET LOCAL hnsw.ef_search = %s",
                     (self._hnsw_ef_search,),
                 )
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug(
+                    "[PgVector] hnsw.ef_search SET failed (non-fatal): %s", exc
+                )
             rows = conn.execute(
                 f"""
                 SELECT essence, 1 - (embedding <=> %s) AS score
@@ -352,7 +355,11 @@ class PostgresVectorStore(VectorStore):
             if isinstance(essence, str):
                 try:
                     essence = json.loads(essence)
-                except Exception:
+                except Exception as exc:
+                    logger.debug(
+                        "[PgVector] essence JSON parse failed, using empty dict: %s",
+                        exc,
+                    )
                     essence = {}
             results.append((essence, score))
         return results
@@ -467,7 +474,7 @@ class PostgresVectorStore(VectorStore):
             return {"error": str(exc)}
 
     def export_stats(self) -> Dict[str, Any]:
-        """Export comprehensive statistics for monitoring."""
+        """Export circuit breaker and connection statistics for monitoring."""
         try:
             with self._connect() as conn:
                 # Vector count by store

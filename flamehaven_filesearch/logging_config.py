@@ -33,7 +33,7 @@ if _JSONLOGGER_AVAILABLE:
 
             # Add service identification
             log_record["service"] = "flamehaven-filesearch"
-            log_record["version"] = "1.4.1"
+            log_record["version"] = "1.4.2"
 
             # Add request ID if available
             if hasattr(record, "request_id"):
@@ -56,11 +56,27 @@ if _JSONLOGGER_AVAILABLE:
 else:
 
     class CustomJsonFormatter(logging.Formatter):
-        """Fallback plain formatter when python-json-logger is unavailable."""
+        """Fallback JSON formatter when python-json-logger is unavailable."""
 
         def format(self, record):
-            base = super().format(record)
-            return base
+            import json
+            import os
+
+            payload = {
+                "timestamp": datetime.now(timezone.utc)
+                .isoformat()
+                .replace("+00:00", "Z"),
+                "level": record.levelname,
+                "logger": record.name,
+                "message": record.getMessage(),
+                "service": "flamehaven-filesearch",
+                "environment": os.getenv("ENVIRONMENT", "development"),
+            }
+            if hasattr(record, "request_id"):
+                payload["request_id"] = record.request_id
+            if record.exc_info:
+                payload["exc_info"] = self.formatException(record.exc_info)
+            return json.dumps(payload)
 
 
 def setup_json_logging(log_level=logging.INFO, **kwargs):
@@ -87,10 +103,7 @@ def setup_json_logging(log_level=logging.INFO, **kwargs):
             datefmt="%Y-%m-%dT%H:%M:%S",
         )
     else:
-        formatter = logging.Formatter(
-            "%(asctime)s %(levelname)s %(name)s %(message)s",
-            datefmt="%Y-%m-%dT%H:%M:%S",
-        )
+        formatter = CustomJsonFormatter()
 
     # Configure root logger
     root_logger = logging.getLogger()

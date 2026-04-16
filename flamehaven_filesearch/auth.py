@@ -15,6 +15,7 @@ import os
 import sqlite3
 import uuid
 from datetime import datetime, timedelta, timezone
+from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import List, Optional, Tuple
 
@@ -519,14 +520,19 @@ def get_key_manager(db_path: str = "./data/flamehaven.db") -> APIKeyManager:
     return _key_manager
 
 
-class IAMProvider:
-    """Pluggable IAM provider (placeholder for future backends)."""
+class IAMProvider(ABC):
+    """Pluggable IAM provider — subclass and implement validate_admin_token."""
+
+    @abstractmethod
+    def validate_admin_token(self, token: str) -> Optional[str]:
+        """Return user_id if token is valid, else None."""
+        ...
+
+
+class NullIAMProvider(IAMProvider):
+    """Default IAM provider: rejects all admin tokens (no external IAM configured)."""
 
     def validate_admin_token(self, token: str) -> Optional[str]:
-        """
-        Validate admin token and return user_id if valid, else None.
-        Override in real provider (AWS IAM / OIDC, etc.).
-        """
         return None
 
 
@@ -555,7 +561,8 @@ class OIDCIAMProvider(IAMProvider):
             return (
                 payload.get("sub") or payload.get("preferred_username") or "oidc-admin"
             )
-        except Exception:
+        except Exception as exc:
+            logger.debug("[OIDC] Token validation failed: %s", exc)
             return None
 
 
@@ -575,7 +582,7 @@ def get_iam_provider() -> IAMProvider:
                     "OIDC provider selected but FLAMEHAVEN_OIDC_SECRET missing; "
                     "falling back to default IAM provider"
                 )
-                _iam_provider = IAMProvider()
+                _iam_provider = NullIAMProvider()
         else:
-            _iam_provider = IAMProvider()
+            _iam_provider = NullIAMProvider()
     return _iam_provider

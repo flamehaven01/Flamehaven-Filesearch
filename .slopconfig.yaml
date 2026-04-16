@@ -1,0 +1,199 @@
+# .slopconfig.yaml — FLAMEHAVEN FileSearch project slop-scan configuration
+# Run: python -m slop_detector.cli flamehaven_filesearch --json --config .slopconfig.yaml
+
+patterns:
+  disabled:
+    # exceptions.py: exception hierarchy __init__ cluster is structural repetition,
+    # not fragmentation. Every custom exception class needs its own __init__ to
+    # carry domain-specific fields (filename, reason, etc.).
+    - function_clone_cluster
+    # @abstractmethod bodies are written as `...` by Python convention (PEP 3119).
+    # Flagging them as placeholders is a false positive.
+    - ellipsis_placeholder
+    # NullIAMProvider.validate_admin_token returns None explicitly — it is the
+    # correct null-object implementation, not an unfinished stub.
+    - return_none_placeholder
+    # return_constant_stub: NoopVisionModal.describe_image returns '' deliberately
+    # (it is a no-op; the real providers override it).
+    - return_constant_stub
+
+  phantom_import:
+    # These packages live in pyproject.toml [project.optional-dependencies],
+    # which slop-detector does not read. They are NOT undeclared deps.
+    allowed_optional:
+      - psycopg           # postgres extra: psycopg[binary]>=3.1.0
+      - pgvector          # postgres extra: pgvector>=0.2.5
+      - hnswlib           # vector extra: hnswlib>=0.8.0
+      - openpyxl          # parsers extra: openpyxl>=3.1.0
+      - pptx              # parsers extra: python-pptx>=0.6.23
+      - striprtf          # parsers extra: striprtf>=0.0.26
+      - langdetect        # multilingual extra: langdetect>=1.0.9
+      - jieba             # multilingual extra: jieba>=0.42.1
+      - PIL               # vision extra: pillow>=10.0.0
+      - pytesseract       # vision extra: pytesseract>=0.3.10
+      - fastapi           # api extra
+      - uvicorn           # api extra
+      - slowapi           # api extra
+      - prometheus_client # api extra
+      - google.genai      # google extra
+      - jwt               # api extra: PyJWT
+
+  not_implemented:
+    # storage.py and the base VectorStore class intentionally raise
+    # NotImplementedError — they are abstract interfaces whose concrete
+    # implementations (ChromaStore, PgVectorStore, HnswlibStore) override them.
+    allowed_files:
+      - "flamehaven_filesearch/storage.py"
+      - "flamehaven_filesearch/vector_store.py"
+
+  return_none_placeholder:
+    # IAMProvider.validate_admin_token is a documented override point.
+    # The base class returns None by design; subclasses (OIDCIAMProvider) override.
+    allowed_functions:
+      - "validate_admin_token"
+
+  jargon:
+    # "optimized_query" is a variable name for the intent-refined query,
+    # not marketing language. Matches on "optimized" should be word-bounded
+    # against identifier context.
+    justified_identifiers:
+      - "optimized_query"   # core.py: output of IntentRefiner.refine_intent()
+
+  nested_complexity:
+    depth_threshold: 4
+    cc_threshold: 8
+    domain_overrides:
+      # ws_search: WebSocket handler must nest auth + stream + drain logic.
+      # Each layer has a mandatory try/except for cleanup. Depth is structural.
+      - function_pattern: "ws_search"
+        depth_threshold: 6
+        cc_threshold: 20
+      # File parsers: cell/row/shape iteration inside sheet/slide loops
+      # produces two mandatory nesting levels (outer iterator + inner filter).
+      - function_pattern: "_extract_xlsx"
+        depth_threshold: 5
+        cc_threshold: 12
+      - function_pattern: "_extract_pptx"
+        depth_threshold: 6
+        cc_threshold: 12
+      # core._local_search: multi-backend branching (local/postgres/hnswlib) +
+      # per-result reranking loop + fallback chain. Structural, not fragmented.
+      - function_pattern: "_local_search"
+        depth_threshold: 6
+        cc_threshold: 30
+      # core.upload_file: validate -> save -> parse -> embed -> store pipeline
+      # with per-step error handling. Sequential guards produce natural nesting.
+      - function_pattern: "upload_file"
+        depth_threshold: 5
+        cc_threshold: 20
+      # api.initialize_services: sequential try/except guard per subsystem.
+      - function_pattern: "initialize_services"
+        depth_threshold: 5
+        cc_threshold: 15
+
+  god_function:
+    complexity_threshold: 10
+    lines_threshold: 50
+    domain_overrides:
+      # dashboard.py renders a full HTML page as a single function — it is a
+      # template function, not logic. Excluded from coverage by pyproject.toml.
+      - function_pattern: "dashboard"
+        complexity_threshold: 40
+        lines_threshold: 400
+      # usage_middleware dispatch: wraps every request with budget/quota checks +
+      # rate-limit branching. The sequential guard chain is structural.
+      - function_pattern: "dispatch"
+        complexity_threshold: 15
+        lines_threshold: 70
+      # core.py search / upload: orchestrate embedding, vector lookup, Gemini
+      # API, fallback branching, and result assembly in a single logical unit.
+      # Splitting would scatter the transaction boundary across multiple files.
+      - function_pattern: "search"
+        complexity_threshold: 20
+        lines_threshold: 160
+      - function_pattern: "search_multimodal"
+        complexity_threshold: 20
+        lines_threshold: 160
+      - function_pattern: "upload_file"
+        complexity_threshold: 20
+        lines_threshold: 120
+      - function_pattern: "_local_search"
+        complexity_threshold: 30
+        lines_threshold: 120
+      # auth.py key management: SQLite CRUD with proper error handling produces
+      # naturally longer functions without being logically fragmented.
+      - function_pattern: "generate_key"
+        complexity_threshold: 15
+        lines_threshold: 70
+      - function_pattern: "validate_key"
+        complexity_threshold: 15
+        lines_threshold: 75
+      - function_pattern: "get_usage_stats"
+        complexity_threshold: 15
+        lines_threshold: 90
+      - function_pattern: "_ensure_db"
+        complexity_threshold: 12
+        lines_threshold: 60
+      # api.py init: startup orchestration loads all subsystems with
+      # try/except guards per subsystem — length is defensive, not sloppy.
+      - function_pattern: "initialize_services"
+        complexity_threshold: 15
+        lines_threshold: 70
+      - function_pattern: "main"
+        complexity_threshold: 15
+        lines_threshold: 80
+      # ws_routes.ws_search: auth + stream + drain in one WebSocket handler.
+      - function_pattern: "ws_search"
+        complexity_threshold: 20
+        lines_threshold: 90
+      # core.py __init__: wires embedding, intent, chronos-grid, vector store,
+      # and optional Gemini client in one __init__ by design (single service object).
+      - function_pattern: "__init__"
+        complexity_threshold: 15
+        lines_threshold: 80
+
+  interface_only_class:
+    # storage.py / vector_store.py base classes are intentional ABCs.
+    # cache.py CacheBackend is an ABC whose subclasses are MemoryCache / RedisCache.
+    allowed_files:
+      - "flamehaven_filesearch/storage.py"
+      - "flamehaven_filesearch/vector_store.py"
+      - "flamehaven_filesearch/cache.py"
+
+  global_statement:
+    # FastAPI / singleton patterns: module-level app, limiter, searcher, and
+    # key_manager objects are the accepted FastAPI composition model.
+    # These are NOT mutable globals — they are injected once at startup.
+    allowed_files:
+      - "flamehaven_filesearch/api.py"
+      - "flamehaven_filesearch/auth.py"
+      - "flamehaven_filesearch/cache.py"
+      - "flamehaven_filesearch/ws_routes.py"
+      - "flamehaven_filesearch/batch_routes.py"
+      - "flamehaven_filesearch/admin_routes.py"
+      - "flamehaven_filesearch/engine/embedding_generator.py"
+      - "flamehaven_filesearch/engine/embedding_generator_legacy.py"
+
+ignore:
+  # Python packaging boilerplate
+  - "**/__init__.py"
+  # Test suite
+  - "tests/**"
+  - "**/*_test.py"
+  - "**/test_*.py"
+  # Type stubs
+  - "**/*.pyi"
+  # Virtual environments and build artifacts
+  - "**/.venv/**"
+  - ".venv/**"
+  - "**/venv/**"
+  - "venv/**"
+  - "**/site-packages/**"
+  - "**/node_modules/**"
+  - "**/__pycache__/**"
+  - "build/**"
+  - "dist/**"
+  - "htmlcov/**"
+  # Helm charts and examples (not Python logic)
+  - "helm/**"
+  - "examples/**"

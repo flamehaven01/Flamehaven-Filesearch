@@ -39,7 +39,7 @@ class EmbeddingGenerator:
     CACHE_SIZE = 1024
 
     # Feature engineering (SIDRCE optimization)
-    CHAR_NGRAM_RANGE = (3, 5)  # 3-5 grams for robustness
+    CHAR_NGRAM_RANGE = (3, 5)  # 3-5 char n-grams for morphological resilience
     USE_WORD_TOKENS = True
     WORD_WEIGHT = 2.0  # Words more important than n-grams
     CHAR_WEIGHT = 1.0
@@ -61,7 +61,7 @@ class EmbeddingGenerator:
     def _attuned_text(self, text: str) -> str:
         """
         Normalize text to canonical form.
-        Combines current simplicity + SIDRCE robustness.
+        Combines whitespace collapse, noise removal, and length truncation.
         """
         if not text:
             return ""

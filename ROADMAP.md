@@ -6,13 +6,13 @@ pressure reduction before expanding surface area.
 
 ## Next Steps (Now)
 
-- [ ] Usage-budget controls (per-key quotas, alerts, and admin usage reporting).
 - [ ] Cache + cost improvements (cache hit tracking by search mode/backend,
       tighter invalidation, and default safe limits).
-- [x] pgvector reliability (health checks, retry/backoff, and index tuning
-      guidance).
-- [x] Multimodal stability (vision provider selection, size/timeouts, clearer
-      errors).
+- [ ] Multi-language full support (15+ languages beyond current stopword sets).
+- [ ] Kubernetes Helm charts.
+- [x] Usage-budget controls (per-key quotas, alerts, and admin usage reporting).
+- [x] pgvector reliability (health checks, retry/backoff, and index tuning guidance).
+- [x] Multimodal stability (vision provider selection, size/timeouts, clearer errors).
 - [x] Performance baseline (stabilize benchmarks and document expected ranges).
 
 ## v1.4.0 (Released: 2025-12-28)
@@ -23,22 +23,33 @@ pressure reduction before expanding surface area.
 - [x] PostgreSQL backend option (metadata + vector store).
 - [x] Vector backend override per request.
 
+## v1.4.2 (Released: 2026-04-16)
+
+**Focus:** Code quality, performance fixes, CI/CD alignment.
+
+- [x] `MAX_FILENAME_LENGTH` 255 → 200 (Windows MAX_PATH fix).
+- [x] Vector generation ASCII shortcut (<1ms for English, was 14.9ms).
+- [x] ABC + `@abstractmethod` for VectorStore, MetadataStore, IAMProvider.
+- [x] Logging fallback JSON formatter corrected.
+- [x] flake8 → ruff in CI/CD lint job.
+- [x] SIDRCE certification: Omega 0.9894 (S++).
+
 ## v1.4.1 (Released: 2025-12-28)
 
-**Focus:** Stability and observability improvements for "Next Steps (Now)" items.
+**Focus:** Stability and observability improvements.
 
 - [x] Performance baseline documentation (docs/PERFORMANCE_BASELINE.md).
 - [x] Image size limits and timeout controls for multimodal endpoints.
 - [x] pgvector health checks with circuit breaker pattern.
-- [ ] Budget-aware rate limits (global + per-key).
-- [ ] Usage dashboards (weekly/monthly trends).
-- [ ] Vector store maintenance tasks (reindex, vacuum, and stats export).
+- [x] Budget-aware rate limits (global + per-key).
+- [x] Usage dashboards (weekly/monthly trends via admin API).
+- [x] Vector store maintenance tasks (reindex, vacuum, and stats export).
 
-## v2.0.0 (Q2 2026)
+## v2.0.0 (Q3 2026)
 
-- [ ] Multi-language support (15+ languages).
-- [ ] XLSX, PPTX, RTF format support.
-- [ ] WebSocket streaming for real-time results.
+- [x] XLSX, PPTX, RTF format support (shipped in v1.4.x).
+- [x] WebSocket streaming for real-time results (shipped in v1.4.x).
+- [ ] Multi-language support (15+ languages) — partial (stopwords + jieba).
 - [ ] Kubernetes Helm charts.
 - [ ] Distributed indexing.
 

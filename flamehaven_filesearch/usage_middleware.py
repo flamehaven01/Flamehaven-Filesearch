@@ -8,7 +8,7 @@ import logging
 import time
 from datetime import datetime, timezone
 
-from fastapi import HTTPException, Request, Response, status
+from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .exceptions import RateLimitExceededError
@@ -46,7 +46,15 @@ class UsageTrackingMiddleware(BaseHTTPMiddleware):
         if not api_key_id:
             return await call_next(request)
 
-        # Check quota BEFORE processing request
+        # Check global system budget first
+        global_status = self.tracker.check_global_quota_exceeded()
+        if global_status["exceeded"]:
+            logger.warning(
+                f"[UsageMiddleware] Global budget exceeded for request from {api_key_id}"
+            )
+            raise RateLimitExceededError("Global system budget exceeded")
+
+        # Check per-key quota BEFORE processing request
         quota_status = self.tracker.check_quota_exceeded(api_key_id)
         if quota_status["exceeded"]:
             # Find which quota was exceeded

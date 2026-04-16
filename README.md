@@ -7,7 +7,7 @@
 ### Self-hosted RAG search engine. Production-ready in 3 minutes.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.4.1-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.4.2-blue.svg)](CHANGELOG.md)
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/docker-ready-brightgreen.svg)](https://hub.docker.com/r/flamehaven/filesearch)
 
@@ -23,7 +23,7 @@ Stop sending your sensitive documents to third-party services. Get enterprise-gr
 
 ```bash
 # One command. Three minutes. Done.
-docker run -d -p 8000:8000 -e GEMINI_API_KEY="your_key" flamehaven-filesearch:1.4.1
+docker run -d -p 8000:8000 -e GEMINI_API_KEY="your_key" flamehaven-filesearch:1.4.2
 ```
 
 <table>
@@ -60,14 +60,20 @@ Open source & MIT licensed</p>
 - **⚡ Ultra-Fast Vectors** - DSP v2.0 algorithm generates embeddings in <1ms without ML frameworks
 - **🎯 Source Attribution** - Every answer includes links back to source documents
 
-### What's New in v1.4.1
+### What's New in v1.4.2
+
+- **Performance fix** - Vector generation now < 1 ms for ASCII text (ASCII shortcut skips `detect_language`)
+- **Windows compatibility** - `MAX_FILENAME_LENGTH` reduced to 200 to prevent `MAX_PATH` overflow
+- **Code quality** - ABC + `@abstractmethod` for `VectorStore`, `MetadataStore`, `IAMProvider`
+- **CI/CD** - Replaced `flake8` with `ruff`; lint and test pipelines fully green
+- **SIDRCE certified** - Omega 0.9894 (S++)
+
+### Features in v1.4.1
 
 - **Usage Tracking & Quotas** - Per-API-key request/token tracking with daily/monthly limits
 - **Admin Usage APIs** - Detailed usage stats, quota management, and alert monitoring
 - **pgvector Maintenance** - HNSW reindexing, VACUUM ANALYZE, and index statistics
-- **pgvector Tuning Guide** - Comprehensive production tuning and optimization documentation
 - **Circuit Breaker** - Automatic failure recovery for database connections
-- **Performance Monitoring** - Complete observability with health checks and metrics
 
 ### Production Features (v1.4.0+)
 
@@ -99,7 +105,7 @@ docker run -d \
   -e GEMINI_API_KEY="your_gemini_api_key" \
   -e FLAMEHAVEN_ADMIN_KEY="secure_admin_password" \
   -v $(pwd)/data:/app/data \
-  flamehaven-filesearch:1.4.1
+  flamehaven-filesearch:1.4.2
 ```
 
 ✅ Server running at `http://localhost:8000`
@@ -177,7 +183,7 @@ pip install flamehaven-filesearch[all]
 # Build from source
 git clone https://github.com/flamehaven01/Flamehaven-Filesearch.git
 cd Flamehaven-Filesearch
-docker build -t flamehaven-filesearch:1.4.1 .
+docker build -t flamehaven-filesearch:1.4.2 .
 ```
 
 ---
@@ -246,8 +252,8 @@ security:
 </tr>
 <tr>
 <td>Test Suite</td>
-<td><code>0.33s</code></td>
-<td>19/19 tests passing</td>
+<td><code>331 tests</code></td>
+<td>All passing (pytest)</td>
 </tr>
 <tr>
 <td>Cold Start</td>
@@ -339,19 +345,21 @@ curl -X DELETE http://localhost:8000/api/admin/keys/old_key_id \
 
 Full roadmap lives in `ROADMAP.md`. Summary below:
 
-### v1.4.x (Q1 2026)
+### v1.4.x (Completed)
 - [x] Multimodal search (image + text)
 - [x] HNSW vector indexing for faster search
 - [x] OAuth2/OIDC integration
 - [x] PostgreSQL backend option (metadata + vector store)
-- [ ] Usage-budget controls and reporting
-- [ ] pgvector tuning and reliability hardening
+- [x] Usage-budget controls and reporting (v1.4.1)
+- [x] pgvector tuning and reliability hardening (v1.4.1)
+- [x] Code quality audit + CI/CD ruff integration (v1.4.2)
 
-### v2.0.0 (Q2 2026)
-- [ ] Multi-language support (15+ languages)
-- [ ] XLSX, PPTX, RTF format support
-- [ ] WebSocket streaming for real-time results
+### v2.0.0 (Q3 2026)
+- [x] XLSX, PPTX, RTF format support (shipped in v1.4.x)
+- [x] WebSocket streaming for real-time results (shipped in v1.4.x)
+- [ ] Multi-language support (15+ languages) — multilingual stopwords + jieba partial
 - [ ] Kubernetes Helm charts
+- [ ] Distributed indexing
 
 ### Community Requests
 See `ROADMAP.md` for backlog curation and request intake.
@@ -455,8 +463,8 @@ We love contributions! FLAMEHAVEN is better because of developers like you.
 ### Good First Issues
 
 - 🟢 **[Easy]** Add dark mode to admin dashboard (1-2 hours)
-- 🟡 **[Medium]** Implement XLSX file support (2-3 hours)
-- 🔴 **[Advanced]** Add HNSW vector indexing (4-6 hours)
+- 🟡 **[Medium]** PostgreSQL backend for usage tracker (multi-instance deployments)
+- 🔴 **[Advanced]** Kubernetes Helm charts for production deployment
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
 
@@ -500,6 +508,6 @@ Built with amazing open source tools:
 
 Built with 🔥 by the Flamehaven Core Team
 
-*Last updated: December 28, 2025 • Version 1.4.1*
+*Last updated: April 16, 2026 • Version 1.4.2*
 
 </div>

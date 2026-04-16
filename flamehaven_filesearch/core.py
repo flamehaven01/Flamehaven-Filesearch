@@ -213,7 +213,17 @@ class FlamehavenFileSearch:
 
         # Check file extension
         ext = Path(file_path).suffix.lower()
-        supported_exts = [".pdf", ".docx", ".md", ".txt"]
+        supported_exts = [
+            ".pdf",
+            ".docx",
+            ".md",
+            ".txt",
+            ".xlsx",
+            ".xls",
+            ".pptx",
+            ".ppt",
+            ".rtf",
+        ]
         supported_exts.extend(sorted(self._image_extensions()))
         if ext not in supported_exts:
             logger.warning("File extension '%s' may not be supported", ext)
@@ -358,11 +368,9 @@ class FlamehavenFileSearch:
         if ext in self._image_extensions():
             content = vision_text or ""
         else:
-            try:
-                with open(file_path, "r", encoding="utf-8", errors="ignore") as source:
-                    content = source.read()
-            except OSError:
-                content = ""
+            from .engine.file_parser import extract_text
+
+            content = extract_text(file_path)
 
         metadata = {"file_type": ext}
         if vision_text:
@@ -692,6 +700,60 @@ class FlamehavenFileSearch:
         except Exception as e:
             logger.error("Search failed: %s", e)
             return {"status": "error", "message": str(e)}
+
+    def search_stream(
+        self,
+        query: str,
+        store_name: str = "default",
+        model: Optional[str] = None,
+        max_tokens: Optional[int] = None,
+        temperature: Optional[float] = None,
+    ):
+        """
+        Stream search results token-by-token via Gemini streaming API.
+
+        Yields string chunks as they arrive. In local/offline mode yields
+        the full answer as a single chunk.
+        """
+        model = model or self.config.default_model
+        max_tokens = max_tokens or self.config.max_output_tokens
+        temperature = (
+            temperature if temperature is not None else self.config.temperature
+        )
+
+        intent = self.intent_refiner.refine_intent(query)
+        optimized_query = intent.refined_query or query
+
+        if not self._use_native_client:
+            result = self.search(query, store_name, model, max_tokens, temperature)
+            yield result.get("answer", "")
+            return
+
+        if store_name not in self.stores:
+            raise ValueError(f"Store '{store_name}' not found")
+
+        try:
+            for chunk in self.client.models.generate_content_stream(
+                model=model,
+                contents=optimized_query,
+                config=google_genai_types.GenerateContentConfig(
+                    tools=[
+                        google_genai_types.Tool(
+                            file_search=google_genai_types.FileSearch(
+                                file_search_store_names=[self.stores[store_name]]
+                            )
+                        )
+                    ],
+                    max_output_tokens=max_tokens,
+                    temperature=temperature,
+                    response_modalities=["TEXT"],
+                ),
+            ):
+                if chunk.text:
+                    yield chunk.text
+        except Exception as exc:
+            logger.error("Stream search failed: %s", exc)
+            raise
 
     def search_multimodal(
         self,

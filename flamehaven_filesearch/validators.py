@@ -31,8 +31,9 @@ class FilenameValidator:
     # Invalid filename characters (OS-specific)
     INVALID_CHARS_PATTERN = r'[<>:"|?*\x00-\x1f]'  # Windows + control chars
 
-    # Maximum filename length (typical filesystem limit)
-    MAX_FILENAME_LENGTH = 255
+    # Maximum filename length — capped at 200 to stay within Windows MAX_PATH
+    # when combined with a typical temp directory prefix (~50-60 chars).
+    MAX_FILENAME_LENGTH = 200
 
     @classmethod
     def validate_filename(cls, filename: str, allow_empty: bool = False) -> str:
@@ -392,6 +393,9 @@ class MimeTypeValidator:
         "application/zip",
         "application/x-tar",
         "application/gzip",
+        # RTF documents
+        "text/rtf",
+        "application/rtf",
         # Other
         "application/octet-stream",  # Generic binary
     ]

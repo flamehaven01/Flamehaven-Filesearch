@@ -81,8 +81,8 @@ class PillowVisionModal:
                 sample = image.convert("RGB").resize((1, 1))
                 r, g, b = sample.getpixel((0, 0))
                 description += f" avg_rgb={r},{g},{b}"
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("[Vision] avg_rgb extraction failed: %s", exc)
         return description
 
 

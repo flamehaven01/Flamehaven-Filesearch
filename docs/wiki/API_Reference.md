@@ -1,4 +1,4 @@
-# API Reference (v1.4.0)
+# API Reference (v1.4.2)
 
 All endpoints return JSON unless otherwise noted. Default base URL:
 `http://localhost:8000`.
@@ -166,7 +166,40 @@ Notes:
 
 ---
 
-## 🏗️ SDK Usage (v1.4.0)
+## 🔌 WebSocket Streaming
+
+### `WS /ws/search`
+
+Stream search results token-by-token. Available when the server is running.
+
+**Handshake message (client → server):**
+
+```json
+{
+  "token": "sk_live_...",
+  "query": "What is the refund policy?",
+  "store": "default",
+  "model": "gemini-2.5-flash",
+  "max_tokens": 1000,
+  "temperature": 0.7
+}
+```
+
+**Server messages:**
+
+```json
+{"type": "chunk",  "text": "...partial answer..."}
+{"type": "done",   "query": "...", "store": "...", "total_chars": 123}
+{"type": "error",  "message": "..."}
+{"type": "auth_error", "message": "Invalid or missing token"}
+```
+
+- Auth token validated on connect (10s timeout).
+- Streaming uses thread executor + async queue to avoid blocking the event loop.
+
+---
+
+## 🏗️ SDK Usage (v1.4.2)
 
 ```python
 from flamehaven_filesearch import FlamehavenFileSearch

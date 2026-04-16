@@ -1,6 +1,6 @@
-# Benchmark Report (v1.4.1)
+# Benchmark Report (v1.4.2)
 
-Performance metrics for **Flamehaven FileSearch v1.4.1** featuring the **Gravitas DSP Engine**.
+Performance metrics for **Flamehaven FileSearch v1.4.2** featuring the **Gravitas DSP Engine**.
 
 > **📊 For comprehensive performance baselines, see:** [`docs/PERFORMANCE_BASELINE.md`](../PERFORMANCE_BASELINE.md)
 > This document provides detailed benchmarks, monitoring guidelines, and historical performance data.
@@ -15,7 +15,7 @@ Performance metrics for **Flamehaven FileSearch v1.4.1** featuring the **Gravita
 | RAM | 16 GB |
 | Backend | **Gravitas DSP v2.0** (Zero ML dependency) |
 | Vector Store | **Chronos-Grid** (Quantized int8) |
-| Test Suite | `tests/run_all_tests.py` |
+| Test Suite | `pytest tests/` — 331 tests |
 
 ---
 
@@ -84,7 +84,25 @@ Results of **GravitasPacker** symbolic compression on metadata.
 
 ---
 
-## 7. Recommendations (v1.4.1)
+## 7. v1.4.2 Performance Fixes
+
+### Embedding Generator (ASCII Shortcut)
+
+| Scenario | v1.4.1 avg | v1.4.2 avg | Notes |
+|----------|-----------|-----------|-------|
+| ASCII text (English) | 14.9 ms | **0.847 ms** | Skips `detect_language()` |
+| Non-ASCII (CJK) | 14.9 ms | ~15 ms | `detect_language()` still called |
+| p95 (ASCII) | — | **0.993 ms** | Below 1 ms threshold |
+
+- Root cause: `detect_language()` calls `langdetect.detect()` which takes ~15ms.
+- Fix: `if attuned.isascii(): resolved_lang = None` — avoids detection for
+  all-ASCII (English, German, French, etc.) text.
+- `tokenize()` in `lang_processor.py` no longer auto-detects language;
+  callers control `lang` explicitly.
+
+---
+
+## 8. Recommendations (v1.4.2)
 
 1. **Use `int8` quantization** for high-volume stores to save memory without sacrificing accuracy.
 2. **Prefer `hybrid` mode** for production to combine exact match reliability with semantic recall.

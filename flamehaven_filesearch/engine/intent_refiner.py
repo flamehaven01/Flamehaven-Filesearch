@@ -92,7 +92,12 @@ class IntentRefiner:
         Returns:
             SearchIntent with refined query and extracted metadata
         """
+        from .lang_processor import detect_language
+
         self.stats["total_queries"] += 1
+
+        # Detect language for multilingual keyword extraction
+        lang = detect_language(query)
 
         # Normalize query
         normalized = query.lower().strip()
@@ -100,9 +105,20 @@ class IntentRefiner:
         # Extract file extensions
         file_extensions = self._extract_extensions(normalized)
 
-        # Extract and correct keywords
-        keywords = self._extract_keywords(normalized)
-        corrected_keywords, suggestions = self._apply_corrections(keywords)
+        # Extract and correct keywords (typo correction only for English)
+        # For Chinese: use jieba TF-IDF keyword extraction when available
+        if lang and lang.startswith("zh"):
+            from .lang_processor import extract_keywords_chinese
+
+            kws = extract_keywords_chinese(normalized, top_k=10)
+            keywords = kws if kws else self._extract_keywords(normalized, lang=lang)
+            corrected_keywords, suggestions = keywords, []
+        elif lang and not lang.startswith("en"):
+            keywords = self._extract_keywords(normalized, lang=lang)
+            corrected_keywords, suggestions = keywords, []
+        else:
+            keywords = self._extract_keywords(normalized, lang=lang)
+            corrected_keywords, suggestions = self._apply_corrections(keywords)
 
         is_corrected = len(suggestions) > 0
         if is_corrected:
@@ -145,54 +161,17 @@ class IntentRefiner:
 
         return list(set(extensions))
 
-    def _extract_keywords(self, query: str) -> List[str]:
-        """Extract meaningful keywords from query."""
-        # Remove common stop words
-        stop_words = {
-            "the",
-            "a",
-            "an",
-            "and",
-            "or",
-            "in",
-            "of",
-            "to",
-            "for",
-            "by",
-            "is",
-            "are",
-            "was",
-            "were",
-            "be",
-            "been",
-            "being",
-            "have",
-            "has",
-            "had",
-            "do",
-            "does",
-            "did",
-            "will",
-            "would",
-            "could",
-            "should",
-            "with",
-            "find",
-            "get",
-            "search",
-            "about",
-            "where",
-        }
+    def _extract_keywords(self, query: str, lang: str = None) -> List[str]:
+        """Extract meaningful keywords from query using language-aware stopwords."""
+        from .lang_processor import tokenize, get_stopwords
 
-        # Tokenize and filter
-        words = query.split()
+        stop_words = get_stopwords(lang)
+
+        words = tokenize(query, lang=lang)
         keywords = []
 
         for word in words:
-            # Remove punctuation
             cleaned = re.sub(r"[^\w\-]", "", word)
-
-            # Skip stop words, extensions, and short words
             if (
                 cleaned
                 and cleaned.lower() not in stop_words

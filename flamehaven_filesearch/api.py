@@ -1,7 +1,7 @@
 """
-FastAPI server for FLAMEHAVEN FileSearch v1.4.1
+FastAPI server for FLAMEHAVEN FileSearch v1.4.2
 
-Production-ready API with:
+FastAPI server with:
 - Rate limiting
 - Request ID tracing
 - Security headers
@@ -11,8 +11,8 @@ Production-ready API with:
 - LRU caching with TTL
 - Prometheus metrics
 - Structured JSON logging
-- Usage tracking and quota management (v1.4.1)
-- pgvector maintenance operations (v1.4.1)
+- Usage tracking and quota management (v1.4.2)
+- pgvector maintenance operations (v1.4.2)
 """
 
 import ipaddress
@@ -51,6 +51,8 @@ from . import batch_routes
 
 # Import routers
 from .admin_routes import router as admin_router
+from .ws_routes import router as ws_router
+from . import ws_routes as _ws_routes
 from .auth import APIKeyInfo
 from .batch_routes import router as batch_router
 from .cache import get_all_cache_stats
@@ -168,9 +170,9 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="FLAMEHAVEN FileSearch API",
     description=(
-        "Open source semantic document search powered by Google Gemini " "- v1.4.1"
+        "Open source semantic document search powered by Google Gemini " "- v1.4.2"
     ),
-    version="1.4.1",
+    version="1.4.2",
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan,
@@ -198,7 +200,7 @@ app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RequestIDMiddleware)
 app.add_middleware(CORSHeadersMiddleware)
 
-# Add usage tracking middleware (v1.4.1)
+# Add usage tracking middleware (v1.4.2)
 # Enabled by default, can be disabled via USAGE_TRACKING_ENABLED=false
 usage_tracking_enabled = os.getenv("USAGE_TRACKING_ENABLED", "true").lower() in {
     "1",
@@ -212,6 +214,7 @@ app.add_middleware(UsageTrackingMiddleware, enabled=usage_tracking_enabled)
 app.include_router(admin_router)
 app.include_router(dashboard_router)
 app.include_router(batch_router)
+app.include_router(ws_router)
 
 # Global instances
 searcher: Optional[FlamehavenFileSearch] = None
@@ -364,8 +367,9 @@ def initialize_services(force: bool = False) -> None:
                     )
         except Exception as exc:  # pragma: no cover - defensive
             logger.warning("Unable to create default store: %s", exc)
-        # Set searcher for batch routes
+        # Set searcher for batch routes and WebSocket streaming
         batch_routes.set_searcher(searcher)
+        _ws_routes.set_searcher(searcher)
     except Exception as exc:  # pragma: no cover - defensive guard
         logger.warning(
             "Failed to initialize FLAMEHAVEN FileSearch (%s); running without searcher",
@@ -448,7 +452,7 @@ async def health_check(request: Request):
 
     return {
         "status": "healthy" if searcher else "unhealthy",
-        "version": "1.4.1",
+        "version": "1.4.2",
         "uptime_seconds": round(uptime, 2),
         "uptime_formatted": format_uptime(uptime),
         "uptime": format_uptime(uptime),
@@ -1200,7 +1204,7 @@ async def root():
     """
     return {
         "name": "FLAMEHAVEN FileSearch API",
-        "version": "1.4.1",
+        "version": "1.4.2",
         "description": "Open source semantic document search powered by Google Gemini",
         "docs": "/docs",
         "health": "/health",
@@ -1346,7 +1350,7 @@ def main():
         print("      - Rate limiting (slowapi): 10/min uploads, 100/min searches")
         print("      - Request ID tracing with X-Request-ID header")
         print("      - OWASP security headers (HSTS, CSP, X-Frame-Options)")
-        print("      - Comprehensive input validation")
+        print("      - Input validation (filename, size, MIME type)")
         print("  [*] Performance:")
         print("      - LRU caching with TTL (1000 items, 1-hour TTL)")
         print(

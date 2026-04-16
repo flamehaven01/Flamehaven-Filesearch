@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.4.2] - 2026-04-16
+
+### Changed
+- **CI/CD**: Replaced `flake8` with `ruff` in the lint job for faster and
+  consistent linting (matches local development tooling).
+- **Abstract base classes**: `VectorStore`, `MetadataStore`, and `IAMProvider`
+  migrated from `raise NotImplementedError` stubs to proper `ABC` +
+  `@abstractmethod` — cleaner Python contract, eliminates unreachable
+  `NotImplementedError` paths.
+- **`tokenize()` in `lang_processor.py`**: Removed implicit `detect_language()`
+  call; callers must pass `lang` explicitly. Removes a hidden latency source
+  and makes call-site intent clear.
+
+### Added
+- **`NullIAMProvider`**: Concrete null-object implementation of `IAMProvider`
+  for use when no IAM backend is configured (replaces direct abstract
+  instantiation).
+- **`.slopconfig.yaml`**: Project-specific AI-Slop-Detector configuration —
+  suppresses false positives for optional dependencies, ABC stubs, and
+  FastAPI singleton globals; adds Flamehaven-specific domain overrides.
+- **`_xlsx_row_text()` / `_pptx_table_lines()`**: Extracted helpers in
+  `file_parser.py` to reduce nesting depth and improve readability.
+
+### Fixed
+- **`MAX_FILENAME_LENGTH` 255 → 200** (`validators.py`): Prevents Windows
+  `MAX_PATH` (260 chars) overflow when writing uploaded files to temp
+  directories, fixing `test_very_long_filename` → 500 regression.
+- **Logging fallback JSON output**: `CustomJsonFormatter` (when
+  `python-json-logger` is absent) now emits proper JSON instead of plain text,
+  fixing `JSONDecodeError` in `test_setup_json_logging_accepts_level_kwarg`.
+- **`setup_json_logging()` else branch**: Used `logging.Formatter()` instead of
+  `CustomJsonFormatter()` — corrected to `CustomJsonFormatter()`.
+- **Vector generation latency** (`embedding_generator.py`): Added ASCII
+  shortcut — skips `detect_language()` for ASCII-only text, reducing avg
+  generation time from 14.9 ms to 0.847 ms (p95 < 1 ms).
+- **Empty `except` blocks**: Converted silent exception swallowing in
+  `ws_routes.py`, `multimodal.py`, and `vector_store.py` to `logger.debug()`
+  calls with the captured exception.
+- **Unused imports**: Removed `from typing import Generator` (inline,
+  `core.py`) and `HTTPException`, `Response`, `status` (`usage_middleware.py`).
+
+### Tests
+- 331 tests collected, all pass under `pytest`.
+- `test_very_long_filename`: now correctly returns 400 (not 500) on Windows.
+- `test_performance_*`: avg vector generation < 1 ms (threshold met).
+- `test_setup_json_logging_*`: fallback JSON formatter validated.
+
+---
+
 ## [1.4.1] - 2025-12-28
 
 ### Added

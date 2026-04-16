@@ -81,17 +81,19 @@ class EmbeddingGenerator:
 
         return text
 
-    def _extract_features(self, text: str) -> List[tuple]:
+    def _extract_features(self, text: str, lang: str = None) -> List[tuple]:
         """
-        Hybrid feature extraction (SIDRCE algorithm).
+        Hybrid feature extraction (SIDRCE algorithm) with language-aware tokenization.
 
         Returns list of (feature, weight) tuples.
         """
+        from .lang_processor import tokenize
+
         features = []
 
-        # 1. Word tokens (semantic anchors)
+        # 1. Word tokens (semantic anchors) — language-aware
         if self.USE_WORD_TOKENS:
-            words = text.split()
+            words = tokenize(text, lang)
             for word in words:
                 if len(word) > 1:  # Skip single chars
                     features.append((f"w:{word}", self.WORD_WEIGHT))
@@ -110,12 +112,12 @@ class EmbeddingGenerator:
 
         return features
 
-    def _vectorize_text(self, text: str) -> Any:
+    def _vectorize_text(self, text: str, lang: str = None) -> Any:
         """
         SIDRCE Signed Hashing + Current efficiency.
 
         Algorithm:
-        1. Extract hybrid features
+        1. Extract hybrid features (language-aware)
         2. Signed hashing projection (collision mitigation)
         3. L2 normalization
         """
@@ -124,7 +126,7 @@ class EmbeddingGenerator:
 
         vector = np.zeros(self.VECTOR_DIM, dtype=np.float32)
 
-        features = self._extract_features(text)
+        features = self._extract_features(text, lang=lang)
 
         if not features:
             return vector
@@ -152,16 +154,19 @@ class EmbeddingGenerator:
 
         return vector
 
-    def generate(self, text: str) -> Optional[Any]:
+    def generate(self, text: str, lang: str = None) -> Optional[Any]:
         """
-        Generate semantic vector - instant, deterministic.
+        Generate semantic vector - instant, deterministic, language-aware.
 
         Args:
             text: Input text
+            lang: ISO 639-1 language code (auto-detected if None)
 
         Returns:
             384-dimensional numpy array or list
         """
+        from .lang_processor import detect_language
+
         if not text:
             return (
                 np.zeros(self.VECTOR_DIM)
@@ -179,8 +184,17 @@ class EmbeddingGenerator:
 
         self._cache_misses += 1
 
+        # Auto-detect language only for non-ASCII text (CJK routing).
+        # ASCII-only text skips langdetect to keep generation <1ms.
+        if lang is not None:
+            resolved_lang = lang
+        elif attuned.isascii():
+            resolved_lang = None
+        else:
+            resolved_lang = detect_language(attuned)
+
         # Generate vector
-        vector = self._vectorize_text(attuned)
+        vector = self._vectorize_text(attuned, lang=resolved_lang)
 
         # Cache management (LRU-like)
         if len(self._essence_cache) >= self.CACHE_SIZE:

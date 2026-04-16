@@ -19,6 +19,7 @@ from .cache import get_all_cache_stats, reset_all_caches
 from .config import Config
 from .oauth import is_jwt_format, oauth_has_admin, validate_oauth_token
 from .usage_tracker import QuotaConfig, get_usage_tracker
+from .vector_store import create_vector_store
 
 logger = logging.getLogger(__name__)
 
@@ -552,4 +553,219 @@ async def get_usage_alerts(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get usage alerts",
+        )
+
+
+@router.get("/usage/trend")
+async def get_usage_trend(
+    api_key_id: Optional[str] = None,
+    days: int = 30,
+    current_user: str = Depends(_get_admin_user),
+):
+    """
+    Get daily usage breakdown for trend visualization (weekly/monthly dashboard).
+
+    Parameters:
+        api_key_id: Optional API key ID to filter by (omit for system-wide)
+        days: Number of days to include (default: 30)
+    """
+    tracker = get_usage_tracker()
+    key_manager = get_key_manager()
+
+    try:
+        if api_key_id:
+            keys = key_manager.list_keys(current_user)
+            if not any(k.id == api_key_id for k in keys):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You don't own this API key",
+                )
+
+        trend = tracker.get_usage_trend(api_key_id=api_key_id, days=days)
+
+        return {
+            "period_days": days,
+            "api_key_id": api_key_id or "all",
+            "data": trend,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Failed to get usage trend: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get usage trend",
+        )
+
+
+@router.get("/usage/quota/global")
+async def get_global_quota_status(
+    current_user: str = Depends(_get_admin_user),
+):
+    """Get system-wide global budget quota status."""
+    tracker = get_usage_tracker()
+
+    try:
+        status_data = tracker.check_global_quota_exceeded()
+        quota = tracker.get_quota(tracker.GLOBAL_QUOTA_KEY)
+        status_data["config"] = {
+            "daily_requests": quota.daily_requests,
+            "daily_tokens": quota.daily_tokens,
+            "monthly_requests": quota.monthly_requests,
+            "monthly_tokens": quota.monthly_tokens,
+            "alert_threshold_pct": quota.alert_threshold_pct,
+        }
+        return status_data
+
+    except Exception as e:
+        logger.error("Failed to get global quota status: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get global quota status",
+        )
+
+
+@router.post("/usage/quota/global")
+async def set_global_quota(
+    quota_request: QuotaConfigRequest,
+    current_user: str = Depends(_get_admin_user),
+):
+    """Set system-wide global budget quota limits."""
+    tracker = get_usage_tracker()
+
+    try:
+        quota_config = QuotaConfig(
+            daily_requests=quota_request.daily_requests,
+            daily_tokens=quota_request.daily_tokens,
+            monthly_requests=quota_request.monthly_requests,
+            monthly_tokens=quota_request.monthly_tokens,
+            alert_threshold_pct=quota_request.alert_threshold_pct,
+        )
+        tracker.set_quota(tracker.GLOBAL_QUOTA_KEY, quota_config)
+
+        return {
+            "status": "ok",
+            "message": "Global quota configured",
+            "config": {
+                "daily_requests": quota_config.daily_requests,
+                "daily_tokens": quota_config.daily_tokens,
+                "monthly_requests": quota_config.monthly_requests,
+                "monthly_tokens": quota_config.monthly_tokens,
+                "alert_threshold_pct": quota_config.alert_threshold_pct,
+            },
+        }
+
+    except Exception as e:
+        logger.error("Failed to set global quota: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to set global quota",
+        )
+
+
+# ===== Vector Store Maintenance (v1.4.1) =====
+
+
+def _get_pg_vector_store():
+    """Get PgVectorStore instance or raise 400 if not configured."""
+    from .engine.embedding_generator import get_embedding_generator
+
+    config = Config.from_env()
+    store = create_vector_store(config, get_embedding_generator().vector_dim)
+    if store is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Vector maintenance requires PostgreSQL backend (set VECTOR_BACKEND=postgres)",
+        )
+    return store
+
+
+@router.get("/vector/stats")
+async def get_vector_stats(
+    current_user: str = Depends(_get_admin_user),
+):
+    """Get vector store index statistics (PostgreSQL backend only)."""
+    try:
+        store = _get_pg_vector_store()
+        return store.get_index_stats()
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Failed to get vector stats: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get vector stats",
+        )
+
+
+@router.get("/vector/export")
+async def export_vector_stats(
+    current_user: str = Depends(_get_admin_user),
+):
+    """Export comprehensive vector store statistics for monitoring."""
+    try:
+        store = _get_pg_vector_store()
+        return store.export_stats()
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Failed to export vector stats: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to export vector stats",
+        )
+
+
+@router.post("/vector/reindex")
+async def reindex_vector(
+    current_user: str = Depends(_get_admin_user),
+):
+    """
+    Rebuild HNSW vector index for optimal search performance.
+    Warning: index rebuild causes brief query degradation.
+    """
+    try:
+        store = _get_pg_vector_store()
+        result = store.reindex_hnsw()
+        if result.get("status") == "error":
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=result.get("error", "Reindex failed"),
+            )
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Failed to reindex vector store: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to reindex vector store",
+        )
+
+
+@router.post("/vector/vacuum")
+async def vacuum_vector_store(
+    current_user: str = Depends(_get_admin_user),
+):
+    """
+    Run VACUUM ANALYZE on the vector table to reclaim space and refresh planner statistics.
+    Recommended after bulk deletes or large ingestion runs.
+    """
+    try:
+        store = _get_pg_vector_store()
+        result = store.vacuum_analyze()
+        if result.get("status") == "error":
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=result.get("error", "VACUUM ANALYZE failed"),
+            )
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Failed to vacuum vector store: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to vacuum vector store",
         )

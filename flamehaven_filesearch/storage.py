@@ -5,6 +5,7 @@ Metadata storage backends for local fallback mode.
 import json
 import logging
 import re
+from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
 from .config import Config
@@ -12,21 +13,21 @@ from .config import Config
 logger = logging.getLogger(__name__)
 
 
-class MetadataStore:
-    def ensure_store(self, name: str) -> None:
-        raise NotImplementedError
+class MetadataStore(ABC):
+    @abstractmethod
+    def ensure_store(self, name: str) -> None: ...
 
-    def add_doc(self, store_name: str, doc: Dict[str, Any]) -> None:
-        raise NotImplementedError
+    @abstractmethod
+    def add_doc(self, store_name: str, doc: Dict[str, Any]) -> None: ...
 
-    def get_docs(self, store_name: str) -> List[Dict[str, Any]]:
-        raise NotImplementedError
+    @abstractmethod
+    def get_docs(self, store_name: str) -> List[Dict[str, Any]]: ...
 
-    def list_store_names(self) -> List[str]:
-        raise NotImplementedError
+    @abstractmethod
+    def list_store_names(self) -> List[str]: ...
 
-    def delete_store(self, name: str) -> None:
-        raise NotImplementedError
+    @abstractmethod
+    def delete_store(self, name: str) -> None: ...
 
 
 class MemoryMetadataStore(MetadataStore):

@@ -86,6 +86,8 @@ class UsageStats:
 class UsageTracker:
     """Track and enforce API usage quotas"""
 
+    GLOBAL_QUOTA_KEY: str = "__global__"
+
     def __init__(self, db_path: str = "./data/usage.db"):
         self.db_path = db_path
         self._ensure_db()
@@ -499,6 +501,114 @@ class UsageTracker:
             }
             for row in rows
         ]
+
+    def get_usage_trend(
+        self,
+        api_key_id: Optional[str] = None,
+        days: int = 30,
+    ) -> List[Dict[str, Any]]:
+        """Get daily usage breakdown for trend visualization."""
+        with sqlite3.connect(self.db_path) as conn:
+            where_clauses = ["timestamp >= ?"]
+            params: List[Any] = [
+                (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+            ]
+
+            if api_key_id:
+                where_clauses.append("api_key_id = ?")
+                params.append(api_key_id)
+
+            where_sql = "WHERE " + " AND ".join(where_clauses)
+
+            rows = conn.execute(
+                f"""
+                SELECT
+                    date(timestamp) as day,
+                    COUNT(*) as requests,
+                    COALESCE(SUM(total_tokens), 0) as tokens,
+                    COALESCE(SUM(total_bytes), 0) as bytes,
+                    COALESCE(AVG(duration_ms), 0.0) as avg_duration_ms,
+                    COALESCE(
+                        SUM(CASE WHEN status_code >= 200 AND status_code < 300
+                            THEN 1 ELSE 0 END) * 100.0 / COUNT(*),
+                        100.0
+                    ) as success_rate
+                FROM usage_records
+                {where_sql}
+                GROUP BY date(timestamp)
+                ORDER BY day ASC
+                """,
+                params,
+            ).fetchall()
+
+        return [
+            {
+                "day": row[0],
+                "requests": row[1],
+                "tokens": row[2],
+                "bytes": row[3],
+                "avg_duration_ms": round(row[4], 2),
+                "success_rate": round(row[5], 2),
+            }
+            for row in rows
+        ]
+
+    def check_global_quota_exceeded(self) -> Dict[str, Any]:
+        """Check system-wide global quota against total usage across all keys."""
+        quota = self.get_quota(self.GLOBAL_QUOTA_KEY)
+        now = datetime.now(timezone.utc)
+
+        daily_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        daily_stats = self.get_usage_stats(start_time=daily_start, end_time=now)
+
+        monthly_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        monthly_stats = self.get_usage_stats(start_time=monthly_start, end_time=now)
+
+        def _pct(current: int, limit: int) -> float:
+            return (current / limit * 100) if limit > 0 else 0.0
+
+        result: Dict[str, Any] = {
+            "exceeded": False,
+            "daily": {
+                "requests": {
+                    "current": daily_stats.total_requests,
+                    "limit": quota.daily_requests,
+                    "exceeded": daily_stats.total_requests >= quota.daily_requests,
+                    "pct": _pct(daily_stats.total_requests, quota.daily_requests),
+                },
+                "tokens": {
+                    "current": daily_stats.total_tokens,
+                    "limit": quota.daily_tokens,
+                    "exceeded": daily_stats.total_tokens >= quota.daily_tokens,
+                    "pct": _pct(daily_stats.total_tokens, quota.daily_tokens),
+                },
+            },
+            "monthly": {
+                "requests": {
+                    "current": monthly_stats.total_requests,
+                    "limit": quota.monthly_requests,
+                    "exceeded": monthly_stats.total_requests >= quota.monthly_requests,
+                    "pct": _pct(monthly_stats.total_requests, quota.monthly_requests),
+                },
+                "tokens": {
+                    "current": monthly_stats.total_tokens,
+                    "limit": quota.monthly_tokens,
+                    "exceeded": monthly_stats.total_tokens >= quota.monthly_tokens,
+                    "pct": _pct(monthly_stats.total_tokens, quota.monthly_tokens),
+                },
+            },
+        }
+
+        result["exceeded"] = any(
+            [
+                result["daily"]["requests"]["exceeded"],
+                result["daily"]["tokens"]["exceeded"],
+                result["monthly"]["requests"]["exceeded"],
+                result["monthly"]["tokens"]["exceeded"],
+            ]
+        )
+
+        return result
 
     def cleanup_old_records(self, days: int = 90) -> int:
         """Clean up usage records older than specified days"""

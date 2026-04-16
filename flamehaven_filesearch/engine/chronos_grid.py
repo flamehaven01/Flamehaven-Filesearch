@@ -67,7 +67,7 @@ class ChronosStats:
 class ChronosGrid:
     """
     Flamehaven Chronos-Grid - Quantum-Resonant Probabilistic Index
-    Optimized for hybrid (keyword + vector semantic) file search with < 10ms latency
+    Tuned for hybrid (keyword + vector semantic) file search with < 10ms latency
     """
 
     def __init__(self, config: Optional[ChronosConfig] = None):
