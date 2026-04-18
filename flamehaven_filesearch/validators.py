@@ -396,11 +396,21 @@ class MimeTypeValidator:
         # RTF documents
         "text/rtf",
         "application/rtf",
-        # HWP (Hangul Word Processor)
-        "application/x-hwp",
-        "application/haansofthwp",
-        "application/vnd.hancom.hwp",
-        "application/vnd.hancom.hwpx",
+        # Audio (Docling ASR pipeline)
+        "audio/wav",
+        "audio/x-wav",
+        "audio/mpeg",
+        "audio/mp3",
+        "audio/mp4",
+        "audio/ogg",
+        "audio/flac",
+        "audio/aac",
+        "audio/x-m4a",
+        # WebVTT subtitles
+        "text/vtt",
+        # LaTeX
+        "application/x-latex",
+        "text/x-tex",
         # Other
         "application/octet-stream",  # Generic binary
     ]

@@ -7,7 +7,7 @@
 ### Self-hosted RAG search engine. Production-ready in 3 minutes.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.4.2-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.5.0-blue.svg)](CHANGELOG.md)
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/docker-ready-brightgreen.svg)](https://hub.docker.com/r/flamehaven/filesearch)
 
@@ -23,7 +23,7 @@ Stop sending your sensitive documents to third-party services. Get enterprise-gr
 
 ```bash
 # One command. Three minutes. Done.
-docker run -d -p 8000:8000 -e GEMINI_API_KEY="your_key" flamehaven-filesearch:1.4.2
+docker run -d -p 8000:8000 -e GEMINI_API_KEY="your_key" flamehaven-filesearch:1.5.0
 ```
 
 <table>
@@ -60,13 +60,22 @@ Open source & MIT licensed</p>
 - **⚡ Ultra-Fast Vectors** - DSP v2.0 algorithm generates embeddings in <1ms without ML frameworks
 - **🎯 Source Attribution** - Every answer includes links back to source documents
 
-### What's New in v1.4.2
+### What's New in v1.5.0
+
+- **Universal Document Parser** — 34 file formats, zero external document-AI dependency
+  - PDF (pymupdf/pypdf), DOCX/DOC, XLSX, PPTX, RTF via optional `[parsers]` extra
+  - HTML, WebVTT, LaTeX, CSV — stdlib only, no extra install needed
+  - Image OCR via `[vision]` extra (pytesseract)
+- **Content-Based RAG Embeddings** — File content extracted and embedded (not filename); semantic search now works correctly in local mode
+- **Internal Text Chunker** — Structure-aware + token-aware RAG chunking with zero ML deps (`chunk_text()`)
+- **Framework Integrations** — LangChain, LlamaIndex, Haystack, CrewAI adapters (`flamehaven_filesearch.integrations`)
+
+### Features in v1.4.2
 
 - **Performance fix** - Vector generation now < 1 ms for ASCII text (ASCII shortcut skips `detect_language`)
 - **Windows compatibility** - `MAX_FILENAME_LENGTH` reduced to 200 to prevent `MAX_PATH` overflow
 - **Code quality** - ABC + `@abstractmethod` for `VectorStore`, `MetadataStore`, `IAMProvider`
 - **CI/CD** - Replaced `flake8` with `ruff`; lint and test pipelines fully green
-- **SIDRCE certified** - Omega 0.9894 (S++)
 
 ### Features in v1.4.1
 
@@ -105,7 +114,7 @@ docker run -d \
   -e GEMINI_API_KEY="your_gemini_api_key" \
   -e FLAMEHAVEN_ADMIN_KEY="secure_admin_password" \
   -v $(pwd)/data:/app/data \
-  flamehaven-filesearch:1.4.2
+  flamehaven-filesearch:1.5.0
 ```
 
 ✅ Server running at `http://localhost:8000`
@@ -162,28 +171,57 @@ curl -X POST http://localhost:8000/api/search \
 ## 📦 Installation
 
 ```bash
-# Core package
+# Core package (HTML, CSV, LaTeX, WebVTT, plain-text parsing included — zero extra deps)
 pip install flamehaven-filesearch
 
-# With API server
-pip install flamehaven-filesearch[api]
+# + Document parsers: PDF (pymupdf/pypdf), DOCX, XLSX, PPTX, RTF
+pip install flamehaven-filesearch[parsers]
 
-# With HNSW vector index
-pip install flamehaven-filesearch[vector]
-
-# With PostgreSQL backend (metadata + vector store)
-pip install flamehaven-filesearch[postgres]
-
-# With vision delegate support
+# + Image OCR (Pillow + pytesseract; requires Tesseract system binary)
 pip install flamehaven-filesearch[vision]
 
-# Development setup
+# + Google Gemini API
+pip install flamehaven-filesearch[google]
+
+# + REST API server (FastAPI + uvicorn)
+pip install flamehaven-filesearch[api]
+
+# + HNSW vector index
+pip install flamehaven-filesearch[vector]
+
+# + PostgreSQL backend
+pip install flamehaven-filesearch[postgres]
+
+# Everything
 pip install flamehaven-filesearch[all]
 
 # Build from source
 git clone https://github.com/flamehaven01/Flamehaven-Filesearch.git
 cd Flamehaven-Filesearch
-docker build -t flamehaven-filesearch:1.4.2 .
+docker build -t flamehaven-filesearch:1.5.0 .
+```
+
+### Framework Integrations
+
+Framework SDKs (LangChain, LlamaIndex, etc.) are imported lazily — install only
+what you need:
+
+```python
+# LangChain  (pip install langchain-core)
+from flamehaven_filesearch.integrations import FlamehavenLangChainLoader
+docs = FlamehavenLangChainLoader("report.pdf", chunk=True).load()
+
+# LlamaIndex  (pip install llama-index-core)
+from flamehaven_filesearch.integrations import FlamehavenLlamaIndexReader
+nodes = FlamehavenLlamaIndexReader(chunk=True).load_data(["report.pdf", "slides.pptx"])
+
+# Haystack  (pip install haystack-ai)
+from flamehaven_filesearch.integrations import FlamehavenHaystackConverter
+result = FlamehavenHaystackConverter().run(sources=["report.pdf"])
+
+# CrewAI  (pip install crewai)
+from flamehaven_filesearch.integrations import FlamehavenCrewAITool
+tool = FlamehavenCrewAITool()           # pass to your agent's tools list
 ```
 
 ---
@@ -438,11 +476,13 @@ Use the links below to jump to the most relevant guide.
 
 | Topic | Description |
 |-------|-------------|
-| [Troubleshooting](docs/wiki/Troubleshooting.md) | Step-by-step debugging playbook |
+| [Document Parsing](docs/wiki/Document_Parsing.md) | Supported formats, internal parsers, RAG chunking |
+| [Framework Integrations](docs/wiki/Framework_Integrations.md) | LangChain, LlamaIndex, Haystack, CrewAI adapters |
+| [API Reference](docs/wiki/API_Reference.md) | REST endpoints, payloads, rate limits |
+| [Architecture](docs/wiki/Architecture.md) | How all layers fit together (v1.5.0) |
 | [Configuration Reference](docs/wiki/Configuration.md) | Full list of environment variables and config fields |
 | [Production Deployment](docs/wiki/Production_Deployment.md) | Docker, systemd, reverse proxy, scaling tips |
-| [API Reference](docs/wiki/API_Reference.md) | REST endpoints, payloads, rate limits |
-| [Architecture](docs/wiki/Architecture.md) | How the FastAPI, cache, metrics, and validation layers fit together |
+| [Troubleshooting](docs/wiki/Troubleshooting.md) | Step-by-step debugging playbook |
 | [Benchmarks](docs/wiki/Benchmarks.md) | Performance measurements and methodology |
 
 These Markdown files live inside the repository so they stay versioned alongside the code. Feel free to contribute improvements via pull requests.

@@ -1,12 +1,13 @@
 # Architecture Overview
 
 Flamehaven FileSearch balances simplicity with production-grade safeguards. This
-document describes the moving parts as of **v1.4.2**, featuring:
+document describes the moving parts as of **v1.5.0**, featuring:
 - **Gravitas DSP Engine** (v1.3.1+)
 - **Multimodal Search** (v1.4.0+)
 - **pgvector with HNSW** (v1.4.0+)
 - **Circuit Breaker & Health Checks** (v1.4.1+)
 - **ABC base classes, ruff CI, Windows filename fix** (v1.4.2)
+- **Universal Document Parser, Internal Chunker, Framework Integrations** (v1.5.0)
 
 ---
 
@@ -107,3 +108,47 @@ The new **Chronos-Grid** integration handles high-speed vector storage and simil
 2. Vectors are quantized to `int8` if enabled.
 3. Metadata is compressed into **Lore Scrolls** via **GravitasPacker**.
 4. Artifacts are persisted in the `data/` directory or designated store location.
+
+---
+
+## 9. Document Parsing Engine (v1.5.0)
+
+The `engine/` sub-package contains the full parsing stack:
+
+```
+engine/
+  file_parser.py      — Dispatcher: routes by extension, tries parsers in priority order
+  format_parsers.py   — Internal parsers: HTML, WebVTT, LaTeX, CSV, Image OCR
+  text_chunker.py     — Structure-aware + token-aware RAG chunker (stdlib only)
+  embedding_generator.py  — DSP v2.0 vectorizer
+  chronos_grid.py     — Vector index + metadata store
+  gravitas_pack.py    — Metadata compression
+  intent_refiner.py   — Query analysis + search mode selection
+```
+
+**Extraction priority** (for each file):
+1. Per-format internal parser (HTML/VTT/LaTeX/CSV via `format_parsers.py`)
+2. Optional heavy parser (pymupdf, python-docx, openpyxl, python-pptx, striprtf)
+3. Plain UTF-8 read (last resort for unknown text formats)
+
+**Content-based embedding** (v1.5.0): The first 2000 characters of extracted
+content are used to generate the vector embedding, replacing the previous
+filename-based approach that made semantic search meaningless in local mode.
+
+---
+
+## 10. Framework Integrations (v1.5.0)
+
+`flamehaven_filesearch/integrations/` provides adapter classes for AI frameworks:
+
+| Adapter | Interface | Framework |
+|---|---|---|
+| `FlamehavenLangChainLoader` | `BaseLoader` | LangChain |
+| `FlamehavenLlamaIndexReader` | `BaseReader` | LlamaIndex |
+| `FlamehavenHaystackConverter` | `BaseConverter` | Haystack |
+| `FlamehavenCrewAITool` | `BaseTool` | CrewAI |
+
+All adapters use the internal `extract_text()` + `chunk_text()` pipeline. No
+external document-AI framework is installed as a dependency.
+
+See [Framework_Integrations.md](Framework_Integrations.md) for full usage.

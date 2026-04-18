@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "flamehaven-filesearch"
-version = "1.4.2"
+version = "1.5.0"
 description = "FLAMEHAVEN FileSearch - Open source semantic document search with API authentication powered by Google Gemini"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -20,6 +20,12 @@ keywords = [
     "google-ai",
     "file-retrieval",
     "semantic-search",
+    "document-parsing",
+    "langchain",
+    "llamaindex",
+    "haystack",
+    "crewai",
+    "text-extraction",
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -108,7 +114,7 @@ Repository = "https://github.com/flamehaven01/Flamehaven-Filesearch"
 flamehaven-api = "flamehaven_filesearch.api:main"
 
 [tool.setuptools]
-packages = ["flamehaven_filesearch"]
+packages = ["flamehaven_filesearch", "flamehaven_filesearch.engine", "flamehaven_filesearch.integrations"]
 
 [tool.setuptools.package-data]
 flamehaven_filesearch = ["py.typed"]

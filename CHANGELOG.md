@@ -7,6 +7,90 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.5.0] - 2026-04-16
+
+### Added
+
+- **Universal Document Parser** (`engine/file_parser.py`): Complete rewrite with
+  support for 34 file extensions across 10 format families. Extraction stack:
+  PDF (pymupdf → pypdf), DOCX/DOC (python-docx + antiword), XLSX (openpyxl),
+  PPTX (python-pptx), RTF (striprtf), HTML, WebVTT, LaTeX, CSV (all stdlib),
+  Image OCR ([vision] extra).
+
+- **Internal Format Parsers** (`engine/format_parsers.py`): Zero-dependency
+  implementations absorbed directly into the codebase — no external document-AI
+  framework required:
+  - **HTML** (`extract_html`): stdlib `html.parser`-based extractor; suppresses
+    `<script>`, `<style>`, `<head>` content; preserves block structure.
+  - **WebVTT** (`extract_vtt`): W3C WebVTT spec regex parser; strips timestamps,
+    cue settings, NOTE/STYLE/REGION blocks, and inline tags (`<b>`, `<c.*>`).
+  - **LaTeX** (`extract_latex`): Regex-based text extraction; removes display math
+    and figure environments, promotes `\section` headings, unwraps `\textbf{}` /
+    `\emph{}` etc., strips remaining commands.
+  - **CSV** (`extract_csv`): stdlib `csv.Sniffer` with auto-detected delimiter
+    (`,`, `;`, TAB, `|`, `:`); fallback to comma on detection failure.
+  - **Image OCR** (`extract_image`): Delegates to pytesseract when [vision] extra
+    is installed; gracefully returns empty string otherwise.
+
+- **Internal Text Chunker** (`engine/text_chunker.py`): Structure-aware + token-
+  aware chunking for RAG pipelines — no external ML dependency:
+  - Phase 1: Markdown heading boundary splitting (heading stack preserved).
+  - Phase 2: Paragraph splitting within sections; sentence splitting for
+    oversized paragraphs.
+  - Phase 3: Undersized chunk merging (`merge_peers`).
+  - Token estimate: 1 token ≈ 0.75 words (conservative for embedding models).
+  - API: `chunk_text(text, max_tokens=512, min_tokens=64, merge_peers=True)`
+    → `List[{text, pages, headings}]`.
+
+- **Framework Integrations** (`integrations/`): Plug-and-play adapters for
+  popular AI agent frameworks — all built on internal extraction, no third-party
+  document-AI required:
+  - `FlamehavenLangChainLoader` — LangChain `BaseLoader` interface; supports
+    `chunk=True` for node-level splits.
+  - `FlamehavenLlamaIndexReader` — LlamaIndex `BaseReader` interface; supports
+    `chunk=True`.
+  - `FlamehavenHaystackConverter` — Haystack `BaseConverter` interface;
+    `run(sources=[...])` returns `{"documents": [...]}`.
+  - `FlamehavenCrewAITool` — CrewAI `BaseTool` interface; `_run()` and
+    `_arun()` for sync and async agents.
+
+- **Content-Based Vector Embeddings**: Upload pipeline now extracts file content
+  (first 2000 chars) and embeds it via DSP v2.0. Previously, embeddings were
+  generated from filename + filetype strings, making semantic search meaningless
+  for local mode. Fixes semantic search quality for all non-Gemini-API paths.
+
+### Changed
+
+- **`engine/file_parser.py`**: Fully rewritten. Docling external dependency
+  removed; all parsers are now internal or delegate to existing [parsers] extras.
+  `SUPPORTED_EXTENSIONS` expanded from 11 to 34 entries.
+
+- **`pyproject.toml`**: `packages` list explicitly includes
+  `flamehaven_filesearch.engine` and `flamehaven_filesearch.integrations`
+  sub-packages for correct PyPI distribution.
+
+- **`validators.py`**: Removed HWP MIME types (`application/x-hwp`,
+  `application/haansofthwp`, `application/vnd.hancom.hwp/hwpx`). Added audio
+  (`audio/wav`, `audio/mpeg`, `audio/ogg`, `audio/flac`, `audio/aac`,
+  `audio/x-m4a`), WebVTT (`text/vtt`), and LaTeX (`application/x-latex`,
+  `text/x-tex`) MIME types.
+
+### Removed
+
+- **HWP / HWPX support**: The OLE binary HWP parser (`_extract_hwp`,
+  `_parse_hwp5_body`) and HWPX ZIP+XML parser have been removed. HWP requires
+  the `olefile` dependency and a custom binary record parser that adds
+  significant complexity for a narrow format. Use `.docx` conversion instead.
+
+### Tests
+
+- 318 tests pass (13 skipped). All format parser functions validated with
+  tempfile-based unit checks.
+- AI-Slop-Detector: status **CLEAN**, all new files LDR S++, inflation PASS.
+- ruff: no issues across all new and modified files.
+
+---
+
 ## [1.4.2] - 2026-04-16
 
 ### Changed

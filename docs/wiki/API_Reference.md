@@ -1,4 +1,4 @@
-# API Reference (v1.4.2)
+# API Reference (v1.5.0)
 
 All endpoints return JSON unless otherwise noted. Default base URL:
 `http://localhost:8000`.
