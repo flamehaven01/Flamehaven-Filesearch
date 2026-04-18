@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.5.1] - 2026-04-18
+
+### Removed
+
+- **`engine/embedding_generator_legacy.py`**: Deleted. Identical API surface and
+  100% function overlap with `embedding_generator.py`; the file was never imported
+  by production code and represented 306 lines of dead duplicate code.
+
+### Refactored
+
+- **`engine/text_chunker.py`**: Extracted `_split_section()` and `_make_chunk()`
+  helpers from `chunk_text()` to reduce nesting depth and cyclomatic complexity.
+
+- **`engine/file_parser.py`**: Extracted `_extract_table_rows()` from
+  `_extract_pptx()` (nesting depth 5 → 3); split bare `except` clauses in
+  `_extract_doc()` into typed `FileNotFoundError` / `subprocess.TimeoutExpired`
+  handlers with proper log messages.
+
+- **`engine/gravitas_pack.py`**: Extracted `_estimate_field_reduction()` from
+  `estimate_compression_ratio()` to eliminate nested for-loops.
+
+- **`engine/chronos_grid.py`**: Extracted `_upsert_vector()` from
+  `inject_essence()` to collapse 4-level nesting.
+
+- **`usage_middleware.py`**: Extracted `_collect_exceeded_quotas()` module-level
+  helper to flatten nested loop inside `dispatch()`.
+
+- **`api.py`**: Extracted `_save_upload_file()` from `upload_multiple_files()`
+  to resolve critical nested_complexity (depth=4 + high cyclomatic complexity).
+
+### Tests
+
+- 360 tests pass (13 skipped) — 29 more than v1.5.0 (360 vs 331).
+- AI-Slop-Detector: **CLEAN** | critical deficits 7 → 0 | avg deficit score
+  13.46 → 11.25.
+- ruff: no issues.
+
+---
+
 ## [1.5.0] - 2026-04-16
 
 ### Added

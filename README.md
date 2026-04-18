@@ -7,7 +7,7 @@
 ### Self-hosted RAG search engine. Production-ready in 3 minutes.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.5.0-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.5.1-blue.svg)](CHANGELOG.md)
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/docker-ready-brightgreen.svg)](https://hub.docker.com/r/flamehaven/filesearch)
 
@@ -59,6 +59,12 @@ Open source & MIT licensed</p>
 - **📄 Multi-Format Support** - PDF, DOCX, TXT, MD, and common image formats
 - **⚡ Ultra-Fast Vectors** - DSP v2.0 algorithm generates embeddings in <1ms without ML frameworks
 - **🎯 Source Attribution** - Every answer includes links back to source documents
+
+### What's New in v1.5.1 (patch)
+
+- **Dead code removed** — `embedding_generator_legacy.py` deleted (306-line duplicate, unused)
+- **Code quality** — Critical nested_complexity eliminated in 6 files; avg slop-detector score 13.46 → 11.25
+- **Test suite expanded** — 360 tests (was 331); AI-Slop-Detector critical deficits 7 → 0
 
 ### What's New in v1.5.0
 
@@ -290,7 +296,7 @@ security:
 </tr>
 <tr>
 <td>Test Suite</td>
-<td><code>331 tests</code></td>
+<td><code>360 tests</code></td>
 <td>All passing (pytest)</td>
 </tr>
 <tr>
@@ -479,7 +485,7 @@ Use the links below to jump to the most relevant guide.
 | [Document Parsing](docs/wiki/Document_Parsing.md) | Supported formats, internal parsers, RAG chunking |
 | [Framework Integrations](docs/wiki/Framework_Integrations.md) | LangChain, LlamaIndex, Haystack, CrewAI adapters |
 | [API Reference](docs/wiki/API_Reference.md) | REST endpoints, payloads, rate limits |
-| [Architecture](docs/wiki/Architecture.md) | How all layers fit together (v1.5.0) |
+| [Architecture](docs/wiki/Architecture.md) | How all layers fit together (v1.5.1) |
 | [Configuration Reference](docs/wiki/Configuration.md) | Full list of environment variables and config fields |
 | [Production Deployment](docs/wiki/Production_Deployment.md) | Docker, systemd, reverse proxy, scaling tips |
 | [Troubleshooting](docs/wiki/Troubleshooting.md) | Step-by-step debugging playbook |

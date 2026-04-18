@@ -1,13 +1,14 @@
 # Architecture Overview
 
 Flamehaven FileSearch balances simplicity with production-grade safeguards. This
-document describes the moving parts as of **v1.5.0**, featuring:
+document describes the moving parts as of **v1.5.1**, featuring:
 - **Gravitas DSP Engine** (v1.3.1+)
 - **Multimodal Search** (v1.4.0+)
 - **pgvector with HNSW** (v1.4.0+)
 - **Circuit Breaker & Health Checks** (v1.4.1+)
 - **ABC base classes, ruff CI, Windows filename fix** (v1.4.2)
 - **Universal Document Parser, Internal Chunker, Framework Integrations** (v1.5.0)
+- **Dead code removal, critical complexity fixes, 360-test suite** (v1.5.1)
 
 ---
 
@@ -84,7 +85,7 @@ The new **Chronos-Grid** integration handles high-speed vector storage and simil
 
 ## 6. Testing & Quality (v1.4.2)
 
-- **Test Framework**: `pytest` — 331 tests collected, all passing.
+- **Test Framework**: `pytest` — 360 tests collected, all passing.
 - **Lint**: `black` (format) + `ruff` (lint/unused imports) — both enforced in CI.
 - **Validation**: `validators.py` enforces security policies (Filename 200-char max, FileSize, SearchQuery XSS/SQLi checks).
 - **SIDRCE Certification**: Omega 0.9894 (S++) — AI-Slop-Detector P0-P5 clean.
