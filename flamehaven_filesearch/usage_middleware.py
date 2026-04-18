@@ -18,6 +18,19 @@ from .usage_tracker import UsageRecord, get_usage_tracker
 logger = logging.getLogger(__name__)
 
 
+def _collect_exceeded_quotas(quota_status: dict) -> list:
+    """Extract human-readable list of exceeded quota labels from quota_status dict."""
+    exceeded = []
+    for period in ("daily", "monthly"):
+        for metric in ("requests", "tokens"):
+            entry = quota_status.get(period, {}).get(metric, {})
+            if entry.get("exceeded"):
+                exceeded.append(
+                    f"{period}_{metric}: {entry['current']}/{entry['limit']}"
+                )
+    return exceeded
+
+
 class UsageTrackingMiddleware(BaseHTTPMiddleware):
     """Middleware to track API usage and enforce quotas"""
 
@@ -57,19 +70,12 @@ class UsageTrackingMiddleware(BaseHTTPMiddleware):
         # Check per-key quota BEFORE processing request
         quota_status = self.tracker.check_quota_exceeded(api_key_id)
         if quota_status["exceeded"]:
-            # Find which quota was exceeded
-            exceeded_quotas = []
-            for period in ["daily", "monthly"]:
-                for metric in ["requests", "tokens"]:
-                    if quota_status[period][metric]["exceeded"]:
-                        exceeded_quotas.append(
-                            f"{period}_{metric}: {quota_status[period][metric]['current']}/{quota_status[period][metric]['limit']}"
-                        )
-
+            exceeded_quotas = _collect_exceeded_quotas(quota_status)
             logger.warning(
-                f"[UsageMiddleware] Quota exceeded for {api_key_id}: {exceeded_quotas}"
+                "[UsageMiddleware] Quota exceeded for %s: %s",
+                api_key_id,
+                exceeded_quotas,
             )
-
             raise RateLimitExceededError(
                 f"Quota exceeded: {', '.join(exceeded_quotas)}"
             )

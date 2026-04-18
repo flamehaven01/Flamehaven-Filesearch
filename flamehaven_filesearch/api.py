@@ -140,15 +140,18 @@ def _normalize_vector_backend(value: Optional[str]) -> Optional[str]:
 
 
 def _enforce_metrics_access(request: Request, api_key: Optional[APIKeyInfo]) -> None:
-    if not _metrics_enabled():
-        raise HTTPException(status_code=404, detail="Not found")
+    # Internal loopback requests (dashboard, dev tools) always allowed
     if _is_internal_request(request):
         return
+    # External requests require METRICS_ENABLED AND admin permission
+    if not _metrics_enabled():
+        raise HTTPException(status_code=404, detail="Not found")
     if not api_key or "admin" not in (api_key.permissions or []):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin permission required",
         )
+
 
 
 def _internal_error(request_id: str) -> HTTPException:
@@ -215,6 +218,19 @@ app.include_router(admin_router)
 app.include_router(dashboard_router)
 app.include_router(batch_router)
 app.include_router(ws_router)
+
+# Serve frontend/dashboard directory at /dashboard/
+# This lets browsers open http://host/dashboard/landing.html with working /api/ fetches
+try:
+    from pathlib import Path
+    from fastapi.staticfiles import StaticFiles
+
+    _frontend_path = Path(__file__).parent.parent / "frontend" / "dashboard"
+    if _frontend_path.exists():
+        app.mount("/dashboard", StaticFiles(directory=str(_frontend_path), html=True), name="dashboard")
+except Exception as _e:  # pragma: no cover
+    pass  # Static serving is optional — API still works without it
+
 
 # Global instances
 searcher: Optional[FlamehavenFileSearch] = None
@@ -558,6 +574,39 @@ async def upload_single_file(
             logger.warning(f"[{request_id}] Failed to cleanup temp dir: {e}")
 
 
+def _save_upload_file(file, temp_dir: str, config, request_id: str):
+    """Save one upload file to temp_dir after validation.
+
+    Returns (result_dict, saved_path_or_None).
+    """
+    try:
+        file.file.seek(0, 2)
+        file_size = file.file.tell()
+        file.file.seek(0)
+
+        validated_filename, _ = validate_upload_file(
+            file.filename,
+            file_size,
+            file.content_type or "application/octet-stream",
+            config.max_file_size_mb,
+        )
+
+        file_path = os.path.join(temp_dir, validated_filename)
+        with open(file_path, "wb") as fh:
+            shutil.copyfileobj(file.file, fh)
+
+        result = {
+            "filename": validated_filename,
+            "status": "saved",
+            "size_mb": round(file_size / (1024 * 1024), 2),
+        }
+        return result, file_path
+
+    except FileSearchException as exc:
+        logger.warning("[%s] File validation failed for %s: %s", request_id, file.filename, exc)
+        return {"filename": file.filename, "status": "failed", "error": str(exc)}, None
+
+
 @app.post("/upload", response_model=UploadResponse, include_in_schema=False)
 @limiter.limit("10/minute")
 async def upload_single_file_legacy(
@@ -605,45 +654,15 @@ async def upload_multiple_files(
     try:
         config = Config.from_env()
 
-        # Save all files
         for file in files:
-            try:
-                # Get file size
-                file.file.seek(0, 2)
-                file_size = file.file.tell()
-                file.file.seek(0)
-
-                # Validate
-                validated_filename, _ = validate_upload_file(
-                    file.filename,
-                    file_size,
-                    file.content_type or "application/octet-stream",
-                    config.max_file_size_mb,
-                )
-
-                file_path = os.path.join(temp_dir, validated_filename)
-                with open(file_path, "wb") as f:
-                    shutil.copyfileobj(file.file, f)
-
-                file_paths.append(file_path)
-                results.append(
-                    {
-                        "filename": validated_filename,
-                        "status": "saved",
-                        "size_mb": round(file_size / (1024 * 1024), 2),
-                    }
-                )
-
-            except FileSearchException as e:
+            result, saved_path = _save_upload_file(file, temp_dir, config, request_id)
+            results.append(result)
+            if saved_path:
+                file_paths.append(saved_path)
+            else:
                 failed += 1
-                results.append(
-                    {"filename": file.filename, "status": "failed", "error": str(e)}
-                )
-                logger.warning(
-                    f"[{request_id}] File validation failed for {file.filename}: {e}"
-                )
 
-        logger.info(f"[{request_id}] Saved {len(file_paths)} files to temp")
+        logger.info("[%s] Saved %d files to temp", request_id, len(file_paths))
 
         # Upload all valid files
         if file_paths:
@@ -1191,6 +1210,16 @@ async def get_metrics(
     metrics["prometheus"] = MetricsCollector.summary()
 
     return metrics
+
+
+# /api/metrics alias — dashboard HTML files use this path
+@app.get("/api/metrics", response_model=MetricsResponse, tags=["Monitoring"], include_in_schema=False)
+@limiter.limit("100/minute")
+async def get_api_metrics(
+    request: Request, api_key: Optional[APIKeyInfo] = Depends(optional_api_key)
+):
+    """Alias for /metrics — used by dashboard frontend."""
+    return await get_metrics(request, api_key)
 
 
 # Root endpoint

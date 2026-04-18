@@ -236,6 +236,17 @@ class ChronosGrid:
             ) / self._quantization_scale + self._quantization_offset
         return quantized
 
+    def _upsert_vector(self, glyph: Any, vector_essence: Any, append: bool = False) -> None:
+        """Insert or update a quantized vector in the in-memory index."""
+        quantized = self._quantize_vector(vector_essence)
+        try:
+            v_idx = self._essence_glyphs.index(glyph)
+            self._vector_essences[v_idx] = quantized
+        except ValueError:
+            self._vector_essences.append(quantized)
+            self._essence_glyphs.append(glyph)
+        self._maybe_update_hnsw(glyph, vector_essence)
+
     def inject_essence(
         self, glyph: Any, essence: Any, vector_essence: Optional[Any] = None
     ) -> None:
@@ -252,23 +263,11 @@ class ChronosGrid:
         time_shard = self._time_shards[shard_idx]
 
         # Update existing essence
-        for i, (k, v) in enumerate(time_shard):
+        for i, (k, _v) in enumerate(time_shard):
             if k == glyph:
                 time_shard[i] = (glyph, essence)
                 if vector_essence is not None and NUMPY_AVAILABLE:
-                    try:
-                        v_idx = self._essence_glyphs.index(glyph)
-                        # Phase 3.5: Quantize before storage
-                        self._vector_essences[v_idx] = self._quantize_vector(
-                            vector_essence
-                        )
-                        self._maybe_update_hnsw(glyph, vector_essence)
-                    except ValueError:
-                        self._vector_essences.append(
-                            self._quantize_vector(vector_essence)
-                        )
-                        self._essence_glyphs.append(glyph)
-                        self._maybe_update_hnsw(glyph, vector_essence)
+                    self._upsert_vector(glyph, vector_essence)
                 return
 
         # Binary insertion for sorted state
@@ -285,9 +284,7 @@ class ChronosGrid:
 
         # Attach vector essence (Phase 3.5: Quantize)
         if vector_essence is not None and NUMPY_AVAILABLE:
-            self._vector_essences.append(self._quantize_vector(vector_essence))
-            self._essence_glyphs.append(glyph)
-            self._maybe_update_hnsw(glyph, vector_essence)
+            self._upsert_vector(glyph, vector_essence, append=True)
 
         # Update TimeShard boundaries
         if (

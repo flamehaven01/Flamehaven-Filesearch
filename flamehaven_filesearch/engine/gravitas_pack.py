@@ -226,26 +226,25 @@ class GravitasPacker:
             return 0.0
 
         original_size = len(json.dumps(metadata, separators=(",", ":")))
-
-        # Estimate compressed size (rough heuristic)
-        estimated_reduction = 0.0
-
-        # Count replaceable strings
-        for key, value in metadata.items():
-            if key in self.FIELD_GLYPHS:
-                estimated_reduction += len(key) - len(self.FIELD_GLYPHS[key])
-
-            if isinstance(value, str):
-                for ext, glyph in self.EXT_GLYPHS.items():
-                    if ext in value:
-                        estimated_reduction += len(ext) - len(glyph)
-
-                for path, glyph in self.PATH_GLYPHS.items():
-                    if path in value:
-                        estimated_reduction += len(path) - len(glyph)
-
+        estimated_reduction = sum(
+            self._estimate_field_reduction(k, v) for k, v in metadata.items()
+        )
         estimated_compressed_size = max(1, original_size - estimated_reduction)
         return estimated_compressed_size / original_size
+
+    def _estimate_field_reduction(self, key: str, value: object) -> float:
+        """Estimate byte savings for a single metadata field."""
+        reduction = 0.0
+        if key in self.FIELD_GLYPHS:
+            reduction += len(key) - len(self.FIELD_GLYPHS[key])
+        if isinstance(value, str):
+            for ext, glyph in self.EXT_GLYPHS.items():
+                if ext in value:
+                    reduction += len(ext) - len(glyph)
+            for path, glyph in self.PATH_GLYPHS.items():
+                if path in value:
+                    reduction += len(path) - len(glyph)
+        return reduction
 
     def get_stats(self) -> Dict[str, Any]:
         """Get compression statistics."""

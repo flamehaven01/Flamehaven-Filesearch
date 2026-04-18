@@ -25,6 +25,7 @@ For RAG chunking use engine.text_chunker.chunk_text().
 
 import logging
 from pathlib import Path
+from typing import List
 
 from .format_parsers import (
     extract_csv,
@@ -179,8 +180,10 @@ def _extract_doc(file_path: str) -> str:
         )
         if result.returncode == 0 and result.stdout.strip():
             return result.stdout
-    except (FileNotFoundError, subprocess.TimeoutExpired):
-        pass
+    except FileNotFoundError:
+        logger.debug("[FileParser] antiword not found; trying python-docx fallback")
+    except subprocess.TimeoutExpired:
+        logger.warning("[FileParser] antiword timed out for %s", file_path)
 
     try:
         import docx
@@ -189,8 +192,8 @@ def _extract_doc(file_path: str) -> str:
         lines = [p.text for p in document.paragraphs if p.text.strip()]
         if lines:
             return "\n".join(lines)
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("[FileParser] python-docx fallback failed for %s: %s", file_path, exc)
 
     logger.warning(
         "[FileParser] .doc extraction failed for %s. "
@@ -253,15 +256,22 @@ def _extract_pptx(file_path: str) -> str:
         lines.append(f"[Slide {i}]")
         for shape in slide.shapes:
             if isinstance(shape, GraphicFrame) and shape.has_table:
-                for row in shape.table.rows:
-                    row_text = "\t".join(
-                        cell.text.strip() for cell in row.cells if cell.text.strip()
-                    )
-                    if row_text:
-                        lines.append(row_text)
+                lines.extend(_extract_table_rows(shape.table))
             elif hasattr(shape, "text") and shape.text.strip():
                 lines.append(shape.text.strip())
     return "\n".join(lines)
+
+
+def _extract_table_rows(table: object) -> List[str]:
+    """Extract tab-separated rows from a pptx/docx table object."""
+    rows = []
+    for row in table.rows:  # type: ignore[attr-defined]
+        row_text = "\t".join(
+            cell.text.strip() for cell in row.cells if cell.text.strip()
+        )
+        if row_text:
+            rows.append(row_text)
+    return rows
 
 
 # ---------------------------------------------------------------------------

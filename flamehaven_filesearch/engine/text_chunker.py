@@ -80,67 +80,60 @@ def chunk_text(
     if not text or not text.strip():
         return []
 
-    # --- Phase 1: split on heading boundaries ---
     sections = _split_into_sections(text)
 
-    # --- Phase 2: split oversized sections at paragraph / sentence level ---
     raw_chunks: List[Dict[str, Any]] = []
     for section in sections:
         body = section["body"].strip()
-        headings = section["headings"]
+        if body:
+            raw_chunks.extend(_split_section(body, section["headings"], max_tokens))
 
-        if not body:
-            continue
-
-        if _estimate_tokens(body) <= max_tokens:
-            raw_chunks.append({"text": body, "pages": [], "headings": headings})
-            continue
-
-        # Split on paragraph breaks
-        paragraphs = [p.strip() for p in _PARA_SPLIT_RE.split(body) if p.strip()]
-        current_parts: List[str] = []
-        current_tokens = 0
-
-        for para in paragraphs:
-            para_tokens = _estimate_tokens(para)
-
-            if para_tokens > max_tokens:
-                # Flush what we have
-                if current_parts:
-                    raw_chunks.append({
-                        "text": "\n\n".join(current_parts),
-                        "pages": [],
-                        "headings": headings,
-                    })
-                    current_parts, current_tokens = [], 0
-                # Split the large paragraph by sentences
-                for sub in _split_by_sentences(para, max_tokens):
-                    raw_chunks.append({"text": sub, "pages": [], "headings": headings})
-                continue
-
-            if current_tokens + para_tokens > max_tokens and current_parts:
-                raw_chunks.append({
-                    "text": "\n\n".join(current_parts),
-                    "pages": [],
-                    "headings": headings,
-                })
-                current_parts, current_tokens = [], 0
-
-            current_parts.append(para)
-            current_tokens += para_tokens
-
-        if current_parts:
-            raw_chunks.append({
-                "text": "\n\n".join(current_parts),
-                "pages": [],
-                "headings": headings,
-            })
-
-    # --- Phase 3: merge undersized trailing chunks ---
     if merge_peers and len(raw_chunks) > 1:
         raw_chunks = _merge_small_chunks(raw_chunks, min_tokens, max_tokens)
 
     return raw_chunks
+
+
+def _split_section(
+    body: str,
+    headings: List[str],
+    max_tokens: int,
+) -> List[Dict[str, Any]]:
+    """Split a single section body into token-bounded chunks."""
+    if _estimate_tokens(body) <= max_tokens:
+        return [{"text": body, "pages": [], "headings": headings}]
+
+    chunks: List[Dict[str, Any]] = []
+    paragraphs = [p.strip() for p in _PARA_SPLIT_RE.split(body) if p.strip()]
+    current_parts: List[str] = []
+    current_tokens = 0
+
+    for para in paragraphs:
+        para_tokens = _estimate_tokens(para)
+
+        if para_tokens > max_tokens:
+            if current_parts:
+                chunks.append(_make_chunk("\n\n".join(current_parts), headings))
+                current_parts, current_tokens = [], 0
+            for sub in _split_by_sentences(para, max_tokens):
+                chunks.append(_make_chunk(sub, headings))
+            continue
+
+        if current_tokens + para_tokens > max_tokens and current_parts:
+            chunks.append(_make_chunk("\n\n".join(current_parts), headings))
+            current_parts, current_tokens = [], 0
+
+        current_parts.append(para)
+        current_tokens += para_tokens
+
+    if current_parts:
+        chunks.append(_make_chunk("\n\n".join(current_parts), headings))
+
+    return chunks
+
+
+def _make_chunk(text: str, headings: List[str]) -> Dict[str, Any]:
+    return {"text": text, "pages": [], "headings": headings}
 
 
 def _split_into_sections(text: str) -> List[Dict[str, Any]]:
