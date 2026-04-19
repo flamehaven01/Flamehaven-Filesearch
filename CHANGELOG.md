@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.5.2] - 2026-04-19
+
+### Added
+
+- **Parse Cache** (`engine/parse_cache.py`): mtime-based file extraction cache.
+  Algorithm absorbed from RAG-Anything `processor.py:_generate_cache_key()`.
+  Cache key = MD5(resolved_path + mtime + parser_config). Path-indexed reverse
+  map enables O(1) `invalidate()`. API: `get/put/invalidate/clear/stats`.
+  `extract_text(use_cache=True)` integrates transparently — no API change.
+  Score: **0.0 CLEAN**.
+
+- **ContextExtractor** (`engine/context_extractor.py`): Sliding-window chunk
+  context extractor for RAG result enrichment. Algorithm absorbed from
+  RAG-Anything `modalprocessors.py:ContextExtractor`. Given `chunk_text()`
+  output, `enrich_chunks()` adds a `context` key to each chunk containing
+  surrounding neighbour text. `ContextConfig`: `window_size`, `max_context_chars`,
+  `include_headings`. Zero external dependencies. Score: **0.0 CLEAN**.
+
+- **Backend Plugin Architecture** (`engine/format_backends.py`): Format-family
+  backends absorbed from Docling `abstract_backend.py` pattern.
+  `AbstractFormatBackend` ABC with `supported_extensions` + `extract()`.
+  `BackendRegistry` maps extensions to backend classes; new formats register
+  without modifying the dispatcher. 11 concrete backends:
+  `PDFBackend`, `DOCXBackend`, `DOCBackend`, `XLSXBackend`, `PPTXBackend`,
+  `RTFBackend`, `HTMLBackend`, `VTTBackend`, `LaTeXBackend`, `CSVBackend`,
+  `ImageBackend`, `PlainTextBackend`. Score: **12.2 clean**.
+
+### Refactored
+
+- **`engine/file_parser.py`** (75 lines, was 340): Rewritten as pure registry
+  dispatcher — `_dispatch()` resolves backend via `BackendRegistry.get(ext)`
+  then calls `backend.extract()`. Cyclomatic complexity 13 → 3.
+  `function_clone_cluster` (5 structurally similar `_extract_*` functions)
+  eliminated by moving each into its own Backend class. Score: **3.0 CLEAN**.
+
+### Tests
+
+- `tests/test_phase1_parse_cache_context.py`: 33 tests (parse_cache + ContextExtractor).
+- `tests/test_phase2_format_backends.py`: 50 tests (registry + backends + helpers).
+- Combined: **83 tests**, all passing. AI-Slop-Detector critical deficits: 0.
+
+---
+
 ## [1.5.1] - 2026-04-18
 
 ### Removed

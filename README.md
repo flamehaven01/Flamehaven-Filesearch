@@ -7,7 +7,7 @@
 ### Self-hosted RAG search engine. Production-ready in 3 minutes.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.5.1-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.5.2-blue.svg)](CHANGELOG.md)
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/docker-ready-brightgreen.svg)](https://hub.docker.com/r/flamehaven/filesearch)
 
@@ -59,6 +59,14 @@ Open source & MIT licensed</p>
 - **📄 Multi-Format Support** - PDF, DOCX, TXT, MD, and common image formats
 - **⚡ Ultra-Fast Vectors** - DSP v2.0 algorithm generates embeddings in <1ms without ML frameworks
 - **🎯 Source Attribution** - Every answer includes links back to source documents
+
+### What's New in v1.5.2 (patch)
+
+- **Parse Cache** (`engine/parse_cache.py`) — mtime-based file parse cache; `extract_text(use_cache=True)` skips re-parsing unchanged files
+- **ContextExtractor** (`engine/context_extractor.py`) — sliding-window chunk context enrichment for RAG pipelines (`enrich_chunks()`)
+- **Backend Plugin Architecture** (`engine/format_backends.py`) — 11 `AbstractFormatBackend` subclasses + `BackendRegistry`; new formats plug in without touching the dispatcher
+- **`file_parser.py`** refactored to 75 lines (was 340); cyclomatic complexity 13 → 3
+- 83 new tests; AI-Slop-Detector critical deficits: 0
 
 ### What's New in v1.5.1 (patch)
 
@@ -485,7 +493,7 @@ Use the links below to jump to the most relevant guide.
 | [Document Parsing](docs/wiki/Document_Parsing.md) | Supported formats, internal parsers, RAG chunking |
 | [Framework Integrations](docs/wiki/Framework_Integrations.md) | LangChain, LlamaIndex, Haystack, CrewAI adapters |
 | [API Reference](docs/wiki/API_Reference.md) | REST endpoints, payloads, rate limits |
-| [Architecture](docs/wiki/Architecture.md) | How all layers fit together (v1.5.1) |
+| [Architecture](docs/wiki/Architecture.md) | How all layers fit together (v1.5.2) |
 | [Configuration Reference](docs/wiki/Configuration.md) | Full list of environment variables and config fields |
 | [Production Deployment](docs/wiki/Production_Deployment.md) | Docker, systemd, reverse proxy, scaling tips |
 | [Troubleshooting](docs/wiki/Troubleshooting.md) | Step-by-step debugging playbook |

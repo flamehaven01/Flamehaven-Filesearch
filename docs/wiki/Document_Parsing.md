@@ -1,4 +1,4 @@
-# Document Parsing (v1.5.0)
+# Document Parsing (v1.5.2)
 
 FLAMEHAVEN FileSearch extracts plain UTF-8 text from 34 file extensions using
 a layered stack of internal and optional parsers. No external document-AI
