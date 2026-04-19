@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "flamehaven-filesearch"
-version = "1.5.2"
-description = "FLAMEHAVEN FileSearch - Open source semantic document search with API authentication powered by Google Gemini"
+version = "1.5.3"
+description = "FLAMEHAVEN FileSearch - Open source semantic document search with multi-provider LLM support (Gemini, OpenAI, Claude, Ollama)"
 readme = "README.md"
 requires-python = ">=3.8"
 authors = [
@@ -18,6 +18,13 @@ keywords = [
     "RAG",
     "gemini",
     "google-ai",
+    "openai",
+    "anthropic",
+    "claude",
+    "ollama",
+    "gemma",
+    "qwen",
+    "local-llm",
     "file-retrieval",
     "semantic-search",
     "document-parsing",
@@ -83,6 +90,15 @@ dev = [
 google = [
     "google-genai>=0.2.0",
 ]
+openai = [
+    "openai>=1.0.0",
+]
+anthropic = [
+    "anthropic>=0.20.0",
+]
+ollama = [
+    "httpx>=0.24.0",
+]
 parsers = [
     "pymupdf>=1.23.0",        # PDF extraction (primary)
     "pypdf>=4.0.0",           # PDF extraction (fallback, pure Python)
@@ -101,7 +117,7 @@ security = [
     "safety>=3.0.0",
 ]
 all = [
-    "flamehaven-filesearch[api,dev,google,vector,postgres,vision,parsers,multilingual]",
+    "flamehaven-filesearch[api,dev,google,openai,anthropic,ollama,vector,postgres,vision,parsers,multilingual]",
 ]
 
 [project.urls]

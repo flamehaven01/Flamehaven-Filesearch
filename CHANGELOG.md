@@ -7,6 +7,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.5.3] - 2026-04-19
+
+### Added
+
+- **Multi-provider LLM support** (`engine/llm_providers.py`): `AbstractLLMProvider`
+  ABC + 4 concrete implementations + `create_llm_provider()` factory.
+
+  | Provider | Class | Install extra |
+  |---|---|---|
+  | Google Gemini | `GeminiProvider` | `[google]` (existing) |
+  | OpenAI ChatGPT | `OpenAIProvider` | `[openai]` |
+  | Anthropic Claude | `AnthropicProvider` | `[anthropic]` |
+  | Ollama local | `OllamaProvider` | `[ollama]` |
+  | OpenAI-compatible | `OpenAIProvider` + `base_url` | `[openai]` |
+
+- **Local model support via Ollama** (`OllamaProvider`): zero API key required.
+  Tested models: `gemma4:27b`, `gemma4:4b`, `gemma4:2b` (128K/256K ctx, Apache-2.0),
+  `qwen2.5:7b/14b/32b`, `mistral`, `llama3.2`. Streaming via `/api/generate`.
+
+- **OpenAI-compatible endpoint routing**: `openai_compatible` / `kimi` / `vllm` /
+  `lmstudio` all map to `OpenAIProvider` with custom `base_url`.
+  Example: Kimi — `OPENAI_BASE_URL=https://api.moonshot.cn/v1`.
+
+- **Provider-RAG mode in `core.py`**: for non-Gemini providers, `search()` runs
+  local semantic retrieval (ChronosGrid) → `_build_rag_prompt()` → LLM answer.
+  `search_stream()` calls `provider.stream()` for token-by-token output.
+
+- **New `Config` fields**:
+  - `llm_provider` (str, default `"gemini"`)
+  - `openai_api_key`, `anthropic_api_key` (auto-loaded from env)
+  - `ollama_base_url` (default `http://localhost:11434`)
+  - `local_model` (default `gemma4:27b`)
+  - `openai_base_url` (for compatible endpoints)
+
+- **New env vars**: `LLM_PROVIDER`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`,
+  `OLLAMA_BASE_URL`, `LOCAL_MODEL`, `OPENAI_BASE_URL`
+
+- **New install extras**: `[openai]`, `[anthropic]`, `[ollama]`
+
+### Changed
+
+- `Config.validate()` skips Google API key requirement when `llm_provider != "gemini"`
+- `pyproject.toml`: `description` updated; keywords extended with `openai`,
+  `anthropic`, `claude`, `ollama`, `gemma`, `qwen`, `local-llm`
+
+---
+
 ## [1.5.2] - 2026-04-19
 
 ### Added

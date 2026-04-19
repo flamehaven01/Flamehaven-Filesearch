@@ -21,6 +21,7 @@ except ImportError:  # pragma: no cover - optional dependency
 
 from .config import Config
 from .engine import ChronosConfig, ChronosGrid, GravitasPacker, IntentRefiner
+from .engine.llm_providers import AbstractLLMProvider, create_llm_provider
 from .engine.embedding_generator import get_embedding_generator
 from .multimodal import VisionModal, get_multimodal_processor
 from .storage import MemoryMetadataStore, create_metadata_store
@@ -56,18 +57,30 @@ class FlamehavenFileSearch:
             allow_offline: Enable offline mode with local search
         """
         self.config = config or Config(api_key=api_key)
+
+        # Provider-RAG mode: non-Gemini LLM + local semantic retrieval
+        self._use_provider_rag: bool = self.config.llm_provider.lower() != "gemini"
+        self._llm_provider: Optional[AbstractLLMProvider] = None
+        if self._use_provider_rag:
+            self._llm_provider = create_llm_provider(self.config)
+
         self._use_native_client = (
-            bool(google_genai) and not allow_offline and bool(self.config.api_key)
+            bool(google_genai)
+            and not allow_offline
+            and not self._use_provider_rag
+            and bool(self.config.api_key)
         )
 
-        # Validate config - API key required only for remote mode
+        # Validate config — API key only required for Gemini cloud mode
         self.config.validate(require_api_key=not allow_offline)
 
         self._local_store_docs: Dict[str, List[Dict[str, str]]] = {}
         self._metadata_store = None
         self.client = None
 
-        if self._use_native_client:
+        if self._use_provider_rag and self._llm_provider:
+            mode_label = self._llm_provider.provider_name
+        elif self._use_native_client:
             self.client = google_genai.Client(api_key=self.config.api_key)
             mode_label = "google-genai"
         else:
@@ -555,6 +568,79 @@ class FlamehavenFileSearch:
         snippet = " ".join(snippet.split())
         return textwrap.shorten(snippet, width=300, placeholder="...")
 
+    def _build_rag_prompt(self, query: str, docs: List[Dict[str, Any]]) -> str:
+        """Build a RAG prompt from retrieved document chunks."""
+        parts = []
+        for doc in docs[: self.config.max_sources]:
+            title = doc.get("title", "document")
+            content = (doc.get("content") or "")[:1200].strip()
+            if content:
+                parts.append(f"[{title}]\n{content}")
+        if parts:
+            ctx = "\n\n".join(parts)
+            return (
+                f"Answer the question using only the context below.\n\n"
+                f"Context:\n{ctx}\n\n"
+                f"Question: {query}\nAnswer:"
+            )
+        return query
+
+    def _provider_search(
+        self,
+        query: str,
+        store_name: str,
+        max_tokens: int,
+        temperature: float,
+        search_mode: str,
+        intent: Any,
+    ) -> Dict[str, Any]:
+        """Local semantic retrieval + external LLM answer (non-Gemini providers)."""
+        refined = intent.refined_query if intent else query
+
+        # Retrieve documents
+        if self._metadata_store:
+            docs = self._metadata_store.get_docs(store_name)
+        else:
+            docs = self._local_store_docs.get(store_name, [])
+
+        # Semantic retrieval via ChronosGrid
+        q_vec = self.embedding_generator.generate(refined)
+        sem_hits = self.chronos_grid.seek_vector_resonance(
+            q_vec, top_k=self.config.max_sources
+        )
+        relevant_docs = [h[0] for h in sem_hits if isinstance(h, tuple) and h]
+
+        # Keyword fallback when semantic index is cold
+        if not relevant_docs:
+            needle = refined.lower()
+            relevant_docs = [
+                d for d in docs if needle in (d.get("content") or "").lower()
+            ][: self.config.max_sources]
+
+        prompt = self._build_rag_prompt(refined, relevant_docs)
+        assert self._llm_provider is not None
+        answer = self._llm_provider.generate(prompt, max_tokens, temperature)
+
+        sources = [
+            {"title": d.get("title", ""), "uri": d.get("uri", "")}
+            for d in relevant_docs[: self.config.max_sources]
+        ]
+        return {
+            "status": "success",
+            "answer": answer or "No relevant content found.",
+            "sources": sources,
+            "model": self._llm_provider.provider_name,
+            "query": query,
+            "refined_query": refined if (intent and intent.is_corrected) else None,
+            "corrections": (
+                intent.correction_suggestions
+                if (intent and intent.is_corrected)
+                else None
+            ),
+            "store": store_name,
+            "search_mode": search_mode,
+        }
+
     def search(
         self,
         query: str,
@@ -627,6 +713,16 @@ class FlamehavenFileSearch:
                     query_embedding, top_k=5
                 )
             logger.info(f"[>] Semantic search returned {len(semantic_results)} results")
+
+        if self._use_provider_rag:
+            return self._provider_search(
+                query=query,
+                store_name=store_name,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                search_mode=search_mode,
+                intent=intent,
+            )
 
         if not self._use_native_client:
             return self._local_search(
@@ -747,6 +843,19 @@ class FlamehavenFileSearch:
 
         intent = self.intent_refiner.refine_intent(query)
         optimized_query = intent.refined_query or query
+
+        if self._use_provider_rag and self._llm_provider:
+            intent = self.intent_refiner.refine_intent(query)
+            prompt = self._build_rag_prompt(
+                intent.refined_query,
+                (
+                    self._metadata_store.get_docs(store_name)
+                    if self._metadata_store
+                    else self._local_store_docs.get(store_name, [])
+                )[: self.config.max_sources],
+            )
+            yield from self._llm_provider.stream(prompt, max_tokens, temperature)
+            return
 
         if not self._use_native_client:
             result = self.search(query, store_name, model, max_tokens, temperature)

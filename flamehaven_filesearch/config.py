@@ -32,7 +32,20 @@ class Config:
         redis_db: Redis database number
     """
 
-    api_key: Optional[str] = None
+    # LLM provider selection
+    # "gemini" | "openai" | "anthropic" | "ollama" | "openai_compatible"
+    llm_provider: str = "gemini"
+
+    # Provider-specific credentials
+    api_key: Optional[str] = None  # Google Gemini API key
+    openai_api_key: Optional[str] = None  # OpenAI / OpenAI-compatible key
+    anthropic_api_key: Optional[str] = None  # Anthropic Claude key
+
+    # Local / OpenAI-compatible endpoints
+    ollama_base_url: str = "http://localhost:11434"
+    local_model: str = "gemma4:27b"
+    openai_base_url: Optional[str] = None  # e.g. https://api.moonshot.cn/v1
+
     max_file_size_mb: int = 50
     upload_timeout_sec: int = 60
     default_model: str = "gemini-2.5-flash"
@@ -83,25 +96,50 @@ class Config:
     max_answer_length: int = 4096
     banned_terms: list = field(default_factory=lambda: ["PII-leak"])
 
+    _VALID_PROVIDERS = frozenset(
+        {
+            "gemini",
+            "openai",
+            "anthropic",
+            "ollama",
+            "openai_compatible",
+            "kimi",
+            "vllm",
+            "lmstudio",
+        }
+    )
+
     def __post_init__(self):
-        """Load API key from environment if not provided"""
+        """Load credentials from environment if not provided."""
         if self.api_key is None:
             self.api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
         if self.api_key is not None:
-            self.api_key = self.api_key.strip()
-            if not self.api_key:
-                self.api_key = None
+            self.api_key = self.api_key.strip() or None
+
+        if self.openai_api_key is None:
+            self.openai_api_key = os.getenv("OPENAI_API_KEY")
+        if self.anthropic_api_key is None:
+            self.anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
+        if self.openai_base_url is None:
+            self.openai_base_url = os.getenv("OPENAI_BASE_URL") or None
 
     def validate(self, require_api_key: bool = True) -> bool:
         """
-        Validate configuration
+        Validate configuration.
 
         Args:
-            require_api_key: If True, API key is required. If False, API key is optional
-                           (for offline/local-only mode)
+            require_api_key: If True *and* provider is gemini, a Google API key
+                             is required. Non-Gemini providers handle their own
+                             credential checks at call time.
         """
-        if require_api_key and not self.api_key:
-            raise ValueError("API key required (API key not provided)")
+        gemini_mode = self.llm_provider.lower() == "gemini"
+        if require_api_key and gemini_mode and not self.api_key:
+            raise ValueError("GEMINI_API_KEY required when llm_provider='gemini'")
+
+        if self.llm_provider.lower() not in self._VALID_PROVIDERS:
+            raise ValueError(
+                f"llm_provider must be one of: {sorted(self._VALID_PROVIDERS)}"
+            )
 
         if self.max_file_size_mb <= 0:
             raise ValueError("max_file_size_mb must be positive")
@@ -203,9 +241,15 @@ class Config:
 
     @classmethod
     def from_env(cls) -> "Config":
-        """Create config from environment variables"""
+        """Create config from environment variables."""
         return cls(
+            llm_provider=os.getenv("LLM_PROVIDER", "gemini").strip().lower(),
             api_key=os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"),
+            openai_api_key=os.getenv("OPENAI_API_KEY"),
+            anthropic_api_key=os.getenv("ANTHROPIC_API_KEY"),
+            ollama_base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
+            local_model=os.getenv("LOCAL_MODEL", "gemma4:27b"),
+            openai_base_url=os.getenv("OPENAI_BASE_URL") or None,
             max_file_size_mb=int(os.getenv("MAX_FILE_SIZE_MB", "50")),
             upload_timeout_sec=int(os.getenv("UPLOAD_TIMEOUT_SEC", "60")),
             default_model=os.getenv("DEFAULT_MODEL", "gemini-2.5-flash"),
