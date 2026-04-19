@@ -58,12 +58,36 @@ SUPPORTED_EXTENSIONS = {
 }
 
 
-def extract_text(file_path: str) -> str:
+def extract_text(file_path: str, use_cache: bool = False) -> str:
     """Extract plain UTF-8 text from a file based on its extension.
 
     Falls back to plain-text read for unrecognised formats.
     Returns empty string on unrecoverable errors.
+
+    Args:
+        file_path: Path to the source file.
+        use_cache: When True, check parse_cache before extracting and store
+                   the result after a successful parse. Cache is invalidated
+                   automatically via file mtime — no manual flush needed for
+                   normal file updates.
     """
+    if use_cache:
+        from .parse_cache import get as _cache_get, put as _cache_put
+        cached = _cache_get(file_path)
+        if cached is not None:
+            return cached
+
+    result = _dispatch_extract(file_path)
+
+    if use_cache:
+        from .parse_cache import put as _cache_put
+        _cache_put(file_path, result)
+
+    return result
+
+
+def _dispatch_extract(file_path: str) -> str:
+    """Route extraction to the appropriate parser by file extension."""
     ext = Path(file_path).suffix.lower()
     try:
         if ext == ".pdf":
@@ -88,7 +112,6 @@ def extract_text(file_path: str) -> str:
             return extract_csv(file_path)
         if ext in _IMAGE_EXTS:
             return extract_image(file_path)
-        # Markdown, plain text, unknown text formats
         return _read_plain(file_path)
     except Exception as exc:
         logger.warning("[FileParser] Failed to extract %s: %s", file_path, exc)
@@ -152,12 +175,7 @@ def _extract_docx(file_path: str) -> str:
         document = docx.Document(file_path)
         blocks = [para.text for para in document.paragraphs if para.text.strip()]
         for table in document.tables:
-            for row in table.rows:
-                row_text = "\t".join(
-                    cell.text.strip() for cell in row.cells if cell.text.strip()
-                )
-                if row_text:
-                    blocks.append(row_text)
+            blocks.extend(_extract_table_rows(table))
         return "\n".join(blocks)
     except Exception as exc:
         logger.warning("[FileParser] DOCX extraction failed for %s: %s", file_path, exc)
@@ -220,17 +238,24 @@ def _extract_xlsx(file_path: str) -> str:
         return _read_plain(file_path)
 
     wb = openpyxl.load_workbook(file_path, read_only=True, data_only=True)
-    lines = []
     try:
+        lines = []
         for sheet in wb.worksheets:
             lines.append(f"[Sheet: {sheet.title}]")
-            for row in sheet.iter_rows(values_only=True):
-                row_text = "\t".join("" if c is None else str(c) for c in row)
-                if row_text.strip():
-                    lines.append(row_text)
+            lines.extend(_extract_xlsx_sheet(sheet))
+        return "\n".join(lines)
     finally:
         wb.close()
-    return "\n".join(lines)
+
+
+def _extract_xlsx_sheet(sheet: object) -> List[str]:
+    """Extract non-empty tab-separated rows from an openpyxl worksheet."""
+    rows = []
+    for row in sheet.iter_rows(values_only=True):  # type: ignore[attr-defined]
+        row_text = "\t".join("" if c is None else str(c) for c in row)
+        if row_text.strip():
+            rows.append(row_text)
+    return rows
 
 
 # ---------------------------------------------------------------------------
@@ -254,12 +279,19 @@ def _extract_pptx(file_path: str) -> str:
     lines = []
     for i, slide in enumerate(prs.slides, 1):
         lines.append(f"[Slide {i}]")
-        for shape in slide.shapes:
-            if isinstance(shape, GraphicFrame) and shape.has_table:
-                lines.extend(_extract_table_rows(shape.table))
-            elif hasattr(shape, "text") and shape.text.strip():
-                lines.append(shape.text.strip())
+        lines.extend(_extract_slide_text(slide, GraphicFrame))
     return "\n".join(lines)
+
+
+def _extract_slide_text(slide: object, graphic_frame_cls: type) -> List[str]:
+    """Extract text from all shapes on a single PPTX slide."""
+    parts: List[str] = []
+    for shape in slide.shapes:  # type: ignore[attr-defined]
+        if isinstance(shape, graphic_frame_cls) and shape.has_table:
+            parts.extend(_extract_table_rows(shape.table))
+        elif hasattr(shape, "text") and shape.text.strip():
+            parts.append(shape.text.strip())
+    return parts
 
 
 def _extract_table_rows(table: object) -> List[str]:
