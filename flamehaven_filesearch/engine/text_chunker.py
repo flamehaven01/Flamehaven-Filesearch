@@ -163,7 +163,11 @@ def _split_into_sections(text: str) -> List[Dict[str, Any]]:
 
         # Body = text until next heading or end
         start = match.end()
-        end = heading_matches[i + 1].start() if i + 1 < len(heading_matches) else len(text)
+        end = (
+            heading_matches[i + 1].start()
+            if i + 1 < len(heading_matches)
+            else len(text)
+        )
         body = text[start:end].strip()
 
         sections.append({"body": body, "headings": list(heading_stack)})
@@ -184,7 +188,8 @@ def _merge_small_chunks(
         if (
             _estimate_tokens(chunk["text"]) < min_tokens
             and merged
-            and _estimate_tokens(merged[-1]["text"]) + _estimate_tokens(chunk["text"]) <= max_tokens
+            and _estimate_tokens(merged[-1]["text"]) + _estimate_tokens(chunk["text"])
+            <= max_tokens
         ):
             # Merge into previous
             prev = merged[-1]

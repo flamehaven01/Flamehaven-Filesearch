@@ -2,8 +2,11 @@
 <html class="dark" lang="en"><head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Filesearch Ops - Cache</title>
+  <meta name="description" content="Flamehaven Filesearch - Cache Monitor. View cache hit rates, memory usage, and flush caches." />
+  <title>Filesearch Ops - Cache Monitor</title>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
   <script id="tailwind-config">
@@ -13,7 +16,6 @@
         extend: {
           colors: {
             "primary": "#137fec",
-            "background-light": "#f6f7f8",
             "background-dark": "#101922",
             "surface-dark": "#1d2833",
             "border-dark": "#324d67",
@@ -23,162 +25,265 @@
             "error": "#E53E3E"
           },
           fontFamily: { "display": ["Inter", "sans-serif"] },
-          borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
         },
       },
     }
   </script>
+  <style>
+    @keyframes fade-in { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
+    .fade-in { animation: fade-in 0.25s ease-out; }
+    @keyframes spin { to{transform:rotate(360deg)} }
+    .spin { animation: spin 0.8s linear infinite; }
+    @keyframes pulse-dot { 0%,100%{opacity:1}50%{opacity:.4} }
+    .pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+    .nav-link { transition: background 0.15s, color 0.15s; }
+    .stat-card { transition: border-color 0.2s; }
+    .stat-card:hover { border-color: #137fec55; }
+  </style>
 </head>
-<body class="bg-background-light dark:bg-background-dark font-display text-text-main-dark">
+<body class="bg-background-dark font-display text-text-main-dark">
+
+  <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2"></div>
+
   <div class="flex min-h-screen">
     <!-- SideNavBar -->
-    <aside class="flex h-screen flex-col justify-between bg-surface-dark/50 p-4 w-64 border-r border-border-dark">
+    <aside class="flex h-screen flex-col justify-between bg-surface-dark/50 p-4 w-64 border-r border-border-dark sticky top-0">
       <div class="flex flex-col gap-4">
-        <div class="flex gap-3 items-center">
-          <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="Abstract gradient logo" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBSRe6aCEChDJPLBphsa_t4GP2ZvVu3tM8PNvFwl9_dQcjWaApcFbSxpGk8cKF-vMPaRJtNKPbzJSt90jrRkZw3qaeXHGCzIpHphbveA5bxqwptT09kgOBX6ZvriZoSx0WFFnzYdPFjLVk_EDGx-FX0lBE9JWaxw54pm9S1f8KgLJM9pWJYxF84dc3Votj9PX142Nlehglwp7Ior5rvBPuj2Ct_kPJu_oTQOseOb6w-aZQvgd36Tk-rtk5kbvvT1WiKETu0_QAYF9s");'></div>
+        <div class="flex gap-3 items-center px-1 py-2">
+          <div class="flex items-center justify-center size-10 rounded-xl bg-primary/20 border border-primary/30">
+            <span class="material-symbols-outlined text-primary text-xl">local_fire_department</span>
+          </div>
           <div class="flex flex-col">
-            <h1 class="text-text-main-dark text-base font-medium leading-normal">Filesearch Ops</h1>
-            <p class="text-text-secondary-dark text-sm font-normal leading-normal">Cache</p>
+            <span class="text-text-main-dark text-base font-bold">Filesearch Ops</span>
+            <span class="text-text-secondary-dark text-xs">v1.4.2</span>
           </div>
         </div>
-        <nav class="flex flex-col gap-2 mt-4">
-          <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="landing_new.html">
-            <span class="material-symbols-outlined">dashboard</span>
-            <p class="text-sm font-medium leading-normal">Dashboard</p>
+        <nav class="flex flex-col gap-1 mt-2">
+          <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark hover:text-text-main-dark" href="landing.html">
+            <span class="material-symbols-outlined text-xl">dashboard</span>
+            <span class="text-sm font-medium">Dashboard</span>
           </a>
-          <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="search_new.html">
-            <span class="material-symbols-outlined">search</span>
-            <p class="text-sm font-medium leading-normal">Search</p>
+          <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark hover:text-text-main-dark" href="search.html">
+            <span class="material-symbols-outlined text-xl">search</span>
+            <span class="text-sm font-medium">Search</span>
           </a>
-          <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="upload_new.html">
-            <span class="material-symbols-outlined">upload_file</span>
-            <p class="text-sm font-medium leading-normal">Upload</p>
+          <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark hover:text-text-main-dark" href="upload.html">
+            <span class="material-symbols-outlined text-xl">upload_file</span>
+            <span class="text-sm font-medium">Upload</span>
           </a>
-          <a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/20 text-primary" href="cache_new.html">
-            <span class="material-symbols-outlined">hub</span>
-            <p class="text-sm font-medium leading-normal">Cache</p>
+          <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/20 text-primary" href="cache.html">
+            <span class="material-symbols-outlined text-xl" style="font-variation-settings:'FILL' 1">database</span>
+            <span class="text-sm font-semibold">Cache</span>
           </a>
-          <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="metrics_new.html">
-            <span class="material-symbols-outlined">monitoring</span>
-            <p class="text-sm font-medium leading-normal">Metrics</p>
+          <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark hover:text-text-main-dark" href="metrics.html">
+            <span class="material-symbols-outlined text-xl">monitoring</span>
+            <span class="text-sm font-medium">Metrics</span>
           </a>
-          <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="admin.html">
-            <span class="material-symbols-outlined">admin_panel_settings</span>
-            <p class="text-sm font-medium leading-normal">Admin</p>
+          <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark hover:text-text-main-dark" href="admin.html">
+            <span class="material-symbols-outlined text-xl">admin_panel_settings</span>
+            <span class="text-sm font-medium">Admin</span>
           </a>
         </nav>
       </div>
-      <div class="flex flex-col gap-1">
-        <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="https://github.com/flamehaven01/Flamehaven-Filesearch" title="Open docs/help">
-          <span class="material-symbols-outlined">help</span>
-          <p class="text-sm font-medium leading-normal">Help</p>
-        </a>
-        <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="landing_new.html">
-          <span class="material-symbols-outlined">logout</span>
-          <p class="text-sm font-medium leading-normal">Logout</p>
+      <div class="flex flex-col gap-2">
+        <div id="api-status-badge" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-dark border border-border-dark">
+          <span id="api-dot" class="pulse-dot h-2 w-2 rounded-full bg-gray-500"></span>
+          <span id="api-status-text" class="text-xs text-text-secondary-dark">Checking API...</span>
+        </div>
+        <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="https://github.com/flamehaven01/Flamehaven-Filesearch" target="_blank">
+          <span class="material-symbols-outlined text-xl">help</span>
+          <span class="text-sm font-medium">Help</span>
         </a>
       </div>
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 p-8">
+    <main class="flex-1 p-8 overflow-auto">
       <div class="mx-auto max-w-7xl">
-        <!-- PageHeading -->
-        <header class="flex flex-wrap justify-between items-center gap-3 mb-6">
-          <h1 class="text-text-main-dark text-4xl font-black leading-tight tracking-[-0.033em]">Cache Monitor</h1>
+        <header class="flex flex-wrap justify-between items-center gap-3 mb-8">
+          <div>
+            <h1 class="text-text-main-dark text-4xl font-black leading-tight tracking-[-0.033em]">Cache Monitor</h1>
+            <p class="text-text-secondary-dark text-sm mt-1">
+              Cache statistics · Auto-refresh every 30s
+              <span id="last-refresh" class="ml-2 font-mono"></span>
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <input id="cacheToken" type="password" class="h-10 w-56 rounded-lg bg-surface-dark border border-border-dark text-white text-sm px-3 focus:outline-none focus:ring-2 focus:ring-primary/50" placeholder="Bearer token (admin)" />
+            <button id="btn-refresh-cache" class="flex h-10 items-center gap-2 rounded-lg bg-surface-dark border border-border-dark px-4 text-sm font-medium text-text-secondary-dark hover:text-text-main-dark hover:border-primary/50 transition-all">
+              <span id="refresh-icon" class="material-symbols-outlined text-lg">refresh</span>
+              Refresh
+            </button>
+            <button id="btn-flush-cache" class="flex h-10 items-center gap-2 rounded-lg bg-error/15 border border-error/30 px-4 text-sm font-medium text-red-300 hover:bg-error/25 transition-all">
+              <span class="material-symbols-outlined text-lg">delete_sweep</span>
+              Flush
+            </button>
+          </div>
         </header>
-        <!-- Cache body -->
-        <div class="flex items-center gap-3 mb-4">
-          <input id="cacheToken" class="h-10 rounded-lg bg-[#233648] text-white text-sm px-3 border border-[#324d67]" placeholder="Bearer token" />
-          <button id="btn-refresh-cache" class="flex h-10 items-center rounded-lg bg-primary px-4 text-sm font-bold text-white gap-2 hover:bg-primary/80">
-            <span class="material-symbols-outlined">refresh</span>
-            <span>Refresh</span>
-          </button>
-          <button id="btn-flush-cache" class="flex h-10 items-center rounded-lg bg-[#233648] px-4 text-sm font-bold text-white gap-2 hover:bg-[#1c2a35]">
-            <span class="material-symbols-outlined">delete</span>
-            <span>Flush</span>
-          </button>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div class="stat-card rounded-xl border border-border-dark bg-surface-dark/70 p-5">
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-text-secondary-dark text-xs font-semibold uppercase tracking-wider">Hit Rate</p>
+              <span class="material-symbols-outlined text-text-secondary-dark text-lg">percent</span>
+            </div>
+            <p id="hitRate" class="text-2xl font-bold text-text-main-dark">--</p>
+            <!-- Hit rate bar -->
+            <div class="mt-3 h-1.5 bg-border-dark rounded-full overflow-hidden">
+              <div id="bar-hit" class="h-full bg-success rounded-full transition-all duration-700" style="width:0%"></div>
+            </div>
+          </div>
+          <div class="stat-card rounded-xl border border-border-dark bg-surface-dark/70 p-5">
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-text-secondary-dark text-xs font-semibold uppercase tracking-wider">Keys Cached</p>
+              <span class="material-symbols-outlined text-text-secondary-dark text-lg">key</span>
+            </div>
+            <p id="keysCached" class="text-2xl font-bold text-text-main-dark">--</p>
+            <p class="text-text-secondary-dark text-xs mt-1">Active cache entries</p>
+          </div>
+          <div class="stat-card rounded-xl border border-border-dark bg-surface-dark/70 p-5">
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-text-secondary-dark text-xs font-semibold uppercase tracking-wider">TTL</p>
+              <span class="material-symbols-outlined text-text-secondary-dark text-lg">timer</span>
+            </div>
+            <p id="ttlSeconds" class="text-2xl font-bold text-text-main-dark">--</p>
+            <p class="text-text-secondary-dark text-xs mt-1">Seconds per entry</p>
+          </div>
+          <div class="stat-card rounded-xl border border-border-dark bg-surface-dark/70 p-5">
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-text-secondary-dark text-xs font-semibold uppercase tracking-wider">Backend</p>
+              <span class="material-symbols-outlined text-text-secondary-dark text-lg">database</span>
+            </div>
+            <p id="cacheBackend" class="text-2xl font-bold text-text-main-dark">--</p>
+            <p class="text-text-secondary-dark text-xs mt-1">Cache backend type</p>
+          </div>
         </div>
-        <div class="grid grid-cols-1 gap-4 py-6 sm:grid-cols-2 lg:grid-cols-4">
-          <div class="flex flex-1 flex-col gap-2 rounded-lg border border-[#324d67] bg-[#111a22]/50 p-6">
-            <p class="text-white text-base font-medium leading-normal">Cache Hit Rate</p>
-            <p id="hitRate" class="text-white tracking-light text-3xl font-bold leading-tight">--</p>
+
+        <!-- Hits vs Misses -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div class="rounded-xl border border-border-dark bg-surface-dark/70 p-5">
+            <h2 class="text-white text-sm font-bold mb-4">Hits vs Misses</h2>
+            <div class="flex items-end gap-4">
+              <div class="flex flex-col items-center gap-1.5 flex-1">
+                <span id="hits-count" class="text-success text-2xl font-bold">--</span>
+                <div class="w-full bg-border-dark rounded-full overflow-hidden h-2">
+                  <div id="bar-hits" class="h-full bg-success rounded-full transition-all duration-700" style="width:0%"></div>
+                </div>
+                <span class="text-text-secondary-dark text-xs font-medium">Hits</span>
+              </div>
+              <div class="flex flex-col items-center gap-1.5 flex-1">
+                <span id="misses-count" class="text-error text-2xl font-bold">--</span>
+                <div class="w-full bg-border-dark rounded-full overflow-hidden h-2">
+                  <div id="bar-misses" class="h-full bg-error rounded-full transition-all duration-700" style="width:0%"></div>
+                </div>
+                <span class="text-text-secondary-dark text-xs font-medium">Misses</span>
+              </div>
+            </div>
           </div>
-          <div class="flex flex-1 flex-col gap-2 rounded-lg border border-[#324d67] bg-[#111a22]/50 p-6">
-            <p class="text-white text-base font-medium leading-normal">Memory Used</p>
-            <p id="memUsed" class="text-white tracking-light text-3xl font-bold leading-tight">--</p>
-          </div>
-          <div class="flex flex-1 flex-col gap-2 rounded-lg border border-[#324d67] bg-[#111a22]/50 p-6">
-            <p class="text-white text-base font-medium leading-normal">Keys Cached</p>
-            <p id="keysCached" class="text-white tracking-light text-3xl font-bold leading-tight">--</p>
-          </div>
-          <div class="flex flex-1 flex-col gap-2 rounded-lg border border-[#324d67] bg-[#111a22]/50 p-6">
-            <p class="text-white text-base font-medium leading-normal">TTL</p>
-            <p id="ttlSeconds" class="text-white tracking-light text-3xl font-bold leading-tight">--</p>
+          <div class="rounded-xl border border-border-dark bg-surface-dark/70 p-5">
+            <h2 class="text-white text-sm font-bold mb-4">Cache Config</h2>
+            <pre id="cacheRaw" class="text-text-secondary-dark text-xs leading-relaxed whitespace-pre-wrap max-h-28 overflow-auto">Loading...</pre>
           </div>
         </div>
-        <div class="mt-6 p-4 rounded-lg border border-[#324d67] bg-[#1a202c] text-white text-sm">
-          <p class="text-[#92adc9]">GET /api/metrics -> cache stats, POST /api/admin/cache/flush to clear caches (admin-only).</p>
-          <p id="cacheStatus" class="text-sm text-text-secondary-dark mt-2"></p>
-        </div>
+
+        <!-- Status bar -->
+        <p id="cacheStatus" class="text-text-secondary-dark text-sm"></p>
       </div>
     </main>
   </div>
+
   <script>
     (() => {
+      const TOKEN_KEY = "fh_bearer_token";
       const tokenEl = document.getElementById("cacheToken");
-      const hitRateEl = document.getElementById("hitRate");
-      const memUsedEl = document.getElementById("memUsed");
-      const keysEl = document.getElementById("keysCached");
-      const ttlEl = document.getElementById("ttlSeconds");
-      const statusEl = document.getElementById("cacheStatus");
-      const btnRefresh = document.getElementById("btn-refresh-cache");
-      const btnFlush = document.getElementById("btn-flush-cache");
+      if (tokenEl) {
+        tokenEl.value = localStorage.getItem(TOKEN_KEY) || "";
+        tokenEl.addEventListener("change", () => localStorage.setItem(TOKEN_KEY, tokenEl.value));
+      }
 
-      const headers = () => (tokenEl?.value ? { Authorization: `Bearer ${tokenEl.value}` } : {});
+      const toast = (msg, isError = false) => {
+        const el = document.createElement("div");
+        el.className = `px-4 py-3 rounded-lg text-sm font-medium shadow-lg border fade-in ${isError ? "bg-error/20 border-error/40 text-red-300" : "bg-success/20 border-success/40 text-green-300"}`;
+        el.textContent = msg;
+        document.getElementById("toast-container").appendChild(el);
+        setTimeout(() => el.remove(), 4000);
+      };
+
+      const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+      const setBar = (id, pct) => { const el = document.getElementById(id); if (el) el.style.width = `${Math.min(pct, 100)}%`; };
+
+      const headers = () => tokenEl?.value ? { Authorization: `Bearer ${tokenEl.value}` } : {};
 
       const refresh = async () => {
-        hitRateEl.textContent = "--";
-        memUsedEl.textContent = "--";
-        keysEl.textContent = "--";
-        ttlEl.textContent = "--";
-        statusEl.textContent = "";
+        const icon = document.getElementById("refresh-icon");
+        if (icon) { icon.className = "material-symbols-outlined text-lg spin"; icon.textContent = "sync"; }
+
+        setText("hitRate", "--"); setText("keysCached", "--"); setText("ttlSeconds", "--");
+        setText("cacheBackend", "--"); setText("hits-count", "--"); setText("misses-count", "--");
+
         try {
           const resp = await fetch("/api/metrics", { headers: headers() });
-          if (!resp.ok) throw new Error(resp.statusText);
+          if (!resp.ok) throw new Error(`${resp.status} ${resp.statusText}`);
           const data = await resp.json();
-          const cache = (data.cache && data.cache.search_cache) || {};
-          const hits = (data.prometheus && data.prometheus.cache_hits_total) || null;
-          const misses = (data.prometheus && data.prometheus.cache_misses_total) || null;
-          const rate = hits || misses ? ((hits || 0) / Math.max((hits || 0) + (misses || 0), 1) * 100).toFixed(1) + "%" : "--";
-          hitRateEl.textContent = rate;
-          memUsedEl.textContent = cache.current_size ? `${cache.current_size} items` : "--";
-          keysEl.textContent = cache.current_size ?? "--";
-          ttlEl.textContent = cache.ttl ?? "--";
-        } catch (err) {
-          statusEl.textContent = `Failed to load stats: ${err.message}`;
+
+          const sc = (data.cache && data.cache.search_cache) || {};
+          const hits = data.prometheus?.cache_hits_total || 0;
+          const misses = data.prometheus?.cache_misses_total || 0;
+          const total = hits + misses;
+          const hitPct = total > 0 ? (hits / total * 100) : 0;
+
+          setText("hitRate", total > 0 ? `${hitPct.toFixed(1)}%` : "n/a");
+          setBar("bar-hit", hitPct);
+          setText("keysCached", sc.current_size ?? "--");
+          setText("ttlSeconds", sc.ttl ?? data.config?.cache_ttl_sec ?? "--");
+          setText("cacheBackend", data.config?.cache_backend ?? "--");
+          setText("hits-count", hits);
+          setText("misses-count", misses);
+          setBar("bar-hits", total > 0 ? (hits / total * 100) : 0);
+          setBar("bar-misses", total > 0 ? (misses / total * 100) : 0);
+
+          const raw = document.getElementById("cacheRaw");
+          if (raw) raw.textContent = JSON.stringify(sc, null, 2) || "No cache data";
+
+          // API status
+          document.getElementById("api-dot").className = "pulse-dot h-2 w-2 rounded-full bg-success";
+          document.getElementById("api-status-text").textContent = "API Online";
+          document.getElementById("last-refresh").textContent = `· ${new Date().toLocaleTimeString()}`;
+        } catch (e) {
+          document.getElementById("api-dot").className = "pulse-dot h-2 w-2 rounded-full bg-error";
+          document.getElementById("api-status-text").textContent = "API Offline";
+          document.getElementById("cacheStatus").textContent = `Failed: ${e.message}`;
+          toast(`Failed to load cache stats: ${e.message}`, true);
+        } finally {
+          if (icon) { icon.className = "material-symbols-outlined text-lg"; icon.textContent = "refresh"; }
         }
       };
 
-      btnRefresh?.addEventListener("click", (e) => {
-        e.preventDefault();
-        refresh();
-      });
+      document.getElementById("btn-refresh-cache")?.addEventListener("click", (e) => { e.preventDefault(); refresh(); });
 
-      btnFlush?.addEventListener("click", async (e) => {
+      document.getElementById("btn-flush-cache")?.addEventListener("click", async (e) => {
         e.preventDefault();
-        if (!confirm("Flush cache?")) return;
+        if (!confirm("Flush all caches? This will clear all cached search results.")) return;
         try {
           const resp = await fetch("/api/admin/cache/flush", { method: "POST", headers: headers() });
-          if (!resp.ok) throw new Error(resp.statusText);
-          statusEl.textContent = "Caches flushed";
+          if (!resp.ok) throw new Error(`${resp.status} ${resp.statusText}`);
+          toast("All caches flushed successfully", false);
           refresh();
-        } catch (err) {
-          statusEl.textContent = `Flush failed: ${err.message}`;
+        } catch (e) {
+          toast(`Flush failed: ${e.message}`, true);
         }
       });
 
+      // API status check
+      fetch("/health").then(r => {
+        document.getElementById("api-dot").className = `pulse-dot h-2 w-2 rounded-full ${r.ok ? "bg-success" : "bg-error"}`;
+        document.getElementById("api-status-text").textContent = r.ok ? "API Online" : "API Offline";
+      }).catch(() => {});
+
       refresh();
+      // Auto-refresh every 30 seconds
+      setInterval(refresh, 30000);
     })();
   </script>
 </body></html>

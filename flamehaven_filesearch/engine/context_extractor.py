@@ -25,6 +25,7 @@ class ContextConfig:
         max_context_chars: Hard cap on context string length (prevents bloat).
         include_headings: When True, prepend heading hierarchy to each context chunk.
     """
+
     window_size: int = 1
     max_context_chars: int = 2000
     include_headings: bool = True

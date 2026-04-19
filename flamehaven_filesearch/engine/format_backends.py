@@ -18,7 +18,13 @@ import subprocess
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Set, Type
 
-from .format_parsers import extract_csv, extract_html, extract_image, extract_latex, extract_vtt
+from .format_parsers import (
+    extract_csv,
+    extract_html,
+    extract_image,
+    extract_latex,
+    extract_vtt,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -115,6 +121,7 @@ class PDFBackend(AbstractFormatBackend):
     def _try_pymupdf(self, file_path: str) -> str:
         try:
             import fitz
+
             doc = fitz.open(file_path)
             pages = [p.get_text() for p in doc if p.get_text().strip()]
             doc.close()
@@ -128,6 +135,7 @@ class PDFBackend(AbstractFormatBackend):
     def _try_pypdf(self, file_path: str) -> str:
         try:
             from pypdf import PdfReader
+
             reader = PdfReader(file_path)
             pages = [
                 p.extract_text() or ""
@@ -187,7 +195,9 @@ class DOCBackend(AbstractFormatBackend):
         try:
             proc = subprocess.run(
                 ["antiword", file_path],
-                capture_output=True, text=True, timeout=30,
+                capture_output=True,
+                text=True,
+                timeout=30,
             )
             if proc.returncode == 0 and proc.stdout.strip():
                 return proc.stdout
@@ -200,11 +210,14 @@ class DOCBackend(AbstractFormatBackend):
     def _try_docx(self, file_path: str) -> str:
         try:
             import docx
+
             document = docx.Document(file_path)
             lines = [p.text for p in document.paragraphs if p.text.strip()]
             return "\n".join(lines)
         except Exception as exc:
-            logger.debug("[DOCBackend] python-docx fallback failed for %s: %s", file_path, exc)
+            logger.debug(
+                "[DOCBackend] python-docx fallback failed for %s: %s", file_path, exc
+            )
             return ""
 
 
@@ -233,7 +246,15 @@ class XLSXBackend(AbstractFormatBackend):
 class PPTXBackend(AbstractFormatBackend):
     """PowerPoint extraction: python-pptx (text + tables)."""
 
-    supported_extensions = {".pptx", ".potx", ".ppsx", ".pptm", ".potm", ".ppsm", ".ppt"}
+    supported_extensions = {
+        ".pptx",
+        ".potx",
+        ".ppsx",
+        ".pptm",
+        ".potm",
+        ".ppsm",
+        ".ppt",
+    }
 
     def extract(self, file_path: str) -> str:
         try:
@@ -314,7 +335,11 @@ class PlainTextBackend(AbstractFormatBackend):
     """Plain UTF-8 read for .txt, .md, and unknown text formats."""
 
     supported_extensions = {
-        ".md", ".txt", ".text", ".qmd", ".rmd",
+        ".md",
+        ".txt",
+        ".text",
+        ".qmd",
+        ".rmd",
     }
 
     def extract(self, file_path: str) -> str:

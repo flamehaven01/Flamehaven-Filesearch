@@ -31,13 +31,37 @@ logger = logging.getLogger(__name__)
 _HTML_SKIP_TAGS = frozenset({"script", "style", "head", "noscript", "template"})
 
 # Block-level tags that should produce a newline in the output
-_HTML_BLOCK_TAGS = frozenset({
-    "p", "div", "section", "article", "main", "header", "footer", "nav",
-    "aside", "blockquote", "pre", "br", "hr",
-    "h1", "h2", "h3", "h4", "h5", "h6",
-    "li", "dt", "dd", "tr", "th", "td",
-    "caption", "figcaption",
-})
+_HTML_BLOCK_TAGS = frozenset(
+    {
+        "p",
+        "div",
+        "section",
+        "article",
+        "main",
+        "header",
+        "footer",
+        "nav",
+        "aside",
+        "blockquote",
+        "pre",
+        "br",
+        "hr",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "li",
+        "dt",
+        "dd",
+        "tr",
+        "th",
+        "td",
+        "caption",
+        "figcaption",
+    }
+)
 
 
 class _HTMLTextExtractor(HTMLParser):
@@ -79,7 +103,9 @@ def extract_html(file_path: str) -> str:
         parser.feed(content)
         return parser.get_text()
     except Exception as exc:
-        logger.warning("[FormatParsers] HTML extraction failed for %s: %s", file_path, exc)
+        logger.warning(
+            "[FormatParsers] HTML extraction failed for %s: %s", file_path, exc
+        )
         return ""
 
 
@@ -158,9 +184,21 @@ def extract_vtt(file_path: str) -> str:
 
 # Environments whose content should be suppressed (math, figures, etc.)
 _LATEX_SUPPRESS_ENVS = [
-    "equation", "equation*", "align", "align*", "gather", "gather*",
-    "eqnarray", "eqnarray*", "displaymath", "math", "tikzpicture",
-    "figure", "table", "tabular", "array",
+    "equation",
+    "equation*",
+    "align",
+    "align*",
+    "gather",
+    "gather*",
+    "eqnarray",
+    "eqnarray*",
+    "displaymath",
+    "math",
+    "tikzpicture",
+    "figure",
+    "table",
+    "tabular",
+    "array",
 ]
 
 
@@ -194,20 +232,23 @@ def extract_latex(file_path: str) -> str:
     # 3. Promote structural commands to readable headings
     content = re.sub(
         r"\\(?:part|chapter|section|subsection|subsubsection)\*?\{([^}]+)\}",
-        r"\n\n\1\n", content,
+        r"\n\n\1\n",
+        content,
     )
     content = re.sub(r"\\(?:title|author|abstract)\{([^}]+)\}", r"\n\1\n", content)
 
     # 4. Unwrap inline text commands — keep the argument text
     content = re.sub(
         r"\\(?:text(?:bf|it|tt|rm|sc|sf|up|md|normal|font)|emph|mbox|hbox|vbox)\{([^}]+)\}",
-        r"\1", content,
+        r"\1",
+        content,
     )
 
     # 5. Remove \item, \label, \ref, \cite etc (keep argument if present)
     content = re.sub(
         r"\\(?:item|label|ref|cite|footnote|caption)(?:\[[^\]]*\])?(?:\{([^}]*)\})?",
-        lambda m: (" " + m.group(1) + " ") if m.group(1) else " ", content,
+        lambda m: (" " + m.group(1) + " ") if m.group(1) else " ",
+        content,
     )
 
     # 6. Remove remaining LaTeX commands with their arguments
@@ -256,7 +297,9 @@ def extract_csv(file_path: str) -> str:
             ]
         return "\n".join(lines)
     except Exception as exc:
-        logger.warning("[FormatParsers] CSV extraction failed for %s: %s", file_path, exc)
+        logger.warning(
+            "[FormatParsers] CSV extraction failed for %s: %s", file_path, exc
+        )
         return ""
 
 

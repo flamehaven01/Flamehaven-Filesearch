@@ -212,7 +212,11 @@ class FlamehavenHaystackConverter:
                         documents.append(
                             HSDocument(
                                 content=c["text"],
-                                meta={**meta, "headings": c["headings"], "chunk_index": i},
+                                meta={
+                                    **meta,
+                                    "headings": c["headings"],
+                                    "chunk_index": i,
+                                },
                             )
                         )
                     continue

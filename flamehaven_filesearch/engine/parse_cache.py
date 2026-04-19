@@ -101,7 +101,9 @@ def invalidate(file_path: str) -> None:
     for k in keys_to_remove:
         _cache.pop(k, None)
     if keys_to_remove:
-        logger.debug("[ParseCache] INVALIDATED %s (%d keys)", file_path, len(keys_to_remove))
+        logger.debug(
+            "[ParseCache] INVALIDATED %s (%d keys)", file_path, len(keys_to_remove)
+        )
 
 
 def clear() -> None:

@@ -2,8 +2,11 @@
 <html class="dark" lang="en"><head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Filesearch Ops - Metrics</title>
+  <meta name="description" content="Flamehaven Filesearch - Metrics and Health. Monitor system performance, request rates, and API health." />
+  <title>Filesearch Ops - Metrics & Health</title>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
   <script id="tailwind-config">
@@ -13,7 +16,6 @@
         extend: {
           colors: {
             "primary": "#137fec",
-            "background-light": "#f6f7f8",
             "background-dark": "#101922",
             "surface-dark": "#1d2833",
             "border-dark": "#324d67",
@@ -23,149 +25,261 @@
             "error": "#E53E3E"
           },
           fontFamily: { "display": ["Inter", "sans-serif"] },
-          borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
         },
       },
     }
   </script>
+  <style>
+    @keyframes fade-in { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
+    .fade-in { animation: fade-in 0.25s ease-out; }
+    @keyframes spin { to{transform:rotate(360deg)} }
+    .spin { animation: spin 0.8s linear infinite; }
+    @keyframes pulse-dot { 0%,100%{opacity:1}50%{opacity:.4} }
+    .pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+    .nav-link { transition: background 0.15s, color 0.15s; }
+    .stat-card { transition: border-color 0.2s; }
+    .stat-card:hover { border-color: #137fec55; }
+  </style>
 </head>
-<body class="bg-background-light dark:bg-background-dark font-display text-text-main-dark">
+<body class="bg-background-dark font-display text-text-main-dark">
+
+  <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2"></div>
+
   <div class="flex min-h-screen">
     <!-- SideNavBar -->
-    <aside class="flex h-screen flex-col justify-between bg-surface-dark/50 p-4 w-64 border-r border-border-dark">
+    <aside class="flex h-screen flex-col justify-between bg-surface-dark/50 p-4 w-64 border-r border-border-dark sticky top-0">
       <div class="flex flex-col gap-4">
-        <div class="flex gap-3 items-center">
-          <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="Abstract gradient logo" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBSRe6aCEChDJPLBphsa_t4GP2ZvVu3tM8PNvFwl9_dQcjWaApcFbSxpGk8cKF-vMPaRJtNKPbzJSt90jrRkZw3qaeXHGCzIpHphbveA5bxqwptT09kgOBX6ZvriZoSx0WFFnzYdPFjLVk_EDGx-FX0lBE9JWaxw54pm9S1f8KgLJM9pWJYxF84dc3Votj9PX142Nlehglwp7Ior5rvBPuj2Ct_kPJu_oTQOseOb6w-aZQvgd36Tk-rtk5kbvvT1WiKETu0_QAYF9s");'></div>
+        <div class="flex gap-3 items-center px-1 py-2">
+          <div class="flex items-center justify-center size-10 rounded-xl bg-primary/20 border border-primary/30">
+            <span class="material-symbols-outlined text-primary text-xl">local_fire_department</span>
+          </div>
           <div class="flex flex-col">
-            <h1 class="text-text-main-dark text-base font-medium leading-normal">Filesearch Ops</h1>
-            <p class="text-text-secondary-dark text-sm font-normal leading-normal">Metrics</p>
+            <span class="text-text-main-dark text-base font-bold">Filesearch Ops</span>
+            <span class="text-text-secondary-dark text-xs">v1.4.2</span>
           </div>
         </div>
-        <nav class="flex flex-col gap-2 mt-4">
-          <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="landing_new.html">
-            <span class="material-symbols-outlined">dashboard</span>
-            <p class="text-sm font-medium leading-normal">Dashboard</p>
+        <nav class="flex flex-col gap-1 mt-2">
+          <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark hover:text-text-main-dark" href="landing.html">
+            <span class="material-symbols-outlined text-xl">dashboard</span>
+            <span class="text-sm font-medium">Dashboard</span>
           </a>
-          <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="search_new.html">
-            <span class="material-symbols-outlined">search</span>
-            <p class="text-sm font-medium leading-normal">Search</p>
+          <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark hover:text-text-main-dark" href="search.html">
+            <span class="material-symbols-outlined text-xl">search</span>
+            <span class="text-sm font-medium">Search</span>
           </a>
-          <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="upload_new.html">
-            <span class="material-symbols-outlined">upload_file</span>
-            <p class="text-sm font-medium leading-normal">Upload</p>
+          <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark hover:text-text-main-dark" href="upload.html">
+            <span class="material-symbols-outlined text-xl">upload_file</span>
+            <span class="text-sm font-medium">Upload</span>
           </a>
-          <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="cache_new.html">
-            <span class="material-symbols-outlined">hub</span>
-            <p class="text-sm font-medium leading-normal">Cache</p>
+          <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark hover:text-text-main-dark" href="cache.html">
+            <span class="material-symbols-outlined text-xl">database</span>
+            <span class="text-sm font-medium">Cache</span>
           </a>
-          <a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/20 text-primary" href="metrics_new.html">
-            <span class="material-symbols-outlined">monitoring</span>
-            <p class="text-sm font-medium leading-normal">Metrics</p>
+          <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/20 text-primary" href="metrics.html">
+            <span class="material-symbols-outlined text-xl" style="font-variation-settings:'FILL' 1">monitoring</span>
+            <span class="text-sm font-semibold">Metrics</span>
           </a>
-          <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="admin.html">
-            <span class="material-symbols-outlined">admin_panel_settings</span>
-            <p class="text-sm font-medium leading-normal">Admin</p>
+          <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark hover:text-text-main-dark" href="admin.html">
+            <span class="material-symbols-outlined text-xl">admin_panel_settings</span>
+            <span class="text-sm font-medium">Admin</span>
           </a>
         </nav>
       </div>
-      <div class="flex flex-col gap-1">
-        <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="https://github.com/flamehaven01/Flamehaven-Filesearch" title="Open docs/help">
-          <span class="material-symbols-outlined">help</span>
-          <p class="text-sm font-medium leading-normal">Help</p>
-        </a>
-        <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="landing_new.html">
-          <span class="material-symbols-outlined">logout</span>
-          <p class="text-sm font-medium leading-normal">Logout</p>
+      <div class="flex flex-col gap-2">
+        <div id="api-status-badge" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-dark border border-border-dark">
+          <span id="api-dot" class="pulse-dot h-2 w-2 rounded-full bg-gray-500"></span>
+          <span id="api-status-text" class="text-xs text-text-secondary-dark">Checking API...</span>
+        </div>
+        <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="https://github.com/flamehaven01/Flamehaven-Filesearch" target="_blank">
+          <span class="material-symbols-outlined text-xl">help</span>
+          <span class="text-sm font-medium">Help</span>
         </a>
       </div>
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 p-8">
+    <main class="flex-1 p-8 overflow-auto">
       <div class="mx-auto max-w-7xl">
-        <!-- PageHeading -->
-        <header class="flex flex-wrap justify-between items-center gap-3 mb-6">
-          <h1 class="text-text-main-dark text-4xl font-black leading-tight tracking-[-0.033em]">Metrics &amp; Health</h1>
+        <header class="flex flex-wrap justify-between items-center gap-3 mb-8">
+          <div>
+            <h1 class="text-text-main-dark text-4xl font-black leading-tight tracking-[-0.033em]">Metrics & Health</h1>
+            <p class="text-text-secondary-dark text-sm mt-1">
+              Live system metrics · Auto-refresh every 30s
+              <span id="last-refresh" class="ml-1 font-mono"></span>
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <input id="metricsToken" type="password" class="h-10 w-48 rounded-lg bg-surface-dark border border-border-dark text-white text-sm px-3 focus:outline-none focus:ring-2 focus:ring-primary/50" placeholder="Bearer token" />
+            <button id="btn-refresh-metrics" class="flex h-10 items-center gap-2 rounded-lg bg-surface-dark border border-border-dark px-4 text-sm font-medium text-text-secondary-dark hover:text-text-main-dark hover:border-primary/50 transition-all">
+              <span id="refresh-icon" class="material-symbols-outlined text-lg">refresh</span>
+              Refresh
+            </button>
+          </div>
         </header>
-        <!-- Metrics body -->
-        <div class="flex items-center gap-3 mb-4">
-          <input id="metricsToken" class="h-10 rounded-lg bg-[#233648] text-white text-sm px-3 border border-[#324d67]" placeholder="Bearer token" />
-          <button id="btn-refresh-metrics" class="flex h-10 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-primary px-4 text-sm font-semibold text-white shadow-sm hover:bg-primary/80">
-            <span class="material-symbols-outlined text-lg">refresh</span>
-            <span class="ml-1">Refresh</span>
-          </button>
-        </div>
-        <div class="grid grid-cols-1 gap-4 py-6 sm:grid-cols-2 lg:grid-cols-3">
-          <div class="flex flex-1 flex-col gap-2 rounded-lg border border-[#324d67] bg-[#111a22]/50 p-6">
-            <p class="text-white text-base font-medium leading-normal">Uptime (s)</p>
-            <p id="uptime" class="text-white tracking-light text-3xl font-bold leading-tight">--</p>
-          </div>
-          <div class="flex flex-1 flex-col gap-2 rounded-lg border border-[#324d67] bg-[#111a22]/50 p-6">
-            <p class="text-white text-base font-medium leading-normal">Requests last 60s</p>
-            <p id="req60" class="text-white tracking-light text-3xl font-bold leading-tight">--</p>
-          </div>
-          <div class="flex flex-1 flex-col gap-2 rounded-lg border border-[#324d67] bg-[#111a22]/50 p-6">
-            <p class="text-white text-base font-medium leading-normal">Errors last 60s</p>
-            <p id="err60" class="text-white tracking-light text-3xl font-bold leading-tight">--</p>
-          </div>
-          <div class="flex flex-1 flex-col gap-2 rounded-lg border border-[#324d67] bg-[#111a22]/50 p-6">
-            <p class="text-white text-base font-medium leading-normal">Cache Hits</p>
-            <p id="hits" class="text-white tracking-light text-3xl font-bold leading-tight">--</p>
-          </div>
-          <div class="flex flex-1 flex-col gap-2 rounded-lg border border-[#324d67] bg-[#111a22]/50 p-6">
-            <p class="text-white text-base font-medium leading-normal">Cache Misses</p>
-            <p id="misses" class="text-white tracking-light text-3xl font-bold leading-tight">--</p>
-          </div>
-          <div class="flex flex-1 flex-col gap-2 rounded-lg border border-[#324d67] bg-[#111a22]/50 p-6">
-            <p class="text-white text-base font-medium leading-normal">Health</p>
-            <p id="health" class="text-white tracking-light text-3xl font-bold leading-tight">--</p>
+
+        <!-- Health Status Banner -->
+        <div id="health-banner" class="rounded-xl border p-4 mb-6 flex items-center gap-3 transition-all">
+          <span id="health-icon" class="material-symbols-outlined text-2xl"></span>
+          <div>
+            <p id="health-label" class="font-bold text-base">Checking...</p>
+            <p id="health-detail" class="text-sm text-text-secondary-dark"></p>
           </div>
         </div>
-        <div class="mt-6 p-4 rounded-lg border border-[#324d67] bg-[#1a202c] text-white text-sm">
-          <p class="text-[#92adc9]">GET /metrics provides cache, health, and Prometheus summary (recent request/error counters). Supply a Bearer token if required.</p>
-          <pre id="metricsRaw" class="text-xs text-text-secondary-dark whitespace-pre-wrap mt-2"></pre>
+
+        <!-- Core Stats Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+          <div class="stat-card rounded-xl border border-border-dark bg-surface-dark/70 p-5">
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-text-secondary-dark text-xs font-semibold uppercase tracking-wider">Uptime</p>
+              <span class="material-symbols-outlined text-text-secondary-dark text-lg">schedule</span>
+            </div>
+            <p id="uptime" class="text-2xl font-bold text-text-main-dark">--</p>
+            <p class="text-text-secondary-dark text-xs mt-1">Time since last restart</p>
+          </div>
+          <div class="stat-card rounded-xl border border-border-dark bg-surface-dark/70 p-5">
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-text-secondary-dark text-xs font-semibold uppercase tracking-wider">Requests / 60s</p>
+              <span class="material-symbols-outlined text-text-secondary-dark text-lg">http</span>
+            </div>
+            <p id="req60" class="text-2xl font-bold text-text-main-dark">--</p>
+            <p class="text-text-secondary-dark text-xs mt-1">Recent request volume</p>
+          </div>
+          <div class="stat-card rounded-xl border border-border-dark bg-surface-dark/70 p-5">
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-text-secondary-dark text-xs font-semibold uppercase tracking-wider">Errors / 60s</p>
+              <span class="material-symbols-outlined text-text-secondary-dark text-lg">error_outline</span>
+            </div>
+            <p id="err60" class="text-2xl font-bold text-text-main-dark">--</p>
+            <p class="text-text-secondary-dark text-xs mt-1">Recent error count</p>
+          </div>
+          <div class="stat-card rounded-xl border border-border-dark bg-surface-dark/70 p-5">
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-text-secondary-dark text-xs font-semibold uppercase tracking-wider">Cache Hits</p>
+              <span class="material-symbols-outlined text-success text-lg">check_circle</span>
+            </div>
+            <p id="hits" class="text-2xl font-bold text-success">--</p>
+            <p class="text-text-secondary-dark text-xs mt-1">Total cache hits</p>
+          </div>
+          <div class="stat-card rounded-xl border border-border-dark bg-surface-dark/70 p-5">
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-text-secondary-dark text-xs font-semibold uppercase tracking-wider">Cache Misses</p>
+              <span class="material-symbols-outlined text-error text-lg">cancel</span>
+            </div>
+            <p id="misses" class="text-2xl font-bold text-error">--</p>
+            <p class="text-text-secondary-dark text-xs mt-1">Total cache misses</p>
+          </div>
+          <div class="stat-card rounded-xl border border-border-dark bg-surface-dark/70 p-5">
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-text-secondary-dark text-xs font-semibold uppercase tracking-wider">Active Stores</p>
+              <span class="material-symbols-outlined text-text-secondary-dark text-lg">folder_open</span>
+            </div>
+            <p id="stores-count" class="text-2xl font-bold text-text-main-dark">--</p>
+            <p class="text-text-secondary-dark text-xs mt-1">Indexed document stores</p>
+          </div>
+        </div>
+
+        <!-- Raw JSON -->
+        <div class="rounded-xl border border-border-dark bg-surface-dark/70 p-5">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-white text-sm font-bold">Raw Response</h2>
+            <span class="text-text-secondary-dark text-xs">GET /metrics</span>
+          </div>
+          <pre id="metricsRaw" class="text-text-secondary-dark text-xs leading-relaxed whitespace-pre-wrap max-h-64 overflow-auto">Waiting for data...</pre>
         </div>
       </div>
     </main>
   </div>
+
   <script>
     (() => {
+      const TOKEN_KEY = "fh_bearer_token";
       const tokenEl = document.getElementById("metricsToken");
-      const btnRefresh = document.getElementById("btn-refresh-metrics");
+      if (tokenEl) {
+        tokenEl.value = localStorage.getItem(TOKEN_KEY) || "";
+        tokenEl.addEventListener("change", () => localStorage.setItem(TOKEN_KEY, tokenEl.value));
+      }
+
+      const toast = (msg, isError = false) => {
+        const el = document.createElement("div");
+        el.className = `px-4 py-3 rounded-lg text-sm font-medium shadow-lg border fade-in ${isError ? "bg-error/20 border-error/40 text-red-300" : "bg-success/20 border-success/40 text-green-300"}`;
+        el.textContent = msg;
+        document.getElementById("toast-container").appendChild(el);
+        setTimeout(() => el.remove(), 4000);
+      };
+
       const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-      const raw = document.getElementById("metricsRaw");
+      const headers = () => tokenEl?.value ? { Authorization: `Bearer ${tokenEl.value}` } : {};
+
+      const setHealthBanner = (status) => {
+        const banner = document.getElementById("health-banner");
+        const icon = document.getElementById("health-icon");
+        const label = document.getElementById("health-label");
+        const detail = document.getElementById("health-detail");
+        const isHealthy = status === "healthy";
+        const isUnknown = !status;
+
+        if (banner) {
+          banner.className = `rounded-xl border p-4 mb-6 flex items-center gap-3 transition-all ${
+            isUnknown ? "border-border-dark bg-surface-dark/40" :
+            isHealthy ? "border-success/30 bg-success/10" : "border-error/30 bg-error/10"
+          }`;
+        }
+        if (icon) {
+          icon.textContent = isUnknown ? "pending" : isHealthy ? "check_circle" : "error";
+          icon.className = `material-symbols-outlined text-2xl ${isUnknown ? "text-text-secondary-dark" : isHealthy ? "text-success" : "text-error"}`;
+        }
+        if (label) {
+          label.textContent = isUnknown ? "Loading..." : isHealthy ? "System Healthy" : "System Degraded";
+          label.className = `font-bold text-base ${isUnknown ? "text-text-secondary-dark" : isHealthy ? "text-success" : "text-error"}`;
+        }
+        if (detail && status) {
+          detail.textContent = `API status: ${status}`;
+        }
+      };
 
       const refresh = async () => {
-        setText("uptime", "--");
-        setText("req60", "--");
-        setText("err60", "--");
-        setText("hits", "--");
-        setText("misses", "--");
-        setText("health", "--");
-        raw.textContent = "";
+        const icon = document.getElementById("refresh-icon");
+        if (icon) { icon.className = "material-symbols-outlined text-lg spin"; icon.textContent = "sync"; }
+
+        setText("uptime", "--"); setText("req60", "--"); setText("err60", "--");
+        setText("hits", "--"); setText("misses", "--"); setText("stores-count", "--");
+
         try {
-          const resp = await fetch("/metrics", { headers: tokenEl?.value ? { Authorization: `Bearer ${tokenEl.value}` } : {} });
-          if (!resp.ok) throw new Error(resp.statusText);
+          // Use /metrics (Prometheus-enabled endpoint with full stats)
+          const resp = await fetch("/metrics", { headers: headers() });
+          if (!resp.ok) throw new Error(`${resp.status} ${resp.statusText}`);
           const data = await resp.json();
-          setText("uptime", data.uptime_seconds ?? "--");
+
           const p = data.prometheus || {};
+          setText("uptime", data.uptime_seconds != null ? `${Math.round(data.uptime_seconds)}s` : "--");
           setText("req60", p.requests_last_60s ?? "--");
           setText("err60", p.errors_last_60s ?? "--");
           setText("hits", p.cache_hits_total ?? "--");
           setText("misses", p.cache_misses_total ?? "--");
-          setText("health", data.health_status ?? "unknown");
-          raw.textContent = JSON.stringify(data, null, 2);
-        } catch (err) {
-          raw.textContent = `Error: ${err.message}`;
+          setText("stores-count", data.stores_count ?? "--");
+
+          setHealthBanner(data.health_status || "unknown");
+
+          document.getElementById("api-dot").className = "pulse-dot h-2 w-2 rounded-full bg-success";
+          document.getElementById("api-status-text").textContent = "API Online";
+          document.getElementById("last-refresh").textContent = `· ${new Date().toLocaleTimeString()}`;
+          document.getElementById("metricsRaw").textContent = JSON.stringify(data, null, 2);
+        } catch (e) {
+          setHealthBanner(null);
+          document.getElementById("api-dot").className = "pulse-dot h-2 w-2 rounded-full bg-error";
+          document.getElementById("api-status-text").textContent = "API Offline";
+          document.getElementById("metricsRaw").textContent = `Error: ${e.message}`;
+          toast(`Failed to load metrics: ${e.message}`, true);
+        } finally {
+          if (icon) { icon.className = "material-symbols-outlined text-lg"; icon.textContent = "refresh"; }
         }
       };
 
-      btnRefresh?.addEventListener("click", (e) => {
-        e.preventDefault();
-        refresh();
-      });
+      document.getElementById("btn-refresh-metrics")?.addEventListener("click", (e) => { e.preventDefault(); refresh(); });
 
+      setHealthBanner(null);
       refresh();
+      setInterval(refresh, 30000);
     })();
   </script>
 </body></html>

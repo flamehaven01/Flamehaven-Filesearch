@@ -4,13 +4,17 @@ Tests for Phase 1 new modules:
   - engine/context_extractor.py  (RAG chunk context window)
   - engine/file_parser.py    (use_cache integration)
 """
+
 import os
 import tempfile
 import time
 
 import pytest
 
-from flamehaven_filesearch.engine.context_extractor import ContextConfig, ContextExtractor
+from flamehaven_filesearch.engine.context_extractor import (
+    ContextConfig,
+    ContextExtractor,
+)
 from flamehaven_filesearch.engine.parse_cache import (
     cache_key,
     clear,
@@ -109,9 +113,9 @@ class TestGetPut:
         assert get(tmp_txt) == "extracted text"
 
     def test_stats_hit_miss_counts(self, tmp_txt):
-        get(tmp_txt)           # miss
+        get(tmp_txt)  # miss
         put(tmp_txt, "data")
-        get(tmp_txt)           # hit
+        get(tmp_txt)  # hit
         s = stats()
         assert s["hits"] == 1
         assert s["misses"] == 1
@@ -179,16 +183,19 @@ class TestClearInvalidate:
 class TestExtractTextCache:
     def test_use_cache_false_no_caching(self, tmp_txt):
         from flamehaven_filesearch.engine.file_parser import extract_text
+
         extract_text(tmp_txt, use_cache=False)
         assert stats()["total"] == 0
 
     def test_use_cache_first_call_miss(self, tmp_txt):
         from flamehaven_filesearch.engine.file_parser import extract_text
+
         extract_text(tmp_txt, use_cache=True)
         assert stats()["misses"] == 1
 
     def test_use_cache_second_call_hit(self, tmp_txt):
         from flamehaven_filesearch.engine.file_parser import extract_text
+
         r1 = extract_text(tmp_txt, use_cache=True)
         r2 = extract_text(tmp_txt, use_cache=True)
         assert r1 == r2
@@ -196,6 +203,7 @@ class TestExtractTextCache:
 
     def test_use_cache_content_correct(self, tmp_txt):
         from flamehaven_filesearch.engine.file_parser import extract_text
+
         result = extract_text(tmp_txt, use_cache=True)
         assert "hello cache world" in result
 

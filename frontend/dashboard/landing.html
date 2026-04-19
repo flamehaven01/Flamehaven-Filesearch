@@ -2,6 +2,7 @@
 <html class="dark" lang="en"><head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Flamehaven Filesearch Ops Dashboard - System health, metrics, and API status." />
   <title>Filesearch Ops - Dashboard</title>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -15,7 +16,6 @@
         extend: {
           colors: {
             "primary": "#137fec",
-            "background-light": "#f6f7f8",
             "background-dark": "#101922",
             "surface-dark": "#1d2833",
             "border-dark": "#324d67",
@@ -24,94 +24,275 @@
             "success": "#38A169",
             "error": "#E53E3E"
           },
-          fontFamily: {
-            "display": ["Inter", "sans-serif"]
-          },
-          borderRadius: {
-            "DEFAULT": "0.25rem",
-            "lg": "0.5rem",
-            "xl": "0.75rem",
-            "full": "9999px"
-          },
+          fontFamily: { "display": ["Inter", "sans-serif"] },
+          borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
         },
       },
     }
   </script>
+  <style>
+    @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.4} }
+    .pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+    @keyframes fade-in { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+    .fade-in { animation: fade-in 0.3s ease-out; }
+    .stat-card { transition: border-color 0.2s, box-shadow 0.2s; }
+    .stat-card:hover { border-color: #137fec55; box-shadow: 0 0 0 1px #137fec22; }
+    .nav-link { transition: background 0.15s, color 0.15s; }
+  </style>
 </head>
-<body class="bg-background-light dark:bg-background-dark font-display text-text-main-dark">
+<body class="bg-background-dark font-display text-text-main-dark">
+
+  <!-- Toast container -->
+  <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2"></div>
+
   <div class="flex min-h-screen">
     <!-- SideNavBar -->
-    <aside class="flex h-screen flex-col justify-between bg-surface-dark/50 p-4 w-64 border-r border-border-dark">
+    <aside class="flex h-screen flex-col justify-between bg-surface-dark/50 p-4 w-64 border-r border-border-dark sticky top-0">
       <div class="flex flex-col gap-4">
-        <div class="flex gap-3 items-center">
-          <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="Abstract gradient logo" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBSRe6aCEChDJPLBphsa_t4GP2ZvVu3tM8PNvFwl9_dQcjWaApcFbSxpGk8cKF-vMPaRJtNKPbzJSt90jrRkZw3qaeXHGCzIpHphbveA5bxqwptT09kgOBX6ZvriZoSx0WFFnzYdPFjLVk_EDGx-FX0lBE9JWaxw54pm9S1f8KgLJM9pWJYxF84dc3Votj9PX142Nlehglwp7Ior5rvBPuj2Ct_kPJu_oTQOseOb6w-aZQvgd36Tk-rtk5kbvvT1WiKETu0_QAYF9s");'></div>
+        <div class="flex gap-3 items-center px-1 py-2">
+          <div class="flex items-center justify-center size-10 rounded-xl bg-primary/20 border border-primary/30">
+            <span class="material-symbols-outlined text-primary text-xl">local_fire_department</span>
+          </div>
           <div class="flex flex-col">
-            <h1 class="text-text-main-dark text-base font-medium leading-normal">Filesearch Ops</h1>
-            <p class="text-text-secondary-dark text-sm font-normal leading-normal">Dashboard</p>
+            <span class="text-text-main-dark text-base font-bold leading-tight">Filesearch Ops</span>
+            <span class="text-text-secondary-dark text-xs">v1.4.2</span>
           </div>
         </div>
-        <nav class="flex flex-col gap-2 mt-4">
-          <a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/20 text-primary" href="landing_new.html">
-            <span class="material-symbols-outlined">dashboard</span>
-            <p class="text-sm font-medium leading-normal">Dashboard</p>
+        <nav class="flex flex-col gap-1 mt-2">
+          <a id="nav-dashboard" class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/20 text-primary" href="landing.html">
+            <span class="material-symbols-outlined text-xl" style="font-variation-settings:'FILL' 1">dashboard</span>
+            <span class="text-sm font-semibold">Dashboard</span>
           </a>
-          <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="search_new.html">
-            <span class="material-symbols-outlined">search</span>
-            <p class="text-sm font-medium leading-normal">Search</p>
+          <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark hover:text-text-main-dark" href="search.html">
+            <span class="material-symbols-outlined text-xl">search</span>
+            <span class="text-sm font-medium">Search</span>
           </a>
-          <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="upload_new.html">
-            <span class="material-symbols-outlined">upload_file</span>
-            <p class="text-sm font-medium leading-normal">Upload</p>
+          <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark hover:text-text-main-dark" href="upload.html">
+            <span class="material-symbols-outlined text-xl">upload_file</span>
+            <span class="text-sm font-medium">Upload</span>
           </a>
-          <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="cache_new.html">
-            <span class="material-symbols-outlined">hub</span>
-            <p class="text-sm font-medium leading-normal">Cache</p>
+          <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark hover:text-text-main-dark" href="cache.html">
+            <span class="material-symbols-outlined text-xl">database</span>
+            <span class="text-sm font-medium">Cache</span>
           </a>
-          <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="metrics_new.html">
-            <span class="material-symbols-outlined">monitoring</span>
-            <p class="text-sm font-medium leading-normal">Metrics</p>
+          <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark hover:text-text-main-dark" href="metrics.html">
+            <span class="material-symbols-outlined text-xl">monitoring</span>
+            <span class="text-sm font-medium">Metrics</span>
           </a>
-          <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="admin.html">
-            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">shield_person</span>
-            <p class="text-sm font-medium leading-normal">Admin</p>
+          <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark hover:text-text-main-dark" href="admin.html">
+            <span class="material-symbols-outlined text-xl">admin_panel_settings</span>
+            <span class="text-sm font-medium">Admin</span>
           </a>
         </nav>
       </div>
-      <div class="flex flex-col gap-1">
-        <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="https://github.com/flamehaven01/Flamehaven-Filesearch" title="Open docs/help">
-          <span class="material-symbols-outlined">help</span>
-          <p class="text-sm font-medium leading-normal">Help</p>
-        </a>
-        <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="landing_new.html">
-          <span class="material-symbols-outlined">logout</span>
-          <p class="text-sm font-medium leading-normal">Logout</p>
+      <div class="flex flex-col gap-2">
+        <!-- API Status badge -->
+        <div id="api-status-badge" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-dark border border-border-dark">
+          <span id="api-dot" class="pulse-dot h-2 w-2 rounded-full bg-gray-500"></span>
+          <span id="api-status-text" class="text-xs text-text-secondary-dark">Checking API...</span>
+        </div>
+        <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="https://github.com/flamehaven01/Flamehaven-Filesearch" target="_blank">
+          <span class="material-symbols-outlined text-xl">help</span>
+          <span class="text-sm font-medium">Help</span>
         </a>
       </div>
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 p-8">
+    <main class="flex-1 p-8 overflow-auto">
       <div class="mx-auto max-w-7xl">
-        <!-- PageHeading -->
-        <header class="flex flex-wrap justify-between items-center gap-3 mb-6">
-          <h1 class="text-text-main-dark text-4xl font-black leading-tight tracking-[-0.033em]">Dashboard</h1>
+        <header class="flex flex-wrap justify-between items-center gap-3 mb-8">
+          <div>
+            <h1 class="text-text-main-dark text-4xl font-black leading-tight tracking-[-0.033em]">Dashboard</h1>
+            <p class="text-text-secondary-dark text-sm mt-1">System overview and live metrics</p>
+          </div>
+          <button id="btn-refresh" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-dark border border-border-dark text-text-secondary-dark hover:text-text-main-dark hover:border-primary/50 text-sm font-medium transition-all">
+            <span class="material-symbols-outlined text-lg">refresh</span>
+            Refresh
+          </button>
         </header>
-        <!-- Body content copied from original landing -->
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div class="rounded-lg border border-border-dark bg-surface-dark/70 p-4">
-            <p class="text-text-secondary-dark text-sm">Uptime</p>
-            <p class="text-text-main-dark text-2xl font-bold">--</p>
+
+        <!-- Status + Version Row -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div class="stat-card rounded-xl border border-border-dark bg-surface-dark/70 p-5 fade-in">
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-text-secondary-dark text-xs font-semibold uppercase tracking-wider">Status</p>
+              <span class="material-symbols-outlined text-text-secondary-dark text-lg">favorite</span>
+            </div>
+            <p id="stat-status" class="text-2xl font-bold text-gray-400">--</p>
+            <p class="text-text-secondary-dark text-xs mt-1">API health</p>
           </div>
-          <div class="rounded-lg border border-border-dark bg-surface-dark/70 p-4">
-            <p class="text-text-secondary-dark text-sm">Requests / sec</p>
-            <p class="text-text-main-dark text-2xl font-bold">--</p>
+          <div class="stat-card rounded-xl border border-border-dark bg-surface-dark/70 p-5 fade-in">
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-text-secondary-dark text-xs font-semibold uppercase tracking-wider">Uptime</p>
+              <span class="material-symbols-outlined text-text-secondary-dark text-lg">schedule</span>
+            </div>
+            <p id="stat-uptime" class="text-2xl font-bold text-text-main-dark">--</p>
+            <p class="text-text-secondary-dark text-xs mt-1">Since last restart</p>
           </div>
-          <div class="rounded-lg border border-border-dark bg-surface-dark/70 p-4">
-            <p class="text-text-secondary-dark text-sm">Error rate</p>
-            <p class="text-text-main-dark text-2xl font-bold">--</p>
+          <div class="stat-card rounded-xl border border-border-dark bg-surface-dark/70 p-5 fade-in">
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-text-secondary-dark text-xs font-semibold uppercase tracking-wider">Stores</p>
+              <span class="material-symbols-outlined text-text-secondary-dark text-lg">folder_open</span>
+            </div>
+            <p id="stat-stores" class="text-2xl font-bold text-text-main-dark">--</p>
+            <p class="text-text-secondary-dark text-xs mt-1">Indexed document stores</p>
+          </div>
+          <div class="stat-card rounded-xl border border-border-dark bg-surface-dark/70 p-5 fade-in">
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-text-secondary-dark text-xs font-semibold uppercase tracking-wider">Version</p>
+              <span class="material-symbols-outlined text-text-secondary-dark text-lg">tag</span>
+            </div>
+            <p id="stat-version" class="text-2xl font-bold text-text-main-dark">--</p>
+            <p class="text-text-secondary-dark text-xs mt-1">API version</p>
+          </div>
+        </div>
+
+        <!-- System Resource Row -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div class="stat-card rounded-xl border border-border-dark bg-surface-dark/70 p-5">
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-text-secondary-dark text-xs font-semibold uppercase tracking-wider">CPU</p>
+              <span class="material-symbols-outlined text-text-secondary-dark text-lg">memory</span>
+            </div>
+            <p id="stat-cpu" class="text-2xl font-bold text-text-main-dark">--</p>
+            <div class="mt-2 h-1.5 bg-border-dark rounded-full overflow-hidden">
+              <div id="bar-cpu" class="h-full bg-primary rounded-full transition-all duration-700" style="width:0%"></div>
+            </div>
+          </div>
+          <div class="stat-card rounded-xl border border-border-dark bg-surface-dark/70 p-5">
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-text-secondary-dark text-xs font-semibold uppercase tracking-wider">Memory</p>
+              <span class="material-symbols-outlined text-text-secondary-dark text-lg">storage</span>
+            </div>
+            <p id="stat-mem" class="text-2xl font-bold text-text-main-dark">--</p>
+            <div class="mt-2 h-1.5 bg-border-dark rounded-full overflow-hidden">
+              <div id="bar-mem" class="h-full bg-primary rounded-full transition-all duration-700" style="width:0%"></div>
+            </div>
+          </div>
+          <div class="stat-card rounded-xl border border-border-dark bg-surface-dark/70 p-5">
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-text-secondary-dark text-xs font-semibold uppercase tracking-wider">Disk</p>
+              <span class="material-symbols-outlined text-text-secondary-dark text-lg">hard_drive</span>
+            </div>
+            <p id="stat-disk" class="text-2xl font-bold text-text-main-dark">--</p>
+            <div class="mt-2 h-1.5 bg-border-dark rounded-full overflow-hidden">
+              <div id="bar-disk" class="h-full bg-primary rounded-full transition-all duration-700" style="width:0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Store list -->
+        <div class="rounded-xl border border-border-dark bg-surface-dark/70 p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-text-main-dark text-base font-bold">Active Stores</h2>
+            <a href="upload.html" class="text-primary text-sm hover:underline flex items-center gap-1">
+              <span class="material-symbols-outlined text-base">add</span>Add files
+            </a>
+          </div>
+          <div id="stores-list" class="flex flex-wrap gap-2 min-h-[2rem]">
+            <span class="text-text-secondary-dark text-sm">Loading...</span>
           </div>
         </div>
       </div>
     </main>
   </div>
+
+  <script>
+    (() => {
+      // Toast notification
+      const toast = (msg, isError = false) => {
+        const el = document.createElement("div");
+        el.className = `px-4 py-3 rounded-lg text-sm font-medium shadow-lg border fade-in ${
+          isError ? "bg-error/20 border-error/40 text-red-300" : "bg-success/20 border-success/40 text-green-300"
+        }`;
+        el.textContent = msg;
+        document.getElementById("toast-container").appendChild(el);
+        setTimeout(() => el.remove(), 4000);
+      };
+
+      const setText = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val;
+      };
+      const setBar = (id, pct) => {
+        const el = document.getElementById(id);
+        if (el) el.style.width = `${Math.min(pct, 100)}%`;
+      };
+
+      const setApiStatus = (online) => {
+        const dot = document.getElementById("api-dot");
+        const text = document.getElementById("api-status-text");
+        if (dot) dot.className = `pulse-dot h-2 w-2 rounded-full ${online ? "bg-success" : "bg-error"}`;
+        if (text) text.textContent = online ? "API Online" : "API Offline";
+      };
+
+      const setStatStatus = (status) => {
+        const el = document.getElementById("stat-status");
+        if (!el) return;
+        const isHealthy = status === "healthy";
+        el.textContent = status || "--";
+        el.className = `text-2xl font-bold ${isHealthy ? "text-success" : "text-error"}`;
+      };
+
+      const loadDashboard = async () => {
+        const btn = document.getElementById("btn-refresh");
+        if (btn) { btn.disabled = true; btn.querySelector("span").textContent = "sync"; }
+        try {
+          // Health check
+          const hResp = await fetch("/health");
+          if (!hResp.ok) throw new Error(`Health ${hResp.status}`);
+          const h = await hResp.json();
+
+          setApiStatus(true);
+          setStatStatus(h.status);
+          setText("stat-uptime", h.uptime_formatted || `${Math.round(h.uptime_seconds || 0)}s`);
+          setText("stat-version", h.version || "--");
+
+          const sys = h.system || {};
+          if (!sys.error) {
+            setText("stat-cpu", sys.cpu_percent != null ? `${sys.cpu_percent}%` : "--");
+            setBar("bar-cpu", sys.cpu_percent || 0);
+            setText("stat-mem", sys.memory_percent != null ? `${sys.memory_percent}%` : "--");
+            setBar("bar-mem", sys.memory_percent || 0);
+            setText("stat-disk", sys.disk_percent != null ? `${sys.disk_percent}%` : "--");
+            setBar("bar-disk", sys.disk_percent || 0);
+          }
+
+          // Metrics - stores count
+          const mResp = await fetch("/api/metrics").catch(() => null);
+          if (mResp && mResp.ok) {
+            const m = await mResp.json();
+            setText("stat-stores", m.stores_count ?? "--");
+
+            // stores may be a list OR a dict {name: uri} (offline fallback mode)
+            const storeNames = Array.isArray(m.stores)
+              ? m.stores
+              : Object.keys(m.stores || {});
+
+            // Render store badges
+            const storesList = document.getElementById("stores-list");
+            if (storesList && storeNames.length > 0) {
+              storesList.innerHTML = storeNames.map(s =>
+                `<span class="px-3 py-1 rounded-full bg-primary/15 border border-primary/30 text-primary text-xs font-mono">${s}</span>`
+              ).join("");
+            } else if (storesList) {
+              storesList.innerHTML = `<span class="text-text-secondary-dark text-sm">No stores yet. <a href="upload.html" class="text-primary hover:underline">Upload files</a> to create one.</span>`;
+            }
+          }
+        } catch (e) {
+          setApiStatus(false);
+          toast(`Failed to load dashboard: ${e.message}`, true);
+        } finally {
+          if (btn) { btn.disabled = false; btn.querySelector("span").textContent = "refresh"; }
+        }
+      };
+
+      document.getElementById("btn-refresh")?.addEventListener("click", loadDashboard);
+      loadDashboard();
+
+      // Auto-refresh every 30s
+      setInterval(loadDashboard, 30000);
+    })();
+  </script>
 </body></html>

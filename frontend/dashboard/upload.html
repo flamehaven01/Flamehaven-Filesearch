@@ -2,8 +2,11 @@
 <html class="dark" lang="en"><head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Flamehaven Filesearch - Upload and index documents for AI-powered search." />
   <title>Filesearch Ops - Upload</title>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
   <script id="tailwind-config">
@@ -13,7 +16,6 @@
         extend: {
           colors: {
             "primary": "#137fec",
-            "background-light": "#f6f7f8",
             "background-dark": "#101922",
             "surface-dark": "#1d2833",
             "border-dark": "#324d67",
@@ -23,146 +25,324 @@
             "error": "#E53E3E"
           },
           fontFamily: { "display": ["Inter", "sans-serif"] },
-          borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
         },
       },
     }
   </script>
+  <style>
+    @keyframes fade-in { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
+    .fade-in { animation: fade-in 0.25s ease-out; }
+    @keyframes spin { to{transform:rotate(360deg)} }
+    .spin { animation: spin 0.8s linear infinite; }
+    @keyframes pulse-dot { 0%,100%{opacity:1}50%{opacity:.4} }
+    .pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+    .nav-link { transition: background 0.15s, color 0.15s; }
+    #drop-zone { transition: border-color 0.2s, background 0.2s; }
+    #drop-zone.drag-over { border-color: #137fec; background: rgba(19,127,236,0.08); }
+    .file-item { transition: background 0.15s; }
+    .file-item:hover { background: rgba(50,77,103,0.3); }
+  </style>
 </head>
-<body class="bg-background-light dark:bg-background-dark font-display text-text-main-dark">
+<body class="bg-background-dark font-display text-text-main-dark">
+
+  <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2"></div>
+
   <div class="flex min-h-screen">
     <!-- SideNavBar -->
-    <aside class="flex h-screen flex-col justify-between bg-surface-dark/50 p-4 w-64 border-r border-border-dark">
+    <aside class="flex h-screen flex-col justify-between bg-surface-dark/50 p-4 w-64 border-r border-border-dark sticky top-0">
       <div class="flex flex-col gap-4">
-        <div class="flex gap-3 items-center">
-          <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="Abstract gradient logo" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBSRe6aCEChDJPLBphsa_t4GP2ZvVu3tM8PNvFwl9_dQcjWaApcFbSxpGk8cKF-vMPaRJtNKPbzJSt90jrRkZw3qaeXHGCzIpHphbveA5bxqwptT09kgOBX6ZvriZoSx0WFFnzYdPFjLVk_EDGx-FX0lBE9JWaxw54pm9S1f8KgLJM9pWJYxF84dc3Votj9PX142Nlehglwp7Ior5rvBPuj2Ct_kPJu_oTQOseOb6w-aZQvgd36Tk-rtk5kbvvT1WiKETu0_QAYF9s");'></div>
+        <div class="flex gap-3 items-center px-1 py-2">
+          <div class="flex items-center justify-center size-10 rounded-xl bg-primary/20 border border-primary/30">
+            <span class="material-symbols-outlined text-primary text-xl">local_fire_department</span>
+          </div>
           <div class="flex flex-col">
-            <h1 class="text-text-main-dark text-base font-medium leading-normal">Filesearch Ops</h1>
-            <p class="text-text-secondary-dark text-sm font-normal leading-normal">Upload</p>
+            <span class="text-text-main-dark text-base font-bold">Filesearch Ops</span>
+            <span class="text-text-secondary-dark text-xs">v1.4.2</span>
           </div>
         </div>
-        <nav class="flex flex-col gap-2 mt-4">
-          <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="landing_new.html">
-            <span class="material-symbols-outlined">dashboard</span>
-            <p class="text-sm font-medium leading-normal">Dashboard</p>
+        <nav class="flex flex-col gap-1 mt-2">
+          <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark hover:text-text-main-dark" href="landing.html">
+            <span class="material-symbols-outlined text-xl">dashboard</span>
+            <span class="text-sm font-medium">Dashboard</span>
           </a>
-          <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="search_new.html">
-            <span class="material-symbols-outlined">search</span>
-            <p class="text-sm font-medium leading-normal">Search</p>
+          <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark hover:text-text-main-dark" href="search.html">
+            <span class="material-symbols-outlined text-xl">search</span>
+            <span class="text-sm font-medium">Search</span>
           </a>
-          <a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/20 text-primary" href="upload_new.html">
-            <span class="material-symbols-outlined">upload_file</span>
-            <p class="text-sm font-medium leading-normal">Upload</p>
+          <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/20 text-primary" href="upload.html">
+            <span class="material-symbols-outlined text-xl" style="font-variation-settings:'FILL' 1">upload_file</span>
+            <span class="text-sm font-semibold">Upload</span>
           </a>
-          <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="cache_new.html">
-            <span class="material-symbols-outlined">hub</span>
-            <p class="text-sm font-medium leading-normal">Cache</p>
+          <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark hover:text-text-main-dark" href="cache.html">
+            <span class="material-symbols-outlined text-xl">database</span>
+            <span class="text-sm font-medium">Cache</span>
           </a>
-          <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="metrics_new.html">
-            <span class="material-symbols-outlined">monitoring</span>
-            <p class="text-sm font-medium leading-normal">Metrics</p>
+          <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark hover:text-text-main-dark" href="metrics.html">
+            <span class="material-symbols-outlined text-xl">monitoring</span>
+            <span class="text-sm font-medium">Metrics</span>
           </a>
-          <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="admin.html">
-            <span class="material-symbols-outlined">admin_panel_settings</span>
-            <p class="text-sm font-medium leading-normal">Admin</p>
+          <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark hover:text-text-main-dark" href="admin.html">
+            <span class="material-symbols-outlined text-xl">admin_panel_settings</span>
+            <span class="text-sm font-medium">Admin</span>
           </a>
         </nav>
       </div>
-      <div class="flex flex-col gap-1">
-        <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="https://github.com/flamehaven01/Flamehaven-Filesearch" title="Open docs/help">
-          <span class="material-symbols-outlined">help</span>
-          <p class="text-sm font-medium leading-normal">Help</p>
-        </a>
-        <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="landing_new.html">
-          <span class="material-symbols-outlined">logout</span>
-          <p class="text-sm font-medium leading-normal">Logout</p>
+      <div class="flex flex-col gap-2">
+        <div id="api-status-badge" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-dark border border-border-dark">
+          <span id="api-dot" class="pulse-dot h-2 w-2 rounded-full bg-gray-500"></span>
+          <span id="api-status-text" class="text-xs text-text-secondary-dark">Checking API...</span>
+        </div>
+        <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="https://github.com/flamehaven01/Flamehaven-Filesearch" target="_blank">
+          <span class="material-symbols-outlined text-xl">help</span>
+          <span class="text-sm font-medium">Help</span>
         </a>
       </div>
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 p-8">
-      <div class="mx-auto max-w-7xl">
-        <!-- PageHeading -->
-        <header class="flex flex-wrap justify-between items-center gap-3 mb-6">
-          <h1 class="text-text-main-dark text-4xl font-black leading-tight tracking-[-0.033em]">Upload / Index</h1>
+    <main class="flex-1 p-8 overflow-auto">
+      <div class="mx-auto max-w-4xl">
+        <header class="flex flex-wrap justify-between items-center gap-3 mb-8">
+          <div>
+            <h1 class="text-text-main-dark text-4xl font-black leading-tight tracking-[-0.033em]">Upload / Index</h1>
+            <p class="text-text-secondary-dark text-sm mt-1">Index documents for AI-powered semantic search</p>
+          </div>
         </header>
-        <!-- Upload body -->
-        <div class="flex flex-wrap items-center gap-3 mb-4">
-          <input id="uploadToken" class="h-10 rounded-lg bg-[#233648] text-white text-sm px-3 border border-[#324d67]" placeholder="Bearer token" />
-          <input id="uploadStore" class="h-10 rounded-lg bg-[#233648] text-white text-sm px-3 border border-[#324d67]" value="default" placeholder="Store name" />
-          <button id="btn-upload-files" class="flex h-10 min-w-[120px] cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-primary px-4 text-sm font-bold text-white transition-opacity hover:opacity-90">
-            <span>Upload</span>
-          </button>
-          <input id="fileInput" type="file" multiple class="hidden" />
-          <button id="btn-select-files" class="flex h-10 min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-primary px-5 text-sm font-bold text-white transition-opacity hover:opacity-90">
-            <span>Select Files</span>
-          </button>
+
+        <!-- Config Row -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+          <div>
+            <label class="text-text-secondary-dark text-xs font-semibold uppercase tracking-wider block mb-1.5">Bearer Token</label>
+            <input id="uploadToken" type="password" class="w-full h-10 rounded-lg bg-surface-dark border border-border-dark text-white text-sm px-3 focus:outline-none focus:ring-2 focus:ring-primary/50" placeholder="sk_..." />
+          </div>
+          <div>
+            <label class="text-text-secondary-dark text-xs font-semibold uppercase tracking-wider block mb-1.5">Store Name</label>
+            <input id="uploadStore" class="w-full h-10 rounded-lg bg-surface-dark border border-border-dark text-white text-sm px-3 focus:outline-none focus:ring-2 focus:ring-primary/50" value="default" placeholder="default" />
+          </div>
         </div>
-        <div id="uploadStatus" class="text-sm text-text-secondary-dark mt-2"></div>
-        <div class="mt-8 p-4 rounded-lg border border-[#324d67] bg-[#1a202c] text-white text-sm">
-          <p class="text-[#92adc9]">POST /api/upload/single or /multiple with FormData (files, store). This UI will show a status message after upload.</p>
+
+        <!-- Drop Zone -->
+        <div id="drop-zone" class="rounded-xl border-2 border-dashed border-border-dark bg-surface-dark/40 p-12 text-center cursor-pointer mb-4 hover:border-primary/50">
+          <span class="material-symbols-outlined text-4xl text-text-secondary-dark block mb-3">cloud_upload</span>
+          <p class="text-text-main-dark text-base font-semibold mb-1">Drop files here</p>
+          <p class="text-text-secondary-dark text-sm">or <button id="btn-select-files" class="text-primary hover:underline font-medium">click to browse</button></p>
+          <p class="text-text-secondary-dark text-xs mt-2">PDF, TXT, DOCX, XLSX, PPTX — max 50MB each</p>
+          <input id="fileInput" type="file" multiple class="hidden" accept=".txt,.pdf,.docx,.xlsx,.pptx,.md,.csv,.json,.rtf" />
+        </div>
+
+        <!-- File List -->
+        <div id="file-list" class="hidden rounded-xl border border-border-dark bg-surface-dark/70 mb-4 overflow-hidden">
+          <div class="flex items-center justify-between px-4 py-3 border-b border-border-dark">
+            <span id="file-count" class="text-text-secondary-dark text-sm font-medium">0 files selected</span>
+            <button id="btn-clear" class="text-text-secondary-dark text-xs hover:text-error transition-colors">Clear all</button>
+          </div>
+          <div id="file-items" class="divide-y divide-border-dark max-h-48 overflow-y-auto"></div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div id="progress-container" class="hidden mb-4">
+          <div class="flex justify-between items-center mb-1.5">
+            <span class="text-text-secondary-dark text-xs font-medium">Uploading...</span>
+            <span id="progress-pct" class="text-primary text-xs font-mono">0%</span>
+          </div>
+          <div class="h-2 bg-border-dark rounded-full overflow-hidden">
+            <div id="progress-bar" class="h-full bg-primary rounded-full transition-all duration-300" style="width:0%"></div>
+          </div>
+        </div>
+
+        <!-- Upload Button -->
+        <button id="btn-upload-files" class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl h-12 bg-primary text-white text-sm font-bold tracking-wide hover:bg-primary/85 transition-all disabled:opacity-60 disabled:cursor-not-allowed mb-4">
+          <span id="upload-btn-icon" class="material-symbols-outlined">upload</span>
+          <span id="upload-btn-label">Upload Files</span>
+        </button>
+
+        <!-- Status -->
+        <div id="uploadStatus" class="hidden rounded-xl border p-4 fade-in">
+          <div class="flex items-start gap-3">
+            <span id="status-icon" class="material-symbols-outlined text-lg mt-0.5"></span>
+            <div>
+              <p id="status-title" class="text-sm font-semibold"></p>
+              <p id="status-detail" class="text-xs text-text-secondary-dark mt-0.5"></p>
+            </div>
+          </div>
         </div>
       </div>
     </main>
   </div>
+
   <script>
     (() => {
+      const TOKEN_KEY = "fh_bearer_token";
       const tokenEl = document.getElementById("uploadToken");
+      if (tokenEl) {
+        tokenEl.value = localStorage.getItem(TOKEN_KEY) || "";
+        tokenEl.addEventListener("change", () => localStorage.setItem(TOKEN_KEY, tokenEl.value));
+      }
+
+      const toast = (msg, isError = false) => {
+        const el = document.createElement("div");
+        el.className = `px-4 py-3 rounded-lg text-sm font-medium shadow-lg border fade-in ${isError ? "bg-error/20 border-error/40 text-red-300" : "bg-success/20 border-success/40 text-green-300"}`;
+        el.textContent = msg;
+        document.getElementById("toast-container").appendChild(el);
+        setTimeout(() => el.remove(), 5000);
+      };
+
+      // API status
+      fetch("/health").then(r => {
+        const online = r.ok;
+        document.getElementById("api-dot").className = `pulse-dot h-2 w-2 rounded-full ${online ? "bg-success" : "bg-error"}`;
+        document.getElementById("api-status-text").textContent = online ? "API Online" : "API Offline";
+      }).catch(() => {
+        document.getElementById("api-dot").className = "pulse-dot h-2 w-2 rounded-full bg-error";
+        document.getElementById("api-status-text").textContent = "API Offline";
+      });
+
       const storeEl = document.getElementById("uploadStore");
       const fileInput = document.getElementById("fileInput");
+      const dropZone = document.getElementById("drop-zone");
+      const fileList = document.getElementById("file-list");
+      const fileItems = document.getElementById("file-items");
+      const fileCount = document.getElementById("file-count");
+      const progressContainer = document.getElementById("progress-container");
+      const progressBar = document.getElementById("progress-bar");
+      const progressPct = document.getElementById("progress-pct");
       const statusEl = document.getElementById("uploadStatus");
       const selectBtn = document.getElementById("btn-select-files");
       const uploadBtn = document.getElementById("btn-upload-files");
+      const clearBtn = document.getElementById("btn-clear");
 
-      const showStatus = (msg, isError = false) => {
-        if (!statusEl) return;
-        statusEl.textContent = msg;
-        statusEl.classList.toggle("text-error", isError);
+      let selectedFiles = [];
+
+      const formatBytes = (b) => {
+        if (b < 1024) return `${b}B`;
+        if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)}KB`;
+        return `${(b / 1024 / 1024).toFixed(2)}MB`;
       };
 
-      selectBtn?.addEventListener("click", (e) => {
-        e.preventDefault();
-        fileInput?.click();
-      });
-
-      const upload = async () => {
-        if (!fileInput?.files?.length) {
-          showStatus("Select at least one file first", true);
+      const renderFiles = () => {
+        if (selectedFiles.length === 0) {
+          fileList.classList.add("hidden");
           return;
         }
+        fileList.classList.remove("hidden");
+        fileCount.textContent = `${selectedFiles.length} file${selectedFiles.length > 1 ? "s" : ""} selected`;
+        fileItems.innerHTML = selectedFiles.map((f, i) => `
+          <div class="file-item flex items-center justify-between px-4 py-2.5">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <span class="material-symbols-outlined text-text-secondary-dark text-base flex-shrink-0">description</span>
+              <div class="min-w-0">
+                <p class="text-text-main-dark text-xs font-medium truncate">${f.name}</p>
+                <p class="text-text-secondary-dark text-xs">${formatBytes(f.size)}</p>
+              </div>
+            </div>
+            <button class="text-text-secondary-dark hover:text-error ml-2 flex-shrink-0" data-idx="${i}">
+              <span class="material-symbols-outlined text-base">close</span>
+            </button>
+          </div>
+        `).join("");
+
+        fileItems.querySelectorAll("button[data-idx]").forEach(btn => {
+          btn.addEventListener("click", () => {
+            selectedFiles.splice(Number(btn.dataset.idx), 1);
+            renderFiles();
+          });
+        });
+      };
+
+      const addFiles = (files) => {
+        selectedFiles.push(...Array.from(files));
+        renderFiles();
+      };
+
+      selectBtn?.addEventListener("click", (e) => { e.stopPropagation(); fileInput?.click(); });
+      dropZone?.addEventListener("click", () => fileInput?.click());
+      fileInput?.addEventListener("change", () => { addFiles(fileInput.files); fileInput.value = ""; });
+      clearBtn?.addEventListener("click", () => { selectedFiles = []; renderFiles(); });
+
+      // Drag & drop
+      dropZone?.addEventListener("dragover", (e) => { e.preventDefault(); dropZone.classList.add("drag-over"); });
+      dropZone?.addEventListener("dragleave", () => dropZone.classList.remove("drag-over"));
+      dropZone?.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropZone.classList.remove("drag-over");
+        addFiles(e.dataTransfer.files);
+      });
+
+      const setLoading = (loading) => {
+        uploadBtn.disabled = loading;
+        document.getElementById("upload-btn-icon").className = loading ? "material-symbols-outlined spin" : "material-symbols-outlined";
+        document.getElementById("upload-btn-icon").textContent = loading ? "sync" : "upload";
+        document.getElementById("upload-btn-label").textContent = loading ? "Uploading..." : "Upload Files";
+        progressContainer.classList.toggle("hidden", !loading);
+      };
+
+      const showStatus = (title, detail, isError = false) => {
+        statusEl.classList.remove("hidden");
+        statusEl.classList.add("fade-in");
+        statusEl.className = `rounded-xl border p-4 fade-in ${isError ? "border-error/30 bg-error/10" : "border-success/30 bg-success/10"}`;
+        document.getElementById("status-icon").textContent = isError ? "error" : "check_circle";
+        document.getElementById("status-icon").className = `material-symbols-outlined text-lg mt-0.5 ${isError ? "text-error" : "text-success"}`;
+        document.getElementById("status-title").textContent = title;
+        document.getElementById("status-detail").textContent = detail;
+      };
+
+      const setProgress = (pct) => {
+        progressBar.style.width = `${pct}%`;
+        progressPct.textContent = `${Math.round(pct)}%`;
+      };
+
+      const upload = async () => {
+        if (selectedFiles.length === 0) { toast("Select at least one file first", true); return; }
         const store = storeEl?.value || "default";
-        const multiple = fileInput.files.length > 1;
+        const multiple = selectedFiles.length > 1;
         const fd = new FormData();
+
         if (multiple) {
-          Array.from(fileInput.files).forEach((f) => fd.append("files", f));
+          selectedFiles.forEach(f => fd.append("files", f));
         } else {
-          fd.append("file", fileInput.files[0]);
+          fd.append("file", selectedFiles[0]);
         }
         fd.append("store", store);
         const endpoint = multiple ? "/api/upload/multiple" : "/api/upload/single";
-        showStatus(`Uploading to ${store}...`);
+
+        setLoading(true);
+        setProgress(10);
+        statusEl.classList.add("hidden");
+
         try {
+          setProgress(40);
           const resp = await fetch(endpoint, {
             method: "POST",
             headers: tokenEl?.value ? { Authorization: `Bearer ${tokenEl.value}` } : undefined,
             body: fd,
           });
+          setProgress(90);
           const data = await resp.json();
+
           if (!resp.ok) {
-            showStatus(`Failed (${resp.status}): ${data.detail || "upload error"}`, true);
+            showStatus("Upload failed", `${resp.status}: ${data.detail || data.message || "Unknown error"}`, true);
+            toast("Upload failed", true);
             return;
           }
-          showStatus(`Uploaded ${multiple ? "files" : "file"} to ${store}. Job: ${data.request_id || "n/a"}`, false);
-        } catch (err) {
-          showStatus(`Upload error: ${err.message}`, true);
+
+          setProgress(100);
+          const label = multiple
+            ? `${data.successful || selectedFiles.length} of ${data.total || selectedFiles.length} files indexed`
+            : `${data.filename || selectedFiles[0].name} indexed in store "${store}"`;
+          showStatus("Upload successful", label + (data.request_id ? ` · req: ${data.request_id.slice(0, 8)}` : ""), false);
+          toast(`Uploaded to "${store}"`, false);
+          selectedFiles = [];
+          renderFiles();
+        } catch (e) {
+          showStatus("Network error", e.message, true);
+          toast(`Upload failed: ${e.message}`, true);
+        } finally {
+          setLoading(false);
+          setTimeout(() => setProgress(0), 600);
         }
       };
 
-      uploadBtn?.addEventListener("click", (e) => {
-        e.preventDefault();
-        upload();
-      });
+      uploadBtn?.addEventListener("click", (e) => { e.preventDefault(); upload(); });
     })();
   </script>
 </body></html>

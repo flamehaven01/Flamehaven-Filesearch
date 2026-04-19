@@ -20,10 +20,7 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="[%(levelname)s] %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -104,7 +101,9 @@ class DriftValidator:
                 )
 
         # Calculate README score
-        self.metrics["readme_score"] = found_sections / len(self.REQUIRED_README_SECTIONS)
+        self.metrics["readme_score"] = found_sections / len(
+            self.REQUIRED_README_SECTIONS
+        )
 
         # Check for broken links
         self._check_links(content, readme_path)
@@ -112,7 +111,7 @@ class DriftValidator:
     def _check_links(self, content: str, readme_path: Path):
         """Check for broken markdown links"""
         # Pattern for markdown links: [text](path)
-        link_pattern = r'\[([^\]]+)\]\(([^\)]+)\)'
+        link_pattern = r"\[([^\]]+)\]\(([^\)]+)\)"
         matches = re.finditer(link_pattern, content)
 
         for match in matches:
@@ -135,8 +134,11 @@ class DriftValidator:
 
         for md_file in md_files:
             # Skip hidden directories and build artifacts
-            if any(part.startswith(".") for part in md_file.parts
-                   if part != self.project_root.name):
+            if any(
+                part.startswith(".")
+                for part in md_file.parts
+                if part != self.project_root.name
+            ):
                 continue
 
             self._check_markdown_quality(md_file)
@@ -160,7 +162,9 @@ class DriftValidator:
                     # Find the heading text for context
                     heading_pattern = rf"^#{{{levels[i]}}}\s+(.+)$"
                     heading_match = re.search(heading_pattern, content, re.MULTILINE)
-                    heading_text = heading_match.group(1) if heading_match else "Unknown"
+                    heading_text = (
+                        heading_match.group(1) if heading_match else "Unknown"
+                    )
                     warning = (
                         f"{md_file.relative_to(self.project_root)}: "
                         f"heading level jumps from {levels[i-1]} to {levels[i]} "
@@ -254,9 +258,7 @@ def main():
     """Main entry point"""
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Validate documentation drift metrics"
-    )
+    parser = argparse.ArgumentParser(description="Validate documentation drift metrics")
     parser.add_argument(
         "--project-root",
         default=".",

@@ -236,7 +236,9 @@ class ChronosGrid:
             ) / self._quantization_scale + self._quantization_offset
         return quantized
 
-    def _upsert_vector(self, glyph: Any, vector_essence: Any, append: bool = False) -> None:
+    def _upsert_vector(
+        self, glyph: Any, vector_essence: Any, append: bool = False
+    ) -> None:
         """Insert or update a quantized vector in the in-memory index."""
         quantized = self._quantize_vector(vector_essence)
         try:

@@ -153,7 +153,6 @@ def _enforce_metrics_access(request: Request, api_key: Optional[APIKeyInfo]) -> 
         )
 
 
-
 def _internal_error(request_id: str) -> HTTPException:
     return HTTPException(
         status_code=500,
@@ -227,7 +226,11 @@ try:
 
     _frontend_path = Path(__file__).parent.parent / "frontend" / "dashboard"
     if _frontend_path.exists():
-        app.mount("/dashboard", StaticFiles(directory=str(_frontend_path), html=True), name="dashboard")
+        app.mount(
+            "/dashboard",
+            StaticFiles(directory=str(_frontend_path), html=True),
+            name="dashboard",
+        )
 except Exception as _e:  # pragma: no cover
     pass  # Static serving is optional — API still works without it
 
@@ -603,7 +606,9 @@ def _save_upload_file(file, temp_dir: str, config, request_id: str):
         return result, file_path
 
     except FileSearchException as exc:
-        logger.warning("[%s] File validation failed for %s: %s", request_id, file.filename, exc)
+        logger.warning(
+            "[%s] File validation failed for %s: %s", request_id, file.filename, exc
+        )
         return {"filename": file.filename, "status": "failed", "error": str(exc)}, None
 
 
@@ -1213,7 +1218,12 @@ async def get_metrics(
 
 
 # /api/metrics alias — dashboard HTML files use this path
-@app.get("/api/metrics", response_model=MetricsResponse, tags=["Monitoring"], include_in_schema=False)
+@app.get(
+    "/api/metrics",
+    response_model=MetricsResponse,
+    tags=["Monitoring"],
+    include_in_schema=False,
+)
 @limiter.limit("100/minute")
 async def get_api_metrics(
     request: Request, api_key: Optional[APIKeyInfo] = Depends(optional_api_key)

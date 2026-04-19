@@ -2,7 +2,8 @@
 <html class="dark" lang="en"><head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Filesearch Ops - Search</title>
+  <meta name="description" content="Flamehaven Filesearch - Search Console. Query your indexed documents with keyword, semantic, or hybrid search." />
+  <title>Filesearch Ops - Search Console</title>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -15,7 +16,6 @@
         extend: {
           colors: {
             "primary": "#137fec",
-            "background-light": "#f6f7f8",
             "background-dark": "#101922",
             "surface-dark": "#1d2833",
             "border-dark": "#324d67",
@@ -25,178 +25,344 @@
             "error": "#E53E3E"
           },
           fontFamily: { "display": ["Inter", "sans-serif"] },
-          borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
         },
       },
     }
   </script>
+  <style>
+    @keyframes fade-in { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
+    .fade-in { animation: fade-in 0.25s ease-out; }
+    @keyframes spin { to{transform:rotate(360deg)} }
+    .spin { animation: spin 0.8s linear infinite; }
+    .nav-link { transition: background 0.15s, color 0.15s; }
+    @keyframes pulse-dot { 0%,100%{opacity:1}50%{opacity:.4} }
+    .pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+    .source-card { transition: border-color 0.15s; }
+    .source-card:hover { border-color: #137fec55; }
+    textarea { scrollbar-width: thin; scrollbar-color: #324d67 transparent; }
+  </style>
 </head>
-<body class="bg-background-light dark:bg-background-dark font-display text-text-main-dark">
+<body class="bg-background-dark font-display text-text-main-dark">
+
+  <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2"></div>
+
   <div class="flex min-h-screen">
     <!-- SideNavBar -->
-    <aside class="flex h-screen flex-col justify-between bg-surface-dark/50 p-4 w-64 border-r border-border-dark">
+    <aside class="flex h-screen flex-col justify-between bg-surface-dark/50 p-4 w-64 border-r border-border-dark sticky top-0">
       <div class="flex flex-col gap-4">
-        <div class="flex gap-3 items-center">
-          <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="Abstract gradient logo" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBSRe6aCEChDJPLBphsa_t4GP2ZvVu3tM8PNvFwl9_dQcjWaApcFbSxpGk8cKF-vMPaRJtNKPbzJSt90jrRkZw3qaeXHGCzIpHphbveA5bxqwptT09kgOBX6ZvriZoSx0WFFnzYdPFjLVk_EDGx-FX0lBE9JWaxw54pm9S1f8KgLJM9pWJYxF84dc3Votj9PX142Nlehglwp7Ior5rvBPuj2Ct_kPJu_oTQOseOb6w-aZQvgd36Tk-rtk5kbvvT1WiKETu0_QAYF9s");'></div>
+        <div class="flex gap-3 items-center px-1 py-2">
+          <div class="flex items-center justify-center size-10 rounded-xl bg-primary/20 border border-primary/30">
+            <span class="material-symbols-outlined text-primary text-xl">local_fire_department</span>
+          </div>
           <div class="flex flex-col">
-            <h1 class="text-text-main-dark text-base font-medium leading-normal">Filesearch Ops</h1>
-            <p class="text-text-secondary-dark text-sm font-normal leading-normal">Search</p>
+            <span class="text-text-main-dark text-base font-bold">Filesearch Ops</span>
+            <span class="text-text-secondary-dark text-xs">v1.4.2</span>
           </div>
         </div>
-        <nav class="flex flex-col gap-2 mt-4">
-          <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="landing_new.html">
-            <span class="material-symbols-outlined">dashboard</span>
-            <p class="text-sm font-medium leading-normal">Dashboard</p>
+        <nav class="flex flex-col gap-1 mt-2">
+          <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark hover:text-text-main-dark" href="landing.html">
+            <span class="material-symbols-outlined text-xl">dashboard</span>
+            <span class="text-sm font-medium">Dashboard</span>
           </a>
-          <a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/20 text-primary" href="search_new.html">
-            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">search</span>
-            <p class="text-sm font-medium leading-normal">Search</p>
+          <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/20 text-primary" href="search.html">
+            <span class="material-symbols-outlined text-xl" style="font-variation-settings:'FILL' 1">search</span>
+            <span class="text-sm font-semibold">Search</span>
           </a>
-          <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="upload_new.html">
-            <span class="material-symbols-outlined">upload_file</span>
-            <p class="text-sm font-medium leading-normal">Upload</p>
+          <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark hover:text-text-main-dark" href="upload.html">
+            <span class="material-symbols-outlined text-xl">upload_file</span>
+            <span class="text-sm font-medium">Upload</span>
           </a>
-          <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="cache_new.html">
-            <span class="material-symbols-outlined">hub</span>
-            <p class="text-sm font-medium leading-normal">Cache</p>
+          <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark hover:text-text-main-dark" href="cache.html">
+            <span class="material-symbols-outlined text-xl">database</span>
+            <span class="text-sm font-medium">Cache</span>
           </a>
-          <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="metrics_new.html">
-            <span class="material-symbols-outlined">monitoring</span>
-            <p class="text-sm font-medium leading-normal">Metrics</p>
+          <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark hover:text-text-main-dark" href="metrics.html">
+            <span class="material-symbols-outlined text-xl">monitoring</span>
+            <span class="text-sm font-medium">Metrics</span>
           </a>
-          <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="admin.html">
-            <span class="material-symbols-outlined">admin_panel_settings</span>
-            <p class="text-sm font-medium leading-normal">Admin</p>
+          <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark hover:text-text-main-dark" href="admin.html">
+            <span class="material-symbols-outlined text-xl">admin_panel_settings</span>
+            <span class="text-sm font-medium">Admin</span>
           </a>
         </nav>
       </div>
-      <div class="flex flex-col gap-1">
-        <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="https://github.com/flamehaven01/Flamehaven-Filesearch" title="Open docs/help">
-          <span class="material-symbols-outlined">help</span>
-          <p class="text-sm font-medium leading-normal">Help</p>
-        </a>
-        <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="landing_new.html">
-          <span class="material-symbols-outlined">logout</span>
-          <p class="text-sm font-medium leading-normal">Logout</p>
+      <div class="flex flex-col gap-2">
+        <div id="api-status-badge" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-dark border border-border-dark">
+          <span id="api-dot" class="pulse-dot h-2 w-2 rounded-full bg-gray-500"></span>
+          <span id="api-status-text" class="text-xs text-text-secondary-dark">Checking API...</span>
+        </div>
+        <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="https://github.com/flamehaven01/Flamehaven-Filesearch" target="_blank">
+          <span class="material-symbols-outlined text-xl">help</span>
+          <span class="text-sm font-medium">Help</span>
         </a>
       </div>
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 p-8">
-      <div class="mx-auto max-w-7xl">
-        <!-- PageHeading -->
-        <header class="flex flex-wrap justify-between items-center gap-3 mb-6">
-          <h1 class="text-text-main-dark text-4xl font-black leading-tight tracking-[-0.033em]">Search Console</h1>
+    <main class="flex-1 p-8 overflow-auto">
+      <div class="mx-auto max-w-5xl">
+        <header class="flex flex-wrap justify-between items-center gap-3 mb-8">
+          <div>
+            <h1 class="text-text-main-dark text-4xl font-black leading-tight tracking-[-0.033em]">Search Console</h1>
+            <p class="text-text-secondary-dark text-sm mt-1">Query indexed documents using AI-powered search</p>
+          </div>
         </header>
-        <!-- Search body -->
-        <div class="flex flex-col gap-4">
-          <div class="flex items-center gap-2">
-            <input id="bearerToken" class="h-10 rounded-lg bg-[#233648] text-white text-sm px-3 w-80" placeholder="Bearer token" />
-            <select id="store" class="h-10 rounded-lg bg-[#233648] text-white text-sm px-3">
+
+        <!-- Config Row -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+          <div>
+            <label class="text-text-secondary-dark text-xs font-semibold uppercase tracking-wider block mb-1.5">Bearer Token</label>
+            <input id="bearerToken" type="password" class="w-full h-10 rounded-lg bg-surface-dark border border-border-dark text-white text-sm px-3 focus:outline-none focus:ring-2 focus:ring-primary/50" placeholder="sk_..." />
+          </div>
+          <div>
+            <label class="text-text-secondary-dark text-xs font-semibold uppercase tracking-wider block mb-1.5">Store</label>
+            <select id="store" class="w-full h-10 rounded-lg bg-surface-dark border border-border-dark text-white text-sm px-3 focus:outline-none focus:ring-2 focus:ring-primary/50">
               <option value="default">default</option>
             </select>
           </div>
-          <label class="flex flex-col w-full">
-            <p class="text-[#A0AEC0] text-sm font-medium leading-normal pb-2">Query</p>
-            <textarea id="query" class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-white focus:outline-0 focus:ring-1 focus:ring-primary border-none bg-[#233648] min-h-24 placeholder:text-[#92adc9] p-4 text-base font-normal leading-normal" placeholder="Enter a query to begin your search..."></textarea>
-          </label>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label class="text-text-secondary-dark text-xs font-semibold uppercase tracking-wider block mb-1.5">Search Mode</label>
+            <select id="searchMode" class="w-full h-10 rounded-lg bg-surface-dark border border-border-dark text-white text-sm px-3 focus:outline-none focus:ring-2 focus:ring-primary/50">
+              <option value="keyword">Keyword</option>
+              <option value="semantic">Semantic (AI)</option>
+              <option value="hybrid">Hybrid</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Query Area -->
+        <div class="mb-4">
+          <label class="text-text-secondary-dark text-xs font-semibold uppercase tracking-wider block mb-1.5">Query</label>
+          <textarea id="query" rows="4" class="w-full rounded-xl bg-surface-dark border border-border-dark text-white text-sm px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 placeholder:text-text-secondary-dark" placeholder="Ask anything about your documents..."></textarea>
+        </div>
+
+        <!-- Advanced Options (collapsible) -->
+        <details class="mb-4 group">
+          <summary class="cursor-pointer text-text-secondary-dark text-sm flex items-center gap-1 hover:text-text-main-dark select-none">
+            <span class="material-symbols-outlined text-base group-open:rotate-90 transition-transform">chevron_right</span>
+            Advanced Options
+          </summary>
+          <div class="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 pl-5">
             <div>
-              <label class="flex flex-col w-full">
-                <p class="text-[#A0AEC0] text-sm font-medium leading-normal pb-2">Model</p>
-                <select id="model" class="form-select flex w-full min-w-0 flex-1 rounded-lg text-white focus:outline-0 focus:ring-1 focus:ring-primary border-none bg-[#233648] p-3 text-base font-normal leading-normal">
-                  <option value="default">default</option>
-                  <option value="gemini-2.5-flash">gemini-2.5-flash</option>
-                  <option value="local">local</option>
-                </select>
-              </label>
+              <label class="text-text-secondary-dark text-xs font-semibold block mb-1.5">Model</label>
+              <select id="model" class="w-full h-10 rounded-lg bg-surface-dark border border-border-dark text-white text-sm px-3 focus:outline-none focus:ring-2 focus:ring-primary/50">
+                <option value="default">default</option>
+                <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+                <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+              </select>
             </div>
             <div>
-              <label class="flex flex-col w-full">
-                <div class="flex justify-between items-center pb-2">
-                  <p class="text-[#A0AEC0] text-sm font-medium leading-normal">Temperature</p>
-                  <span id="tempVal" class="text-white text-sm font-medium">0.5</span>
-                </div>
-                <input id="temperature" class="w-full h-2 bg-[#233648] rounded-lg appearance-none cursor-pointer accent-primary" max="1" min="0" step="0.1" type="range" value="0.5" oninput="document.getElementById('tempVal').innerText=this.value" />
-              </label>
+              <div class="flex justify-between mb-1.5">
+                <label class="text-text-secondary-dark text-xs font-semibold">Temperature</label>
+                <span id="tempVal" class="text-white text-xs font-mono">0.5</span>
+              </div>
+              <input id="temperature" class="w-full h-2 bg-border-dark rounded-full appearance-none cursor-pointer accent-primary mt-1" max="1" min="0" step="0.1" type="range" value="0.5" oninput="document.getElementById('tempVal').innerText=this.value" />
             </div>
             <div>
-              <label class="flex flex-col w-full">
-                <div class="flex justify-between items-center pb-2">
-                  <p class="text-[#A0AEC0] text-sm font-medium leading-normal">Max Tokens</p>
-                  <span id="tokensVal" class="text-white text-sm font-medium">1024</span>
-                </div>
-                <input id="maxTokens" class="w-full h-2 bg-[#233648] rounded-lg appearance-none cursor-pointer accent-primary" max="4096" min="1" step="1" type="range" value="1024" oninput="document.getElementById('tokensVal').innerText=this.value" />
-              </label>
-            </div>
-            <div class="flex items-end">
-              <button id="btn-run" class="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 bg-primary text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] px-4 hover:bg-primary/80">
-                <span class="material-symbols-outlined">search</span>
-                <span>Run Query</span>
-              </button>
+              <div class="flex justify-between mb-1.5">
+                <label class="text-text-secondary-dark text-xs font-semibold">Max Tokens</label>
+                <span id="tokensVal" class="text-white text-xs font-mono">1024</span>
+              </div>
+              <input id="maxTokens" class="w-full h-2 bg-border-dark rounded-full appearance-none cursor-pointer accent-primary mt-1" max="4096" min="1" step="1" type="range" value="1024" oninput="document.getElementById('tokensVal').innerText=this.value" />
             </div>
           </div>
-          <div class="mt-8">
-            <h3 class="text-lg font-bold text-white mb-2">Results</h3>
-            <div id="results" class="p-4 bg-[#1a202c] rounded-lg border border-[#233648] text-white text-sm">
-              <p class="text-[#92adc9]">Run a query to see results. POST /api/search with {query, store, model, max_tokens, temperature}. The response will render here.</p>
+        </details>
+
+        <!-- Run Button -->
+        <button id="btn-run" class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl h-12 bg-primary text-white text-sm font-bold tracking-wide hover:bg-primary/85 transition-all disabled:opacity-60 disabled:cursor-not-allowed mb-8">
+          <span id="btn-run-icon" class="material-symbols-outlined">search</span>
+          <span id="btn-run-label">Run Query</span>
+        </button>
+
+        <!-- Results -->
+        <div id="results-section" class="hidden fade-in">
+          <!-- Meta row -->
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+              <span id="result-mode-badge" class="px-2 py-0.5 rounded-full bg-primary/15 border border-primary/30 text-primary text-xs font-semibold"></span>
+              <span id="result-store-badge" class="px-2 py-0.5 rounded-full bg-surface-dark border border-border-dark text-text-secondary-dark text-xs font-mono"></span>
             </div>
+            <span id="result-request-id" class="text-text-secondary-dark text-xs font-mono"></span>
           </div>
+
+          <!-- Answer Card -->
+          <div class="rounded-xl border border-border-dark bg-surface-dark/70 p-6 mb-4">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="material-symbols-outlined text-primary text-lg">auto_awesome</span>
+              <h2 class="text-white text-base font-bold">Answer</h2>
+            </div>
+            <p id="result-answer" class="text-text-secondary-dark text-sm leading-relaxed whitespace-pre-wrap"></p>
+          </div>
+
+          <!-- Sources -->
+          <div>
+            <h2 class="text-white text-sm font-bold mb-3 flex items-center gap-2">
+              <span class="material-symbols-outlined text-text-secondary-dark text-base">source</span>
+              Sources
+            </h2>
+            <div id="result-sources" class="flex flex-col gap-2"></div>
+          </div>
+        </div>
+
+        <!-- Empty state -->
+        <div id="empty-state" class="text-center py-16">
+          <span class="material-symbols-outlined text-5xl text-border-dark block mb-3">manage_search</span>
+          <p class="text-text-secondary-dark text-sm">Run a query to see results</p>
+          <p class="text-text-secondary-dark text-xs mt-1">POST /api/search with {query, store_name, search_mode, model, temperature, max_tokens}</p>
+        </div>
+
+        <!-- Error state -->
+        <div id="error-state" class="hidden rounded-xl border border-error/30 bg-error/10 p-6 fade-in">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="material-symbols-outlined text-error text-lg">error</span>
+            <h2 class="text-error text-sm font-bold">Request Failed</h2>
+          </div>
+          <p id="error-message" class="text-red-300 text-sm font-mono"></p>
         </div>
       </div>
     </main>
   </div>
+
   <script>
     (() => {
+      // Persist token to localStorage
+      const TOKEN_KEY = "fh_bearer_token";
+      const tokenEl = document.getElementById("bearerToken");
+      if (tokenEl) {
+        tokenEl.value = localStorage.getItem(TOKEN_KEY) || "";
+        tokenEl.addEventListener("change", () => localStorage.setItem(TOKEN_KEY, tokenEl.value));
+      }
+
+      const toast = (msg, isError = false) => {
+        const el = document.createElement("div");
+        el.className = `px-4 py-3 rounded-lg text-sm font-medium shadow-lg border fade-in ${isError ? "bg-error/20 border-error/40 text-red-300" : "bg-success/20 border-success/40 text-green-300"}`;
+        el.textContent = msg;
+        document.getElementById("toast-container").appendChild(el);
+        setTimeout(() => el.remove(), 4000);
+      };
+
+      // API status check
+      const checkAPIStatus = async () => {
+        try {
+          const r = await fetch("/health");
+          const online = r.ok;
+          document.getElementById("api-dot").className = `pulse-dot h-2 w-2 rounded-full ${online ? "bg-success" : "bg-error"}`;
+          document.getElementById("api-status-text").textContent = online ? "API Online" : "API Offline";
+
+          // Populate stores
+          if (online) {
+            const mResp = await fetch("/api/metrics").catch(() => null);
+            if (mResp && mResp.ok) {
+              const m = await mResp.json();
+              const storeEl = document.getElementById("store");
+              if (storeEl && Array.isArray(m.stores) && m.stores.length > 0) {
+                storeEl.innerHTML = m.stores.map(s => `<option value="${s}">${s}</option>`).join("");
+              }
+            }
+          }
+        } catch (_) {
+          document.getElementById("api-dot").className = "pulse-dot h-2 w-2 rounded-full bg-error";
+          document.getElementById("api-status-text").textContent = "API Offline";
+        }
+      };
+      checkAPIStatus();
+
       const btn = document.getElementById("btn-run");
-      const tokenInput = document.getElementById("bearerToken");
       const queryEl = document.getElementById("query");
       const modelEl = document.getElementById("model");
       const tempEl = document.getElementById("temperature");
       const tokensEl = document.getElementById("maxTokens");
-      const resultsEl = document.getElementById("results");
+      const storeEl = document.getElementById("store");
+      const modeEl = document.getElementById("searchMode");
+      const resultsSection = document.getElementById("results-section");
+      const emptyState = document.getElementById("empty-state");
+      const errorState = document.getElementById("error-state");
+      const errorMsg = document.getElementById("error-message");
+
+      const setLoading = (loading) => {
+        if (!btn) return;
+        btn.disabled = loading;
+        document.getElementById("btn-run-icon").className = loading ? "material-symbols-outlined spin" : "material-symbols-outlined";
+        document.getElementById("btn-run-icon").textContent = loading ? "sync" : "search";
+        document.getElementById("btn-run-label").textContent = loading ? "Searching..." : "Run Query";
+      };
+
+      const showResults = (data) => {
+        emptyState.classList.add("hidden");
+        errorState.classList.add("hidden");
+        resultsSection.classList.remove("hidden");
+        resultsSection.classList.add("fade-in");
+
+        document.getElementById("result-request-id").textContent = data.request_id ? `req: ${data.request_id.slice(0, 8)}` : "";
+        document.getElementById("result-mode-badge").textContent = data.search_mode || modeEl.value || "keyword";
+        document.getElementById("result-store-badge").textContent = data.store || storeEl.value || "default";
+        document.getElementById("result-answer").textContent = data.answer || data.message || "(No answer — try uploading documents first)";
+
+        const sourcesEl = document.getElementById("result-sources");
+        const sources = data.sources || [];
+        if (sources.length > 0) {
+          sourcesEl.innerHTML = sources.map((s, i) => `
+            <div class="source-card rounded-lg border border-border-dark bg-[#111a22] p-4">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="material-symbols-outlined text-text-secondary-dark text-base">description</span>
+                <span class="text-white text-xs font-semibold">${s.title || s.uri || `Source ${i + 1}`}</span>
+              </div>
+              <p class="text-text-secondary-dark text-xs leading-relaxed">${s.content ? s.content.slice(0, 200) + (s.content.length > 200 ? "..." : "") : "No preview"}</p>
+            </div>
+          `).join("");
+        } else {
+          sourcesEl.innerHTML = `<p class="text-text-secondary-dark text-sm">No sources returned</p>`;
+        }
+      };
+
+      const showError = (msg) => {
+        emptyState.classList.add("hidden");
+        resultsSection.classList.add("hidden");
+        errorState.classList.remove("hidden");
+        errorState.classList.add("fade-in");
+        errorMsg.textContent = msg;
+      };
 
       const postSearch = async () => {
+        const q = queryEl?.value?.trim();
+        if (!q) { toast("Please enter a query", true); return; }
+
+        setLoading(true);
         const payload = {
-          query: queryEl.value || "example query",
-          store: "default",
-          model: modelEl.value || "default",
-          temperature: Number(tempEl.value || 0.5),
-          max_tokens: Number(tokensEl.value || 1024),
+          query: q,
+          store_name: storeEl?.value || "default",
+          model: modelEl?.value === "default" ? undefined : modelEl?.value,
+          temperature: Number(tempEl?.value || 0.5),
+          max_tokens: Number(tokensEl?.value || 1024),
+          search_mode: modeEl?.value || "keyword",
         };
+
         try {
           const resp = await fetch("/api/search", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              ...(tokenInput.value ? { Authorization: `Bearer ${tokenInput.value}` } : {}),
+              ...(tokenEl?.value ? { Authorization: `Bearer ${tokenEl.value}` } : {}),
             },
             body: JSON.stringify(payload),
           });
+
+          const data = await resp.json();
           if (!resp.ok) {
-            resultsEl.innerHTML = `<p class="text-error">Request failed: ${resp.status} ${resp.statusText}</p>`;
+            showError(`${resp.status} ${resp.statusText}: ${data.detail || data.message || JSON.stringify(data)}`);
             return;
           }
-          const data = await resp.json();
-          resultsEl.innerHTML = `
-            <div class="mb-3 text-xs text-[#92adc9]">request_id: ${data.request_id || "n/a"}</div>
-            <div class="p-4 rounded-lg bg-[#111a22] border border-[#233648]">
-              <p class="text-white text-sm font-semibold pb-2">Answer</p>
-              <p class="text-[#92adc9] text-sm">${data.answer || "(no answer)"} </p>
-            </div>
-            <div class="p-4 rounded-lg bg-[#111a22] border border-[#233648] mt-3">
-              <p class="text-white text-sm font-semibold pb-2">Sources</p>
-              <pre class="text-[#92adc9] text-xs whitespace-pre-wrap">${JSON.stringify(data.sources || [], null, 2)}</pre>
-            </div>
-          `;
+          showResults(data);
         } catch (e) {
-          resultsEl.innerHTML = `<p class="text-error">Request failed: ${e.message}</p>`;
+          showError(`Network error: ${e.message}`);
+        } finally {
+          setLoading(false);
         }
       };
-      btn?.addEventListener("click", (e) => {
-        e.preventDefault();
-        postSearch();
+
+      btn?.addEventListener("click", (e) => { e.preventDefault(); postSearch(); });
+      queryEl?.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); postSearch(); }
       });
     })();
   </script>

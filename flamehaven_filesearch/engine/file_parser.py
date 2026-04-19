@@ -36,7 +36,11 @@ _registry: BackendRegistry = BackendRegistry.default()
 
 SUPPORTED_EXTENSIONS: Set[str] = _registry.supported_extensions() | {
     # Aliases covered by fallback plain-text read
-    ".md", ".txt", ".text", ".qmd", ".rmd",
+    ".md",
+    ".txt",
+    ".text",
+    ".qmd",
+    ".rmd",
 }
 
 
@@ -54,6 +58,7 @@ def extract_text(file_path: str, use_cache: bool = False) -> str:
     """
     if use_cache:
         from .parse_cache import get as _cache_get
+
         cached = _cache_get(file_path)
         if cached is not None:
             return cached
@@ -62,6 +67,7 @@ def extract_text(file_path: str, use_cache: bool = False) -> str:
 
     if use_cache:
         from .parse_cache import put as _cache_put
+
         _cache_put(file_path, result)
 
     return result
@@ -75,5 +81,7 @@ def _dispatch(file_path: str) -> str:
     try:
         return backend.extract(file_path)
     except Exception as exc:
-        logger.warning("[FileParser] %s failed for %s: %s", type(backend).__name__, file_path, exc)
+        logger.warning(
+            "[FileParser] %s failed for %s: %s", type(backend).__name__, file_path, exc
+        )
         return ""

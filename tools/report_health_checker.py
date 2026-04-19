@@ -55,7 +55,7 @@ def check_health(
     max_errors: int,
     max_warnings: int,
     max_slop_errors: int,
-    slop_severity: str
+    slop_severity: str,
 ) -> bool:
     """
     Check documentation health against thresholds
@@ -71,25 +71,27 @@ def check_health(
     Returns:
         True if all checks pass, False otherwise
     """
-    metrics = report.get('metrics', {})
+    metrics = report.get("metrics", {})
 
-    readme_score = metrics.get('readme_score', 0)
-    coherence_score = metrics.get('coherence_score', 0)
-    errors = metrics.get('errors', [])
-    warnings = metrics.get('warnings', [])
-    slop_findings = metrics.get('slop_findings', [])
-    slop_errors = metrics.get('slop_errors', 0)
-    slop_warnings = metrics.get('slop_warnings', 0)
-    slop_infos = metrics.get('slop_infos', 0)
+    readme_score = metrics.get("readme_score", 0)
+    coherence_score = metrics.get("coherence_score", 0)
+    errors = metrics.get("errors", [])
+    warnings = metrics.get("warnings", [])
+    slop_findings = metrics.get("slop_findings", [])
+    slop_errors = metrics.get("slop_errors", 0)
+    slop_warnings = metrics.get("slop_warnings", 0)
+    slop_infos = metrics.get("slop_infos", 0)
 
     # Print metrics
     print_github_notice("Documentation Metrics", f"README Score: {readme_score:.1%}")
-    print_github_notice("Documentation Metrics", f"Coherence Score: {coherence_score:.1%}")
+    print_github_notice(
+        "Documentation Metrics", f"Coherence Score: {coherence_score:.1%}"
+    )
     print_github_notice("Documentation Metrics", f"Broken Links: {len(errors)}")
     print_github_notice("Documentation Metrics", f"Warnings: {len(warnings)}")
     print_github_notice(
         "Sanity Metrics",
-        f"Slop Terms: {len(slop_findings)} (Errors: {slop_errors}, Warnings: {slop_warnings}, Info: {slop_infos})"
+        f"Slop Terms: {len(slop_findings)} (Errors: {slop_errors}, Warnings: {slop_warnings}, Info: {slop_infos})",
     )
 
     failed = False
@@ -115,31 +117,30 @@ def check_health(
         )
 
     # Check slop based on severity setting
-    if slop_severity == 'error' and slop_errors > max_slop_errors:
+    if slop_severity == "error" and slop_errors > max_slop_errors:
         print_github_error(
             f"Found {slop_errors} critical hype terms (threshold: {max_slop_errors})"
         )
         # Print first 5 critical slop findings
-        critical_slop = [f for f in slop_findings if f['severity'] == 'error']
+        critical_slop = [f for f in slop_findings if f["severity"] == "error"]
         for s in critical_slop[:5]:
             print_github_error(
                 f"'{s['term']}' -> Use '{s['suggestion']}'",
-                file=s['file'],
-                line=s.get('line')
+                file=s["file"],
+                line=s.get("line"),
             )
         if len(critical_slop) > 5:
             print_github_error(f"...and {len(critical_slop) - 5} more critical terms")
         failed = True
-    elif slop_severity == 'warning' and slop_warnings > 0:
-        print_github_warning(f"Found {slop_warnings} hype terms that should be reviewed")
+    elif slop_severity == "warning" and slop_warnings > 0:
+        print_github_warning(
+            f"Found {slop_warnings} hype terms that should be reviewed"
+        )
 
     return not failed
 
 
-def write_outputs(
-    output_file: Path,
-    metrics: Dict
-) -> None:
+def write_outputs(output_file: Path, metrics: Dict) -> None:
     """
     Write outputs for GitHub Actions
 
@@ -147,14 +148,14 @@ def write_outputs(
         output_file: GITHUB_OUTPUT file path
         metrics: Metrics dictionary from report
     """
-    readme_score = metrics.get('readme_score', 0)
-    coherence_score = metrics.get('coherence_score', 0)
-    error_count = len(metrics.get('errors', []))
-    warning_count = len(metrics.get('warnings', []))
-    slop_count = len(metrics.get('slop_findings', []))
-    slop_errors = metrics.get('slop_errors', 0)
+    readme_score = metrics.get("readme_score", 0)
+    coherence_score = metrics.get("coherence_score", 0)
+    error_count = len(metrics.get("errors", []))
+    warning_count = len(metrics.get("warnings", []))
+    slop_count = len(metrics.get("slop_findings", []))
+    slop_errors = metrics.get("slop_errors", 0)
 
-    with output_file.open('a', encoding='utf-8') as f:
+    with output_file.open("a", encoding="utf-8") as f:
         f.write(f"readme_score={readme_score:.2%}\n")
         f.write(f"coherence_score={coherence_score:.2%}\n")
         f.write(f"error_count={error_count}\n")
@@ -168,45 +169,42 @@ def main():
         description="Validate documentation health against thresholds"
     )
     parser.add_argument(
-        '--report',
-        type=Path,
-        required=True,
-        help='Path to drift report JSON file'
+        "--report", type=Path, required=True, help="Path to drift report JSON file"
     )
     parser.add_argument(
-        '--readme-threshold',
+        "--readme-threshold",
         type=float,
         default=0.6,
-        help='Minimum README score (0.0-1.0, default: 0.6)'
+        help="Minimum README score (0.0-1.0, default: 0.6)",
     )
     parser.add_argument(
-        '--max-broken-links',
+        "--max-broken-links",
         type=int,
         default=3,
-        help='Maximum broken links allowed (default: 3)'
+        help="Maximum broken links allowed (default: 3)",
     )
     parser.add_argument(
-        '--max-warnings',
+        "--max-warnings",
         type=int,
         default=20,
-        help='Maximum warnings allowed (default: 20)'
+        help="Maximum warnings allowed (default: 20)",
     )
     parser.add_argument(
-        '--max-slop-errors',
+        "--max-slop-errors",
         type=int,
         default=0,
-        help='Maximum critical slop terms allowed (default: 0)'
+        help="Maximum critical slop terms allowed (default: 0)",
     )
     parser.add_argument(
-        '--slop-severity',
-        choices=['error', 'warning', 'info'],
-        default='error',
-        help='Slop enforcement level (default: error)'
+        "--slop-severity",
+        choices=["error", "warning", "info"],
+        default="error",
+        help="Slop enforcement level (default: error)",
     )
     parser.add_argument(
-        '--github-output',
+        "--github-output",
         type=Path,
-        help='Path to GITHUB_OUTPUT file (auto-detected from env if not specified)'
+        help="Path to GITHUB_OUTPUT file (auto-detected from env if not specified)",
     )
 
     args = parser.parse_args()
@@ -218,7 +216,7 @@ def main():
 
     # Read report
     try:
-        report = json.loads(args.report.read_text(encoding='utf-8'))
+        report = json.loads(args.report.read_text(encoding="utf-8"))
     except json.JSONDecodeError as e:
         print_github_error(f"Failed to parse report JSON: {e}")
         return 1
@@ -233,25 +231,26 @@ def main():
         args.max_broken_links,
         args.max_warnings,
         args.max_slop_errors,
-        args.slop_severity
+        args.slop_severity,
     )
 
     # Write outputs if GITHUB_OUTPUT is available
     github_output = args.github_output
     if not github_output:
         import os
-        github_output_env = os.environ.get('GITHUB_OUTPUT')
+
+        github_output_env = os.environ.get("GITHUB_OUTPUT")
         if github_output_env:
             github_output = Path(github_output_env)
 
     if github_output:
         try:
-            write_outputs(github_output, report.get('metrics', {}))
+            write_outputs(github_output, report.get("metrics", {}))
         except Exception as e:
             print_github_warning(f"Failed to write outputs: {e}")
 
     return 0 if passed else 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())
