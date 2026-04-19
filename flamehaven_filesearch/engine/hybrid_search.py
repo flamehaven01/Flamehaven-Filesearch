@@ -67,8 +67,7 @@ class BM25:
 
     def search(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
         scores = [
-            {"id": i, "score": self.score(query, i)}
-            for i in range(self.corpus_size)
+            {"id": i, "score": self.score(query, i)} for i in range(self.corpus_size)
         ]
         scores = [s for s in scores if s["score"] > 0]
         scores.sort(key=lambda x: x["score"], reverse=True)
@@ -111,7 +110,8 @@ def hybrid_search(
     """Combine BM25 + semantic results via RRF. alpha>=0.5 => semantic-first."""
     bm25_results = bm25_index.search(query, top_k=top_k * 2)
     ordered = (
-        [semantic_results, bm25_results] if alpha >= 0.5
+        [semantic_results, bm25_results]
+        if alpha >= 0.5
         else [bm25_results, semantic_results]
     )
     return reciprocal_rank_fusion(ordered, k=60, top_k=top_k)

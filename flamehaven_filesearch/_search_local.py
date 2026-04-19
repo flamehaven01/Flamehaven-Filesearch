@@ -124,7 +124,12 @@ class LocalSearchMixin:
         }
 
         if not docs:
-            result = {"status": "success", "answer": "No documents indexed yet.", "sources": [], **base}
+            result = {
+                "status": "success",
+                "answer": "No documents indexed yet.",
+                "sources": [],
+                **base,
+            }
             if search_mode in ["semantic", "hybrid", "multimodal"]:
                 result["semantic_results"] = semantic_results or []
             return result
@@ -142,9 +147,17 @@ class LocalSearchMixin:
                     or d.get("content", "")[:200]
                     for d in fused_docs[:5]
                 ]
-                answer = " ".join(s for s in snippets if s) or "Hybrid: BM25+semantic fusion."
-                return {"status": "success", "answer": answer, "sources": sources,
-                        "semantic_results": semantic_results, **base}
+                answer = (
+                    " ".join(s for s in snippets if s)
+                    or "Hybrid: BM25+semantic fusion."
+                )
+                return {
+                    "status": "success",
+                    "answer": answer,
+                    "sources": sources,
+                    "semantic_results": semantic_results,
+                    **base,
+                }
 
         # Keyword match
         matches: List[Tuple[Dict, str]] = []
@@ -169,9 +182,7 @@ class LocalSearchMixin:
             result["semantic_results"] = semantic_results or []
         return result
 
-    def _fallback_sources(
-        self, store_name, query, search_mode, semantic_results, docs
-    ):
+    def _fallback_sources(self, store_name, query, search_mode, semantic_results, docs):
         """Produce sources/answer when keyword match fails.
 
         Semantic and multimodal modes resolve semantic hits to docs and build
@@ -298,7 +309,9 @@ class LocalSearchMixin:
             "query": query,
             "refined_query": refined if (intent and intent.is_corrected) else None,
             "corrections": (
-                intent.correction_suggestions if (intent and intent.is_corrected) else None
+                intent.correction_suggestions
+                if (intent and intent.is_corrected)
+                else None
             ),
             "store": store_name,
             "search_mode": search_mode,

@@ -22,10 +22,10 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class KnowledgeAtom:
-    id: str              # abs_path#c0001
-    uri: str             # local://<store>/enc_path#c0001
-    title: str           # basename#c0001
-    content: str         # chunk text
+    id: str  # abs_path#c0001
+    uri: str  # local://<store>/enc_path#c0001
+    title: str  # basename#c0001
+    content: str  # chunk text
     metadata: Dict[str, Any]
 
 
@@ -125,7 +125,5 @@ def chunk_and_inject(
         except Exception as exc:
             logger.debug("Atom injection failed for %s: %s", atom_title, exc)
 
-    logger.debug(
-        "KnowledgeAtom: %d atoms injected for %s", injected, base_title
-    )
+    logger.debug("KnowledgeAtom: %d atoms injected for %s", injected, base_title)
     return injected

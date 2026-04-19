@@ -143,7 +143,9 @@ class GravitasPacker:
                 for k, v in obj.items()
             }
         if isinstance(obj, list):
-            return [self._transform_dict(item, key_map, value_transform) for item in obj]
+            return [
+                self._transform_dict(item, key_map, value_transform) for item in obj
+            ]
         if isinstance(obj, str):
             return value_transform(obj)
         return obj

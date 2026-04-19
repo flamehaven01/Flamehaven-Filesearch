@@ -106,7 +106,9 @@ def test_flamehaven_remote_client_flow(monkeypatch, tmp_path):
         core_module, "google_genai", SimpleNamespace(Client=FakeClient), raising=False
     )
     monkeypatch.setattr(core_module, "google_genai_types", fake_types, raising=False)
-    monkeypatch.setattr(_search_cloud_module, "_google_genai_types", fake_types, raising=False)
+    monkeypatch.setattr(
+        _search_cloud_module, "_google_genai_types", fake_types, raising=False
+    )
 
     searcher = core_module.FlamehavenFileSearch(api_key="remote", allow_offline=False)
     assert searcher._use_native_client is True

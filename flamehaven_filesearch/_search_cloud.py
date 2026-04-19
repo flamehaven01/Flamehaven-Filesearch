@@ -144,14 +144,23 @@ class CloudSearchMixin:
 
         if self._use_provider_rag:
             return self._provider_search(
-                query=query, store_name=store_name, max_tokens=max_tokens,
-                temperature=temperature, search_mode=search_mode, intent=intent,
+                query=query,
+                store_name=store_name,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                search_mode=search_mode,
+                intent=intent,
             )
         if not self._use_native_client:
             return self._local_search(
-                store_name=store_name, query=refined, max_tokens=max_tokens,
-                temperature=temperature, model=model, intent_info=intent,
-                search_mode=search_mode, semantic_results=semantic_results,
+                store_name=store_name,
+                query=refined,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                model=model,
+                intent_info=intent,
+                search_mode=search_mode,
+                semantic_results=semantic_results,
                 vector_backend=backend_choice,
             )
 
@@ -170,7 +179,9 @@ class CloudSearchMixin:
                 "model": model,
                 "query": query,
                 "refined_query": refined if intent.is_corrected else None,
-                "corrections": intent.correction_suggestions if intent.is_corrected else None,
+                "corrections": (
+                    intent.correction_suggestions if intent.is_corrected else None
+                ),
                 "store": store_name,
                 "search_mode": search_mode,
                 "vector_backend": backend_choice,
@@ -268,7 +279,8 @@ class CloudSearchMixin:
         logger.info("[>] Multimodal query: %s", refined)
 
         combined_vec = self.embedding_generator.generate_multimodal(
-            refined, image_bytes,
+            refined,
+            image_bytes,
             self.config.multimodal_text_weight,
             self.config.multimodal_image_weight,
         )
@@ -279,9 +291,14 @@ class CloudSearchMixin:
 
         if not self._use_native_client:
             result = self._local_search(
-                store_name=store_name, query=refined, max_tokens=max_tokens,
-                temperature=temperature, model=model, intent_info=intent,
-                search_mode="multimodal", semantic_results=semantic_results,
+                store_name=store_name,
+                query=refined,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                model=model,
+                intent_info=intent,
+                search_mode="multimodal",
+                semantic_results=semantic_results,
                 vector_backend=backend_choice,
             )
             result["multimodal"] = {
@@ -312,7 +329,9 @@ class CloudSearchMixin:
                 "model": model,
                 "query": query,
                 "refined_query": refined if intent.is_corrected else None,
-                "corrections": intent.correction_suggestions if intent.is_corrected else None,
+                "corrections": (
+                    intent.correction_suggestions if intent.is_corrected else None
+                ),
                 "store": store_name,
                 "search_mode": "multimodal",
                 "vector_backend": backend_choice,

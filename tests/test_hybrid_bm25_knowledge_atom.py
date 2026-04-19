@@ -17,6 +17,7 @@ from flamehaven_filesearch.core import FlamehavenFileSearch
 # BM25
 # ---------------------------------------------------------------------------
 
+
 class TestBM25:
     def test_fit_and_corpus_size(self):
         bm25 = BM25()
@@ -25,7 +26,9 @@ class TestBM25:
 
     def test_search_returns_sorted_scores(self):
         bm25 = BM25()
-        bm25.fit(["python programming language", "java enterprise beans", "python snake"])
+        bm25.fit(
+            ["python programming language", "java enterprise beans", "python snake"]
+        )
         results = bm25.search("python", top_k=3)
         # "python" appears in docs 0 and 2 only; java doc scores 0 → filtered
         assert len(results) == 2
@@ -85,6 +88,7 @@ class TestBM25:
 # RRF
 # ---------------------------------------------------------------------------
 
+
 class TestRRF:
     def test_basic_fusion(self):
         list_a = [{"id": "doc1", "score": 1.0}, {"id": "doc2", "score": 0.5}]
@@ -96,9 +100,7 @@ class TestRRF:
         assert result[0]["id"] == "doc2"
 
     def test_top_k_respected(self):
-        lists = [
-            [{"id": f"doc{i}", "score": float(10 - i)} for i in range(10)]
-        ]
+        lists = [[{"id": f"doc{i}", "score": float(10 - i)} for i in range(10)]]
         result = reciprocal_rank_fusion(lists, k=60, top_k=3)
         assert len(result) == 3
 
@@ -137,6 +139,7 @@ class TestRRF:
 # KnowledgeAtom
 # ---------------------------------------------------------------------------
 
+
 class TestChunkText:
     def test_short_text_single_chunk(self):
         chunks = _chunk_text("hello world", max_chars=800, overlap=120)
@@ -169,12 +172,14 @@ class TestChunkText:
 class TestChunkAndInject:
     def _make_mock_grid(self):
         from unittest.mock import MagicMock
+
         grid = MagicMock()
         grid.inject_essence = MagicMock()
         return grid
 
     def _make_mock_embedder(self):
         from unittest.mock import MagicMock
+
         emb = MagicMock()
         emb.generate = MagicMock(return_value=[0.1] * 384)
         return emb
@@ -250,10 +255,12 @@ class TestChunkAndInject:
 # _build_snippet keyword fallback
 # ---------------------------------------------------------------------------
 
+
 class TestBuildSnippet:
     @pytest.fixture
     def searcher(self):
         from flamehaven_filesearch import Config
+
         return FlamehavenFileSearch(config=Config(api_key=None), allow_offline=True)
 
     def test_exact_query_match(self, searcher):
@@ -293,10 +300,12 @@ class TestBuildSnippet:
 # Semantic mode answer from fallback
 # ---------------------------------------------------------------------------
 
+
 class TestSemanticFallback:
     @pytest.fixture
     def offline_searcher(self, tmp_path):
         from flamehaven_filesearch import Config
+
         fs = FlamehavenFileSearch(config=Config(api_key=None), allow_offline=True)
         # Upload a file with known content
         doc = tmp_path / "knowledge.txt"
@@ -335,4 +344,7 @@ class TestSemanticFallback:
         )
         assert result["status"] == "success"
         # After _build_snippet fix: should find "Reciprocal" keyword
-        assert "Reciprocal" in result["answer"] or result["answer"] != "No matching content found in stored files."
+        assert (
+            "Reciprocal" in result["answer"]
+            or result["answer"] != "No matching content found in stored files."
+        )

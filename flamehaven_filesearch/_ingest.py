@@ -15,8 +15,18 @@ from .engine.knowledge_atom import chunk_and_inject
 logger = logging.getLogger(__name__)
 
 _SUPPORTED_EXTS = {
-    ".pdf", ".docx", ".doc", ".hwp", ".hwpx",
-    ".md", ".txt", ".xlsx", ".xls", ".pptx", ".ppt", ".rtf",
+    ".pdf",
+    ".docx",
+    ".doc",
+    ".hwp",
+    ".hwpx",
+    ".md",
+    ".txt",
+    ".xlsx",
+    ".xls",
+    ".pptx",
+    ".ppt",
+    ".rtf",
 }
 
 
@@ -137,7 +147,8 @@ class IngestMixin:
                     file_metadata["vision_text"] = vision_text
             if vision_text:
                 vec = self.embedding_generator.generate_multimodal(
-                    vision_text, image_bytes,
+                    vision_text,
+                    image_bytes,
                     self.config.multimodal_text_weight,
                     self.config.multimodal_image_weight,
                 )
@@ -145,9 +156,12 @@ class IngestMixin:
                 vec = self.embedding_generator.generate_image_bytes(image_bytes)
         else:
             from .engine.file_parser import extract_text as _extract_text
+
             content = _extract_text(file_path)
-            embed_text = content[:2000] if content.strip() else (
-                f"{file_metadata['file_name']} {file_metadata['file_type']}"
+            embed_text = (
+                content[:2000]
+                if content.strip()
+                else (f"{file_metadata['file_name']} {file_metadata['file_type']}")
             )
             vec = self.embedding_generator.generate(embed_text)
             file_metadata["_extracted_content"] = content
@@ -186,6 +200,7 @@ class IngestMixin:
             content = extracted_content
         else:
             from .engine.file_parser import extract_text
+
             content = extract_text(file_path)
 
         metadata: Dict[str, Any] = {"file_type": ext}

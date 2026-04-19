@@ -373,18 +373,23 @@ def _init_searcher(config: Config) -> "Optional[FlamehavenFileSearch]":
             if not getattr(fs, "_use_native_client", False):
                 docs = fs._local_store_docs.setdefault("default", [])
                 if not docs:
-                    docs.append({
-                        "title": "bootstrap.txt",
-                        "uri": "local://bootstrap.txt",
-                        "content": "Flamehaven Filesearch default store bootstrap document.",
-                    })
+                    docs.append(
+                        {
+                            "title": "bootstrap.txt",
+                            "uri": "local://bootstrap.txt",
+                            "content": "Flamehaven Filesearch default store bootstrap document.",
+                        }
+                    )
         except Exception as exc:  # pragma: no cover
             logger.warning("Unable to create default store: %s", exc)
         batch_routes.set_searcher(fs)
         _ws_routes.set_searcher(fs)
         return fs
     except Exception as exc:  # pragma: no cover
-        logger.warning("Failed to initialize FLAMEHAVEN FileSearch (%s); running without searcher", exc)
+        logger.warning(
+            "Failed to initialize FLAMEHAVEN FileSearch (%s); running without searcher",
+            exc,
+        )
         return None
 
 
@@ -394,7 +399,9 @@ def _init_cache(config: Config):
         cache = config.create_search_cache()
         logger.info(
             "Cache initialized: %s backend, %d items max, %ds TTL",
-            config.cache_backend, config.cache_max_size, config.cache_ttl_sec,
+            config.cache_backend,
+            config.cache_max_size,
+            config.cache_ttl_sec,
         )
         return cache
     except Exception as exc:  # pragma: no cover
@@ -409,7 +416,9 @@ def _init_metrics() -> None:
         if _metrics_enabled():
             logger.info("Prometheus metrics enabled at /prometheus")
         else:
-            logger.info("Prometheus metrics disabled (set FLAMEHAVEN_METRICS_ENABLED=1)")
+            logger.info(
+                "Prometheus metrics disabled (set FLAMEHAVEN_METRICS_ENABLED=1)"
+            )
     except Exception as exc:  # pragma: no cover
         logger.warning("Failed to initialize metrics collector: %s", exc)
 
@@ -555,10 +564,14 @@ async def upload_single_file(
         return result
 
     except FileSearchException as e:
-        _record_upload_failure(store, start_time, e.__class__.__name__, "/api/upload/single")
+        _record_upload_failure(
+            store, start_time, e.__class__.__name__, "/api/upload/single"
+        )
         raise
     except Exception as e:
-        _record_upload_failure(store, start_time, "UnexpectedError", "/api/upload/single")
+        _record_upload_failure(
+            store, start_time, "UnexpectedError", "/api/upload/single"
+        )
         logger.error(f"[{request_id}] Upload failed: {e}")
         raise _internal_error(request_id)
     finally:
