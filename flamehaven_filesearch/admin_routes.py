@@ -75,83 +75,78 @@ class UsageStatsResponse(BaseModel):
 # Helper functions
 
 
-def _get_admin_user(request: Request) -> str:
-    """
-    Extract admin user identifier
-
-    For now, uses a simple approach:
-    - Environment-provided admin key
-    - Or derives from request context
-
-    TODO: Implement proper admin authentication in v1.3.0
-    """
-    import os
-
-    # Simple admin key check for now
+def _parse_bearer_token(request: Request) -> str:
+    """Extract bearer token from Authorization header; raise 401 on invalid format."""
     auth_header = request.headers.get("Authorization", "")
-
     if not auth_header:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication required",
             headers={"WWW-Authenticate": "Bearer"},
         )
-
     parts = auth_header.split()
-
     if len(parts) != 2 or parts[0].lower() != "bearer":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid Authorization header",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    return parts[1]
 
-    key = parts[1]
 
-    config = Config.from_env()
-    if config.oauth_enabled and is_jwt_format(key):
-        oauth_info = validate_oauth_token(key, config=config)
-        if oauth_info and oauth_has_admin(oauth_info, config=config):
-            return oauth_info.subject
+def _try_oauth_admin(key: str, config: Config) -> "Optional[str]":
+    """Return subject if key is a valid admin OAuth token, None if OAuth path doesn't apply.
+
+    Raises 403 if token looks like OAuth but lacks admin permission.
+    """
+    if not (config.oauth_enabled and is_jwt_format(key)):
+        return None
+    oauth_info = validate_oauth_token(key, config=config)
+    if oauth_info and oauth_has_admin(oauth_info, config=config):
+        return oauth_info.subject
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Admin permission required",
+    )
+
+
+def _resolve_key_admin(key: str) -> str:
+    """Resolve admin identity from env admin key, IAM provider, or API key with admin perm."""
+    import os
+
+    admin_key = os.getenv("FLAMEHAVEN_ADMIN_KEY")
+    if admin_key and key == admin_key:
+        return "admin"
+
+    iam = get_iam_provider()
+    iam_user = iam.validate_admin_token(key)
+    if iam_user:
+        return iam_user
+
+    key_manager = get_key_manager()
+    api_key_info = key_manager.validate_key(key)
+    if not api_key_info:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid API key",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    if "admin" not in set(api_key_info.permissions or []):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin permission required",
         )
+    return api_key_info.user_id
 
-    # Admin key validation (placeholder)
-    # In production, should use separate admin key management
-    admin_key = os.getenv("FLAMEHAVEN_ADMIN_KEY")
 
-    if not admin_key or key != admin_key:
-        # IAM provider hook (pluggable)
-        iam = get_iam_provider()
-        iam_user = iam.validate_admin_token(key)
-        if iam_user:
-            return iam_user
-
-        # Alternatively, validate as regular API key
-        key_manager = get_key_manager()
-        api_key_info = key_manager.validate_key(key)
-
-        if not api_key_info:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid API key",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-
-        # Require admin permission on API key
-        perms = set(api_key_info.permissions or [])
-        if "admin" not in perms:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Admin permission required",
-            )
-
-        return api_key_info.user_id
-
-    # Admin key authenticated
-    return "admin"
+def _get_admin_user(request: Request) -> str:
+    """Extract and validate admin identity from the request Authorization header."""
+    key = _parse_bearer_token(request)
+    config = Config.from_env()
+    user = _try_oauth_admin(key, config)
+    if user is not None:
+        return user
+    return _resolve_key_admin(key)
 
 
 # Admin endpoints

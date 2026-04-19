@@ -213,7 +213,7 @@ class TestAPIKeyHandling:
         with pytest.raises(ValueError) as exc_info:
             config.validate(require_api_key=True)
 
-        assert "API key required" in str(exc_info.value)
+        assert "GEMINI_API_KEY required" in str(exc_info.value)
 
     def test_valid_api_key_accepted(self):
         """Test that valid API key is accepted"""

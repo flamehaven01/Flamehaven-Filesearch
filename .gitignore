@@ -156,6 +156,9 @@ doc_sanity_report*.json
 DOC_SANITY_FIXES.md
 PHASE*_COMPLETION_SUMMARY.md
 
+# Historical development artifacts (internal audit reports, design docs — not public docs)
+docs/history/
+
 # Test data
 test_files/
 sample_data/
@@ -174,6 +177,16 @@ logs/
 *.sqlite
 *.sqlite3
 
-# SIDRCE reports (internal quality metrics)
+# SIDRCE reports and slop-detector outputs (internal quality metrics)
 sidrce_report*.json
+sidrce_cert*.yaml
+certification_report*.yaml
 quality_report*.json
+slop_*.json
+slop_report*.json
+
+# Scratch / test artefacts
+test_doc.txt
+
+# CR-EP internal config
+.cr-ep/

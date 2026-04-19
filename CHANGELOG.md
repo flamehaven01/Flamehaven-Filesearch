@@ -7,6 +7,104 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.6.1] - 2026-04-19
+
+### Refactored
+
+- **API orchestration** (`api.py`): `initialize_services` (66 lines, CC~8) →
+  `_init_searcher` + `_init_cache` + `_init_metrics` + 8-line orchestrator.
+  `_record_upload_failure` extracted — eliminates 2× duplicated
+  `record_file_upload + record_error` blocks in `upload_single_file`.
+
+- **Admin auth** (`admin_routes.py`): `_get_admin_user` (77 lines, CC~10) →
+  `_parse_bearer_token` + `_try_oauth_admin` + `_resolve_key_admin` + 5-line
+  orchestrator. Fixes `reverse_field_glyphs` rebuilt on every recursive call.
+
+- **Engine** (`engine/chronos_grid.py`): `seek_vector_resonance` (80 lines,
+  2 code paths) → `_hnsw_vector_resonance` + `_brute_vector_resonance` +
+  10-line dispatcher (HNSW path vs brute-force cosine similarity).
+
+- **Engine** (`engine/gravitas_pack.py`): `_compress_dict` / `_decompress_dict`
+  clone cluster → `_transform_dict(obj, key_map, value_transform)` dispatch table.
+  Both callers become 2-line delegators.
+
+### Changed
+
+- **`eval_self.py`**: `CORPUS_FILES` split into `AUDIT_CORPUS` (11 docs) +
+  `SOURCE_CORPUS` (7 source files). `CORPUS_FILES = AUDIT_CORPUS + SOURCE_CORPUS`
+  preserves existing full-pack behaviour; `AUDIT_CORPUS` alone enables lightweight
+  doc-quality runs.
+
+- **`.gitignore`**: `docs/history/` added under "Historical development artifacts".
+
+### Tests
+
+- 475 passed, 13 skipped — same count as v1.6.0 (1 pre-existing flaky timing test
+  in full suite; passes in isolation).
+
+---
+
+## [1.6.0] - 2026-04-19
+
+### Added
+
+- **BM25 + RRF Hybrid Search** (`engine/hybrid_search.py`): Production-grade BM25
+  (k1=1.5, b=0.75) with Korean+English tokenizer
+  (`re.findall(r"[a-z0-9\uac00-\ud7a3]+", text.lower())`).
+  Reciprocal Rank Fusion merges BM25 and ChronosGrid semantic lists using
+  string URI as doc ID — no integer alignment required. k=60, top_k configurable.
+  Lazy per-store index with `_bm25_dirty` set: index rebuilt on first hybrid
+  search after any upload, not on every upload.
+
+- **KnowledgeAtom chunk-level indexing** (`engine/knowledge_atom.py`): Two-level
+  indexing — file-level doc + chunk atoms with fragment URIs
+  (`local://store/enc_path#c0001`). `chunk_and_inject()` splits content into
+  800-char overlapping windows (120-char overlap, 80-char minimum), embeds each
+  chunk via `embedding_generator.generate()`, injects into ChronosGrid, and
+  registers in `_atom_store_docs` for URI-based resolution. Enables precision
+  chunk-level retrieval alongside file-level documents.
+
+- **Stable URI scheme**: Local documents now use
+  `local://<store>/<urllib.parse.quote(abs_path, safe='')>` instead of
+  `local://<store>/<basename>`. Eliminates collisions when files with identical
+  names exist in different directories. URIs are reversible via `unquote()`.
+  Both main docs and chunk atoms share the same URI namespace.
+
+### Refactored
+
+- **`core.py` segmentation** (1258 → 221 lines): `FlamehavenFileSearch` split into
+  three focused mixin classes via `IngestMixin`, `LocalSearchMixin`,
+  `CloudSearchMixin`. `core.py` is now a thin orchestrator: `__init__`,
+  `create_store`, `list_stores`, `delete_store`, `get_metrics`,
+  `_resolve_vector_backend`.
+
+  | Mixin | File | Responsibility |
+  |---|---|---|
+  | `IngestMixin` | `_ingest.py` (228 L) | upload_file, upload_files, _local_upload, _generate_file_vector |
+  | `LocalSearchMixin` | `_search_local.py` (273 L) | _local_search, BM25 rebuild, hybrid rerank, RAG prompt |
+  | `CloudSearchMixin` | `_search_cloud.py` (265 L) | search, search_stream, search_multimodal + 6 shared helpers |
+
+- **Duplicate helper elimination** (`_search_cloud.py`): Six blocks that were
+  copy-pasted between `search()` and `search_multimodal()` are now shared helpers:
+  `_resolve_search_params`, `_ensure_store`, `_query_vector_backend`,
+  `_driftlock_validate`, `_extract_grounding_sources`, `_gemini_search_call`.
+
+### Fixed
+
+- **`search_stream` double intent-refine bug**: `intent_refiner.refine_intent(query)`
+  was called twice (lines 984 and 988 in old `core.py`) — once before the
+  provider-RAG branch and once inside it. The second call discarded the first
+  `optimized_query`. Fixed: single call, result reused throughout the method.
+
+### Tests
+
+- 443 tests pass, 13 skipped — no regression from refactor.
+- `test_flamehaven_remote_client_flow` patch target updated: also patches
+  `flamehaven_filesearch._search_cloud._google_genai_types` after types moved
+  from `core.py` to `_search_cloud.py`.
+
+---
+
 ## [1.5.3] - 2026-04-19
 
 ### Added

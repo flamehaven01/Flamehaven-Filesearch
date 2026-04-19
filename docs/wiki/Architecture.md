@@ -1,7 +1,7 @@
 # Architecture Overview
 
 Flamehaven FileSearch balances simplicity with production-grade safeguards. This
-document describes the moving parts as of **v1.5.2**, featuring:
+document describes the moving parts as of **v1.6.0**, featuring:
 - **Gravitas DSP Engine** (v1.3.1+)
 - **Multimodal Search** (v1.4.0+)
 - **pgvector with HNSW** (v1.4.0+)
@@ -10,6 +10,8 @@ document describes the moving parts as of **v1.5.2**, featuring:
 - **Universal Document Parser, Internal Chunker, Framework Integrations** (v1.5.0)
 - **Dead code removal, critical complexity fixes, 360-test suite** (v1.5.1)
 - **Parse Cache, ContextExtractor, Backend Plugin Architecture** (v1.5.2)
+- **Multi-provider LLM support** (v1.5.3)
+- **BM25+RRF Hybrid Search, KnowledgeAtom, Mixin Architecture** (v1.6.0)
 
 ---
 
@@ -42,13 +44,73 @@ Request → │ FastAPI Router│ ─────> │ Middleware  │ ──┐
 
 ---
 
-## 2. Core Search Engine (v1.4.1)
+## 2. Core Architecture (v1.6.0 — Mixin Pattern)
 
-`FlamehavenFileSearch` (in `core.py`) now supports three primary search modes:
+`FlamehavenFileSearch` is now a thin orchestrator composed of three focused mixins:
 
-- **Keyword Mode** – Traditional exact match indexing.
-- **Semantic Mode (OMEGA)** – Powered by the **Gravitas DSP Engine**. Uses Deterministic Semantic Projection (v2.0) to map text into a 384-dimensional space without heavy ML dependencies.
-- **Hybrid Mode** – Combines both keyword and semantic scores for maximum precision.
+```
+core.py (221 lines)
+  FlamehavenFileSearch(IngestMixin, LocalSearchMixin, CloudSearchMixin)
+    __init__ / create_store / list_stores / delete_store / get_metrics
+
+_ingest.py (228 lines) — IngestMixin
+  upload_file / upload_files / _local_upload / _generate_file_vector
+
+_search_local.py (273 lines) — LocalSearchMixin
+  _local_search / _run_hybrid_rerank / _rebuild_bm25
+  _get_doc_by_uri / _build_snippet / _build_rag_prompt / _provider_search
+
+_search_cloud.py (265 lines) — CloudSearchMixin
+  search / search_stream / search_multimodal
+  + shared helpers: _resolve_search_params / _ensure_store /
+    _query_vector_backend / _driftlock_validate /
+    _extract_grounding_sources / _gemini_search_call
+```
+
+`FlamehavenFileSearch` supports three primary search modes:
+
+- **Keyword Mode** – BM25-scored exact match indexing across all stored content.
+- **Semantic Mode (OMEGA)** – Powered by the **Gravitas DSP Engine**. Uses
+  Deterministic Semantic Projection (v2.0) to map text into a 384-dimensional
+  space without heavy ML dependencies.
+- **Hybrid Mode** – BM25 + ChronosGrid semantic merged via Reciprocal Rank
+  Fusion (RRF, k=60). See [Section 2a](#2a-bm25--rrf-hybrid-search) below.
+
+### 2a. BM25 + RRF Hybrid Search
+
+**Implementation:** `engine/hybrid_search.py`
+
+```
+BM25 (k1=1.5, b=0.75)
+  tokenizer: re.findall(r"[a-z0-9\uac00-\ud7a3]+", text.lower())
+  Korean Hangul syllable range: \uac00-\ud7a3
+  Lazy index per store — rebuilt only after uploads (_bm25_dirty flag)
+  Corpus: main docs + chunk atoms (full 2-level coverage)
+
+RRF(d) = sum(1 / (k + rank_i))   k=60, rank from each result list
+
+Fusion inputs:
+  List A: ChronosGrid semantic results  (similarity-ranked)
+  List B: BM25 scored results           (BM25 score-ranked)
+  ID key: stable URI string (collision-free across lists)
+
+Output: top-k docs resolved via _get_doc_by_uri()
+```
+
+### 2b. KnowledgeAtom 2-Level Indexing
+
+**Implementation:** `engine/knowledge_atom.py`
+
+Level 1 — File doc: `local://<store>/<quote(abs_path)>`
+Level 2 — Chunk atoms: `local://<store>/<quote(abs_path)>#c0001`
+
+`chunk_and_inject()`:
+- Splits content into 800-char windows with 120-char overlap
+- Skips chunks shorter than 80 chars (noise filter)
+- Embeds each chunk via `embedding_generator.generate()`
+- Injects into ChronosGrid for semantic retrieval
+- Registers in `_atom_store_docs[store_name][atom_uri]` for URI lookup
+- Both levels participate in BM25 corpus via `_rebuild_bm25()`
 
 ### Gravitas DSP Engine (v2.0)
 - **Zero-Dependency Vectorizer**: Replaced `sentence-transformers` with a lightweight, signed feature hashing algorithm.
@@ -84,9 +146,9 @@ The new **Chronos-Grid** integration handles high-speed vector storage and simil
 
 ---
 
-## 6. Testing & Quality (v1.4.2)
+## 6. Testing & Quality (v1.6.0)
 
-- **Test Framework**: `pytest` — 443 tests collected, all passing (360 + 83 new).
+- **Test Framework**: `pytest` — 443 tests pass, 13 skipped.
 - **Lint**: `black` (format) + `ruff` (lint/unused imports) — both enforced in CI.
 - **Validation**: `validators.py` enforces security policies (Filename 200-char max, FileSize, SearchQuery XSS/SQLi checks).
 - **SIDRCE Certification**: Omega 0.9894 (S++) — AI-Slop-Detector P0-P5 clean.
@@ -125,6 +187,8 @@ engine/
   parse_cache.py       — mtime-based parse result cache (v1.5.2)
   context_extractor.py — RAG chunk context window extractor (v1.5.2)
   text_chunker.py      — Structure-aware + token-aware RAG chunker (stdlib only)
+  hybrid_search.py     — BM25 + RRF fusion engine (v1.6.0)
+  knowledge_atom.py    — Chunk-level atom indexing with fragment URIs (v1.6.0)
   embedding_generator.py   — DSP v2.0 vectorizer
   chronos_grid.py      — Vector index + metadata store
   gravitas_pack.py     — Metadata compression

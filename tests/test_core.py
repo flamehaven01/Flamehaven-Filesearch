@@ -26,7 +26,7 @@ class TestConfig:
         monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
 
         config = Config(api_key=None)
-        with pytest.raises(ValueError, match="API key required"):
+        with pytest.raises(ValueError, match="GEMINI_API_KEY required"):
             config.validate()
 
     def test_config_validation_invalid_temperature(self):
@@ -94,7 +94,7 @@ class TestFlamehavenFileSearch:
         monkeypatch.delenv("GEMINI_API_KEY", raising=False)
         monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
 
-        with pytest.raises(ValueError, match="API key required"):
+        with pytest.raises(ValueError, match="GEMINI_API_KEY required"):
             FlamehavenFileSearch()
 
     def test_upload_file_not_found(self, mock_api_key):

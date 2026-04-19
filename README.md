@@ -7,7 +7,7 @@
 ### Self-hosted RAG search engine. Production-ready in 3 minutes.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.5.3-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.6.1-blue.svg)](CHANGELOG.md)
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/docker-ready-brightgreen.svg)](https://hub.docker.com/r/flamehaven/filesearch)
 
@@ -17,13 +17,13 @@
 
 ---
 
-## 🎯 Why FLAMEHAVEN?
+## 🎯 Why FLAMEHAVEN FileSearch?
 
-Stop sending your sensitive documents to third-party services. Get enterprise-grade semantic search running locally in minutes, not days.
+Stop sending your sensitive documents to third-party services. FLAMEHAVEN FileSearch is a production-grade RAG search engine — BM25+hybrid retrieval, 34 file formats, multi-LLM (Gemini, OpenAI, Claude, Ollama) — running self-hosted in minutes, not days.
 
 ```bash
 # One command. Three minutes. Done.
-docker run -d -p 8000:8000 -e GEMINI_API_KEY="your_key" flamehaven-filesearch:1.5.2
+docker run -d -p 8000:8000 -e GEMINI_API_KEY="your_key" flamehaven-filesearch:1.6.1
 ```
 
 <table>
@@ -57,9 +57,9 @@ Open source & MIT licensed</p>
 
 | Capability | Detail |
 |---|---|
-| **Search Modes** | Keyword, semantic, and hybrid with automatic typo correction |
+| **Search Modes** | Keyword, semantic, and hybrid (BM25+RRF) with automatic typo correction |
 | **34 File Formats** | PDF, DOCX/DOC, XLSX, PPTX, RTF, HTML, CSV, LaTeX, WebVTT, images + plain text — see [Document Parsing](docs/wiki/Document_Parsing.md) |
-| **RAG Pipeline** | Structure-aware chunking, sliding-window context enrichment, mtime parse cache |
+| **RAG Pipeline** | Structure-aware chunking, KnowledgeAtom 2-level indexing, sliding-window context enrichment, mtime parse cache |
 | **Ultra-Fast Vectors** | DSP v2.0 generates embeddings in <1ms — no ML frameworks required |
 | **Source Attribution** | Every answer links back to the originating document and chunk |
 | **Framework SDKs** | LangChain, LlamaIndex, Haystack, CrewAI adapters out of the box |
@@ -83,7 +83,7 @@ docker run -d \
   -e GEMINI_API_KEY="your_gemini_api_key" \
   -e FLAMEHAVEN_ADMIN_KEY="secure_admin_password" \
   -v $(pwd)/data:/app/data \
-  flamehaven-filesearch:1.5.2
+  flamehaven-filesearch:1.6.1
 ```
 
 ✅ Server running at `http://localhost:8000`
@@ -167,7 +167,7 @@ pip install flamehaven-filesearch[all]
 # Build from source
 git clone https://github.com/flamehaven01/Flamehaven-Filesearch.git
 cd Flamehaven-Filesearch
-docker build -t flamehaven-filesearch:1.5.2 .
+docker build -t flamehaven-filesearch:1.6.1 .
 ```
 
 ### Framework Integrations
@@ -259,7 +259,7 @@ security:
 </tr>
 <tr>
 <td>Test Suite</td>
-<td><code>443 tests</code></td>
+<td><code>476 tests</code></td>
 <td>All passing (pytest)</td>
 </tr>
 <tr>
@@ -299,8 +299,9 @@ flowchart TD
     subgraph Engine["Engine Layer"]
         FP["FileParser\n+ BackendRegistry\n(34 formats)"]
         Cache["ParseCache\n(mtime-based)"]
-        Chunker["TextChunker\n+ ContextExtractor"]
+        Chunker["TextChunker\n+ KnowledgeAtom\n(chunk atoms)"]
         DSP["DSP v2.0\nEmbedding Generator\n(&lt;1ms, zero-ML)"]
+        BM25["BM25 + RRF\nHybrid Search\n(v1.6.0)"]
         Scorer["SemanticScorer\n+ TypoCorrector"]
     end
 
@@ -383,7 +384,14 @@ Full roadmap: [ROADMAP.md](ROADMAP.md)
 - [x] Backend Plugin Architecture — `AbstractFormatBackend` + `BackendRegistry` (v1.5.2)
 - [x] Parse cache — mtime-based, `extract_text(use_cache=True)` (v1.5.2)
 - [x] ContextExtractor — sliding-window RAG chunk enrichment (v1.5.2)
-- [x] 443 tests; AI-Slop-Detector critical deficits: 0 (v1.5.2)
+- [x] Multi-provider LLM support — OpenAI, Claude, Ollama, Gemini (v1.5.3)
+
+### v1.6.0 (Completed)
+- [x] BM25 + RRF hybrid search — Korean+English tokenizer, lazy per-store index
+- [x] KnowledgeAtom 2-level indexing — chunk atoms with fragment URIs
+- [x] Stable URI scheme — `local://<store>/<quote(abs_path)>`, collision-free
+- [x] core.py mixin segmentation — 1258 → 221 lines, 3 focused modules
+- [x] Fix: `search_stream` double intent-refine bug
 
 ### v2.0.0 (Q3 2026)
 - [ ] Multi-language support (15+ languages) — multilingual stopwords + jieba
@@ -465,9 +473,10 @@ Use the links below to jump to the most relevant guide.
 | Topic | Description |
 |-------|-------------|
 | [Document Parsing](docs/wiki/Document_Parsing.md) | Supported formats, internal parsers, RAG chunking |
+| [Hybrid Search](docs/wiki/Hybrid_Search.md) | BM25+RRF, KnowledgeAtom indexing, stable URI scheme (v1.6.0) |
 | [Framework Integrations](docs/wiki/Framework_Integrations.md) | LangChain, LlamaIndex, Haystack, CrewAI adapters |
 | [API Reference](docs/wiki/API_Reference.md) | REST endpoints, payloads, rate limits |
-| [Architecture](docs/wiki/Architecture.md) | How all layers fit together (v1.5.2) |
+| [Architecture](docs/wiki/Architecture.md) | How all layers fit together (v1.6.0) |
 | [Configuration Reference](docs/wiki/Configuration.md) | Full list of environment variables and config fields |
 | [Production Deployment](docs/wiki/Production_Deployment.md) | Docker, systemd, reverse proxy, scaling tips |
 | [Troubleshooting](docs/wiki/Troubleshooting.md) | Step-by-step debugging playbook |
@@ -536,6 +545,6 @@ Built with amazing open source tools:
 
 Built with 🔥 by the Flamehaven Core Team
 
-*Last updated: April 19, 2026 • Version 1.5.3*
+*Last updated: April 19, 2026 • Version 1.6.1*
 
 </div>

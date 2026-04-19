@@ -160,6 +160,17 @@ def _internal_error(request_id: str) -> HTTPException:
     )
 
 
+def _record_upload_failure(
+    store: str, start_time: float, error_type: str, endpoint: str
+) -> None:
+    """Record upload failure metrics. size_bytes is always 0 on failure paths."""
+    duration = time.time() - start_time
+    MetricsCollector.record_file_upload(
+        store=store, size_bytes=0, duration=duration, success=False
+    )
+    MetricsCollector.record_error(error_type=error_type, endpoint=endpoint)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """FastAPI lifespan to replace deprecated on_event hooks."""
@@ -352,72 +363,67 @@ class ErrorResponse(BaseModel):
     timestamp: str
 
 
-def initialize_services(force: bool = False) -> None:
-    """Initialize searcher, caches, and metrics."""
-    global searcher, search_cache, startup_time
-
-    if not force and searcher is not None and search_cache is not None:
-        return
-
-    startup_time = time.time()
-
-    # Load configuration once and use for all services
-    config = Config.from_env()
-
+def _init_searcher(config: Config) -> "Optional[FlamehavenFileSearch]":
+    """Create FlamehavenFileSearch, seed the default store, and wire sub-routers."""
     try:
-        searcher = FlamehavenFileSearch(config=config, allow_offline=True)
+        fs = FlamehavenFileSearch(config=config, allow_offline=True)
         logger.info("FLAMEHAVEN FileSearch v1.4.0 initialized successfully")
-        # Ensure default store exists for ready-to-use search endpoints
         try:
-            searcher.create_store("default")
-            # Seed fallback mode with a tiny sample so health/search tests succeed
-            if not getattr(searcher, "_use_native_client", False):
-                docs = searcher._local_store_docs.setdefault("default", [])
+            fs.create_store("default")
+            if not getattr(fs, "_use_native_client", False):
+                docs = fs._local_store_docs.setdefault("default", [])
                 if not docs:
-                    docs.append(
-                        {
-                            "title": "bootstrap.txt",
-                            "uri": "local://bootstrap.txt",
-                            "content": (
-                                "Flamehaven Filesearch default store bootstrap "
-                                "document."
-                            ),
-                        }
-                    )
-        except Exception as exc:  # pragma: no cover - defensive
+                    docs.append({
+                        "title": "bootstrap.txt",
+                        "uri": "local://bootstrap.txt",
+                        "content": "Flamehaven Filesearch default store bootstrap document.",
+                    })
+        except Exception as exc:  # pragma: no cover
             logger.warning("Unable to create default store: %s", exc)
-        # Set searcher for batch routes and WebSocket streaming
-        batch_routes.set_searcher(searcher)
-        _ws_routes.set_searcher(searcher)
-    except Exception as exc:  # pragma: no cover - defensive guard
-        logger.warning(
-            "Failed to initialize FLAMEHAVEN FileSearch (%s); running without searcher",
-            exc,
-        )
-        searcher = None
+        batch_routes.set_searcher(fs)
+        _ws_routes.set_searcher(fs)
+        return fs
+    except Exception as exc:  # pragma: no cover
+        logger.warning("Failed to initialize FLAMEHAVEN FileSearch (%s); running without searcher", exc)
+        return None
 
+
+def _init_cache(config: Config):
+    """Create and return the search cache, or None on failure."""
     try:
-        search_cache = config.create_search_cache()
+        cache = config.create_search_cache()
         logger.info(
             "Cache initialized: %s backend, %d items max, %ds TTL",
-            config.cache_backend,
-            config.cache_max_size,
-            config.cache_ttl_sec,
+            config.cache_backend, config.cache_max_size, config.cache_ttl_sec,
         )
-    except Exception as exc:  # pragma: no cover - defensive guard
+        return cache
+    except Exception as exc:  # pragma: no cover
         logger.warning("Failed to initialize cache system: %s", exc)
-        search_cache = None
+        return None
 
+
+def _init_metrics() -> None:
+    """Update system metrics and log Prometheus status."""
     try:
         MetricsCollector.update_system_metrics()
         if _metrics_enabled():
             logger.info("Prometheus metrics enabled at /prometheus")
         else:
-            logger.info(
-                "Prometheus metrics disabled (set FLAMEHAVEN_METRICS_ENABLED=1)"
-            )
-    except Exception as exc:  # pragma: no cover - defensive guard
+            logger.info("Prometheus metrics disabled (set FLAMEHAVEN_METRICS_ENABLED=1)")
+    except Exception as exc:  # pragma: no cover
         logger.warning("Failed to initialize metrics collector: %s", exc)
+
+
+def initialize_services(force: bool = False) -> None:
+    """Initialize searcher, cache, and metrics."""
+    global searcher, search_cache, startup_time
+    if not force and searcher is not None and search_cache is not None:
+        return
+    startup_time = time.time()
+    config = Config.from_env()
+    searcher = _init_searcher(config)
+    search_cache = _init_cache(config)
+    _init_metrics()
 
 
 # Helper functions
@@ -549,24 +555,10 @@ async def upload_single_file(
         return result
 
     except FileSearchException as e:
-        # Record failed upload metric
-        duration = time.time() - start_time
-        MetricsCollector.record_file_upload(
-            store=store, size_bytes=0, duration=duration, success=False
-        )
-        MetricsCollector.record_error(
-            error_type=e.__class__.__name__, endpoint="/api/upload/single"
-        )
+        _record_upload_failure(store, start_time, e.__class__.__name__, "/api/upload/single")
         raise
     except Exception as e:
-        # Record failed upload metric
-        duration = time.time() - start_time
-        MetricsCollector.record_file_upload(
-            store=store, size_bytes=0, duration=duration, success=False
-        )
-        MetricsCollector.record_error(
-            error_type="UnexpectedError", endpoint="/api/upload/single"
-        )
+        _record_upload_failure(store, start_time, "UnexpectedError", "/api/upload/single")
         logger.error(f"[{request_id}] Upload failed: {e}")
         raise _internal_error(request_id)
     finally:

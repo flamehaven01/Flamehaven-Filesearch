@@ -4,6 +4,18 @@ This roadmap reflects the current constraints and priorities for Flamehaven
 FileSearch. Weekly usage budget is ~2%, so immediate focus is cost and quota
 pressure reduction before expanding surface area.
 
+## v1.6.0 (Released: 2026-04-19)
+
+**Focus:** Native RAG architecture — BM25+RRF hybrid search, chunk-level indexing.
+
+- [x] BM25 engine — Korean+English tokenizer, k1=1.5, b=0.75, lazy per-store rebuild.
+- [x] RRF fusion (k=60) — merges BM25 and ChronosGrid semantic lists by URI.
+- [x] KnowledgeAtom 2-level indexing — chunk atoms with `#cNNNN` fragment URIs.
+- [x] Stable URI scheme — `local://<store>/<quote(abs_path)>`, collision-free.
+- [x] core.py mixin segmentation — 1258 → 221 lines; 3 focused mixin modules.
+- [x] Fix: `search_stream` double intent-refine bug.
+- [x] 443 tests pass, 13 skipped; AI-Slop-Detector: CLEAN.
+
 ## Next Steps (Now)
 
 - [ ] Cache + cost improvements (cache hit tracking by search mode/backend,

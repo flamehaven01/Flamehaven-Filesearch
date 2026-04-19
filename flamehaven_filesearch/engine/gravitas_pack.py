@@ -135,39 +135,27 @@ class GravitasPacker:
             logger.warning(f"Failed to decompress: {compressed_json}")
             return {}
 
-    def _compress_dict(self, obj: Any) -> Any:
-        """Recursively compress dictionary using glyph mappings."""
+    def _transform_dict(self, obj: Any, key_map: dict, value_transform) -> Any:
+        """Recursively transform a dict/list/str using key_map for keys and value_transform for strings."""
         if isinstance(obj, dict):
-            compressed = {}
-            for key, value in obj.items():
-                # Compress key if it's a field name
-                compressed_key = self.FIELD_GLYPHS.get(key, key)
-                compressed[compressed_key] = self._compress_dict(value)
-            return compressed
-        elif isinstance(obj, list):
-            return [self._compress_dict(item) for item in obj]
-        elif isinstance(obj, str):
-            return self._compress_string(obj)
-        else:
-            return obj
+            return {
+                key_map.get(k, k): self._transform_dict(v, key_map, value_transform)
+                for k, v in obj.items()
+            }
+        if isinstance(obj, list):
+            return [self._transform_dict(item, key_map, value_transform) for item in obj]
+        if isinstance(obj, str):
+            return value_transform(obj)
+        return obj
+
+    def _compress_dict(self, obj: Any) -> Any:
+        """Compress dictionary using glyph mappings."""
+        return self._transform_dict(obj, self.FIELD_GLYPHS, self._compress_string)
 
     def _decompress_dict(self, obj: Any) -> Any:
-        """Recursively decompress dictionary using reverse glyph mappings."""
-        if isinstance(obj, dict):
-            decompressed = {}
-            reverse_field_glyphs = {v: k for k, v in self.FIELD_GLYPHS.items()}
-
-            for key, value in obj.items():
-                # Decompress key if it's a glyph
-                decompressed_key = reverse_field_glyphs.get(key, key)
-                decompressed[decompressed_key] = self._decompress_dict(value)
-            return decompressed
-        elif isinstance(obj, list):
-            return [self._decompress_dict(item) for item in obj]
-        elif isinstance(obj, str):
-            return self._decompress_string(obj)
-        else:
-            return obj
+        """Decompress dictionary using reverse glyph mappings."""
+        reverse_fields = {v: k for k, v in self.FIELD_GLYPHS.items()}
+        return self._transform_dict(obj, reverse_fields, self._decompress_string)
 
     def _compress_string(self, value: str) -> str:
         """Compress string by replacing paths and extensions with glyphs."""

@@ -341,6 +341,53 @@ class ChronosGrid:
         self.stats.false_positive_echoes += 1
         return None
 
+    def _hnsw_vector_resonance(
+        self, query_vector_essence: Any, top_k: int
+    ) -> List[Tuple[Any, float]]:
+        """HNSW index path: ANN lookup via hnswlib."""
+        query_vec = self._prepare_vector_for_index(query_vector_essence)
+        labels, distances = self._hnsw_index.knn_query(query_vec, k=top_k)
+        results = []
+        for label, dist in zip(labels[0], distances[0]):
+            glyph = self._hnsw_reverse_labels.get(int(label))
+            if glyph is None:
+                continue
+            essence = self.seek_resonance(glyph)
+            if essence is not None:
+                results.append((essence, 1.0 - float(dist)))
+        return results
+
+    def _brute_vector_resonance(
+        self, query_vector_essence: Any, top_k: int
+    ) -> List[Tuple[Any, float]]:
+        """Brute-force cosine similarity over all stored vectors."""
+        if not isinstance(query_vector_essence, np.ndarray):
+            query_vector_essence = np.array(query_vector_essence, dtype=np.float32)
+        norm = np.linalg.norm(query_vector_essence)
+        if norm > 0:
+            query_vector_essence = query_vector_essence / norm
+
+        if self.config.enable_vector_quantization:
+            matrix = np.stack(
+                [self._dequantize_vector(v) for v in self._vector_essences],
+                dtype=np.float32,
+            )
+        else:
+            matrix = np.stack(self._vector_essences, dtype=np.float32)
+
+        norms = np.linalg.norm(matrix, axis=1)
+        norms[norms == 0] = 1.0
+        matrix = matrix / norms[:, np.newaxis]
+        resonance_scores = np.dot(matrix, query_vector_essence)
+        top_indices = np.argsort(resonance_scores)[::-1][:top_k]
+
+        results = []
+        for idx in top_indices:
+            essence = self.seek_resonance(self._essence_glyphs[idx])
+            if essence is not None:
+                results.append((essence, float(resonance_scores[idx])))
+        return results
+
     def seek_vector_resonance(
         self,
         query_vector_essence: Any,
@@ -360,67 +407,12 @@ class ChronosGrid:
         """
         if not NUMPY_AVAILABLE or not self._vector_essences:
             return []
-
         if top_k is not None:
             top_k_resonances = top_k
-
         self.stats.vector_essence_seeks += 1
-
-        # HNSW path (if enabled and index initialized)
         if self._hnsw_enabled() and self._hnsw_index is not None:
-            query_vec = self._prepare_vector_for_index(query_vector_essence)
-            labels, distances = self._hnsw_index.knn_query(
-                query_vec, k=top_k_resonances
-            )
-            resonant_results = []
-            for label, dist in zip(labels[0], distances[0]):
-                glyph = self._hnsw_reverse_labels.get(int(label))
-                if glyph is None:
-                    continue
-                essence = self.seek_resonance(glyph)
-                if essence is not None:
-                    similarity = 1.0 - float(dist)
-                    resonant_results.append((essence, similarity))
-            return resonant_results
-
-        # Convert to numpy array
-        if not isinstance(query_vector_essence, np.ndarray):
-            query_vector_essence = np.array(query_vector_essence, dtype=np.float32)
-
-        # Normalize query vector
-        norm = np.linalg.norm(query_vector_essence)
-        if norm > 0:
-            query_vector_essence = query_vector_essence / norm
-
-        # Phase 3.5: Dequantize stored vectors for computation
-        if self.config.enable_vector_quantization:
-            matrix = np.stack(
-                [self._dequantize_vector(v) for v in self._vector_essences],
-                dtype=np.float32,
-            )
-        else:
-            matrix = np.stack(self._vector_essences, dtype=np.float32)
-
-        # Normalize stored vectors
-        norms = np.linalg.norm(matrix, axis=1)
-        norms[norms == 0] = 1.0
-        matrix = matrix / norms[:, np.newaxis]
-
-        # Compute cosine similarity
-        resonance_scores = np.dot(matrix, query_vector_essence)
-
-        # Get top K results
-        top_indices = np.argsort(resonance_scores)[::-1][:top_k_resonances]
-
-        resonant_results = []
-        for idx in top_indices:
-            glyph = self._essence_glyphs[idx]
-            score = resonance_scores[idx]
-            essence = self.seek_resonance(glyph)
-            if essence is not None:
-                resonant_results.append((essence, float(score)))
-
-        return resonant_results
+            return self._hnsw_vector_resonance(query_vector_essence, top_k_resonances)
+        return self._brute_vector_resonance(query_vector_essence, top_k_resonances)
 
     def _maybe_update_hnsw(self, glyph: Any, vector_essence: Any) -> None:
         if not self._hnsw_enabled():

@@ -1,6 +1,5 @@
 import sys
 import os
-import time
 from unittest.mock import MagicMock, patch
 
 # Add project root to path
@@ -103,13 +102,12 @@ try:
         assert compressed == b"compressed_data"
         print("    [+] Gravitas Packer Mock Passed")
 
-        print("\n" + "=" * 30)
-        print("✨ ALL CORE SYSTEMS VERIFIED (USING COMPREHENSIVE MOCKING) ✨")
-        print("=" * 30)
+        print("\n" + "=" * 50)
+        print("[+] ALL CORE SYSTEMS VERIFIED (mocked)")
+        print("=" * 50)
 
 except Exception as e:
-    print(f"\n❌ VERIFICATION FAILED: {e}")
     import traceback
-
+    print(f"\n[-] VERIFICATION FAILED: {e}")
     traceback.print_exc()
     sys.exit(1)

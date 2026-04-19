@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "flamehaven-filesearch"
-version = "1.5.3"
+version = "1.6.1"
 description = "FLAMEHAVEN FileSearch - Open source semantic document search with multi-provider LLM support (Gemini, OpenAI, Claude, Ollama)"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -116,8 +116,20 @@ security = [
     "bandit>=1.7.0",
     "safety>=3.0.0",
 ]
+langchain = [
+    "langchain-core>=0.1.0",
+]
+llamaindex = [
+    "llama-index-core>=0.10.0",
+]
+haystack = [
+    "haystack-ai>=2.0.0",
+]
+crewai = [
+    "crewai>=0.1.0",
+]
 all = [
-    "flamehaven-filesearch[api,dev,google,openai,anthropic,ollama,vector,postgres,vision,parsers,multilingual]",
+    "flamehaven-filesearch[api,dev,google,openai,anthropic,ollama,vector,postgres,vision,parsers,multilingual,langchain,llamaindex,haystack,crewai]",
 ]
 
 [project.urls]
