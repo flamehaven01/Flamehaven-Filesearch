@@ -4,9 +4,6 @@ Tests for Phase 2 new modules:
   - engine/file_parser.py      (registry-based dispatcher)
 """
 
-import os
-import tempfile
-
 import pytest
 
 from flamehaven_filesearch.engine.file_parser import SUPPORTED_EXTENSIONS, extract_text

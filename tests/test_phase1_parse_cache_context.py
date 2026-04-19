@@ -6,7 +6,6 @@ Tests for Phase 1 new modules:
 """
 
 import os
-import tempfile
 import time
 
 import pytest
