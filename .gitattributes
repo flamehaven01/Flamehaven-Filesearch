@@ -1,0 +1,15 @@
+# Normalize line endings to LF on all platforms
+* text=auto eol=lf
+
+# Explicitly mark Python files as text with LF
+*.py text eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.whl binary
