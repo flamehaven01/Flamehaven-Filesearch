@@ -23,7 +23,7 @@ Stop sending your sensitive documents to third-party services. Get enterprise-gr
 
 ```bash
 # One command. Three minutes. Done.
-docker run -d -p 8000:8000 -e GEMINI_API_KEY="your_key" flamehaven-filesearch:1.5.0
+docker run -d -p 8000:8000 -e GEMINI_API_KEY="your_key" flamehaven-filesearch:1.5.2
 ```
 
 <table>
@@ -55,64 +55,19 @@ Open source & MIT licensed</p>
 
 ### Core Capabilities
 
-- **🔍 Smart Search Modes** - Keyword, semantic, and hybrid search with automatic typo correction
-- **📄 Multi-Format Support** - PDF, DOCX, TXT, MD, and common image formats
-- **⚡ Ultra-Fast Vectors** - DSP v2.0 algorithm generates embeddings in <1ms without ML frameworks
-- **🎯 Source Attribution** - Every answer includes links back to source documents
+| Capability | Detail |
+|---|---|
+| **Search Modes** | Keyword, semantic, and hybrid with automatic typo correction |
+| **34 File Formats** | PDF, DOCX/DOC, XLSX, PPTX, RTF, HTML, CSV, LaTeX, WebVTT, images + plain text — see [Document Parsing](docs/wiki/Document_Parsing.md) |
+| **RAG Pipeline** | Structure-aware chunking, sliding-window context enrichment, mtime parse cache |
+| **Ultra-Fast Vectors** | DSP v2.0 generates embeddings in <1ms — no ML frameworks required |
+| **Source Attribution** | Every answer links back to the originating document and chunk |
+| **Framework SDKs** | LangChain, LlamaIndex, Haystack, CrewAI adapters out of the box |
+| **Enterprise Auth** | API key hashing (SHA256+salt), OAuth2/OIDC, fine-grained permissions |
+| **Admin Dashboard** | Real-time metrics, quota management, batch processing (1–100 queries) |
+| **Flexible Storage** | SQLite (default) · PostgreSQL + pgvector · Redis cache (optional) |
 
-### What's New in v1.5.2 (patch)
-
-- **Parse Cache** (`engine/parse_cache.py`) — mtime-based file parse cache; `extract_text(use_cache=True)` skips re-parsing unchanged files
-- **ContextExtractor** (`engine/context_extractor.py`) — sliding-window chunk context enrichment for RAG pipelines (`enrich_chunks()`)
-- **Backend Plugin Architecture** (`engine/format_backends.py`) — 11 `AbstractFormatBackend` subclasses + `BackendRegistry`; new formats plug in without touching the dispatcher
-- **`file_parser.py`** refactored to 75 lines (was 340); cyclomatic complexity 13 → 3
-- 83 new tests; AI-Slop-Detector critical deficits: 0
-
-### What's New in v1.5.1 (patch)
-
-- **Dead code removed** — `embedding_generator_legacy.py` deleted (306-line duplicate, unused)
-- **Code quality** — Critical nested_complexity eliminated in 6 files; avg slop-detector score 13.46 → 11.25
-- **Test suite expanded** — 360 tests (was 331); AI-Slop-Detector critical deficits 7 → 0
-
-### What's New in v1.5.0
-
-- **Universal Document Parser** — 34 file formats, zero external document-AI dependency
-  - PDF (pymupdf/pypdf), DOCX/DOC, XLSX, PPTX, RTF via optional `[parsers]` extra
-  - HTML, WebVTT, LaTeX, CSV — stdlib only, no extra install needed
-  - Image OCR via `[vision]` extra (pytesseract)
-- **Content-Based RAG Embeddings** — File content extracted and embedded (not filename); semantic search now works correctly in local mode
-- **Internal Text Chunker** — Structure-aware + token-aware RAG chunking with zero ML deps (`chunk_text()`)
-- **Framework Integrations** — LangChain, LlamaIndex, Haystack, CrewAI adapters (`flamehaven_filesearch.integrations`)
-
-### Features in v1.4.2
-
-- **Performance fix** - Vector generation now < 1 ms for ASCII text (ASCII shortcut skips `detect_language`)
-- **Windows compatibility** - `MAX_FILENAME_LENGTH` reduced to 200 to prevent `MAX_PATH` overflow
-- **Code quality** - ABC + `@abstractmethod` for `VectorStore`, `MetadataStore`, `IAMProvider`
-- **CI/CD** - Replaced `flake8` with `ruff`; lint and test pipelines fully green
-
-### Features in v1.4.1
-
-- **Usage Tracking & Quotas** - Per-API-key request/token tracking with daily/monthly limits
-- **Admin Usage APIs** - Detailed usage stats, quota management, and alert monitoring
-- **pgvector Maintenance** - HNSW reindexing, VACUUM ANALYZE, and index statistics
-- **Circuit Breaker** - Automatic failure recovery for database connections
-
-### Production Features (v1.4.0+)
-
-- **Multimodal Search** - Text + image search endpoint (optional)
-- **HNSW Vector Index** - High-performance similarity search with pgvector
-- **OAuth2/OIDC Support** - JWT validation alongside API keys
-- **PostgreSQL Backend** - Enterprise-grade persistence and vector store
-- **Vision Processing** - Image metadata extraction with size limits and timeouts
-
-### Enterprise Features (v1.2.2+)
-
-- **🔐 API Key Authentication** - Fine-grained permission system
-- **⚡ Rate Limiting** - Configurable per-user quotas
-- **📊 Audit Logging** - Complete request history
-- **📦 Batch Processing** - Process 1-100 queries per request
-- **📈 Admin Dashboard** - Real-time metrics and management
+> **What changed in each release?** See [CHANGELOG.md](CHANGELOG.md) for the full version history.
 
 ---
 
@@ -128,7 +83,7 @@ docker run -d \
   -e GEMINI_API_KEY="your_gemini_api_key" \
   -e FLAMEHAVEN_ADMIN_KEY="secure_admin_password" \
   -v $(pwd)/data:/app/data \
-  flamehaven-filesearch:1.5.0
+  flamehaven-filesearch:1.5.2
 ```
 
 ✅ Server running at `http://localhost:8000`
@@ -212,7 +167,7 @@ pip install flamehaven-filesearch[all]
 # Build from source
 git clone https://github.com/flamehaven01/Flamehaven-Filesearch.git
 cd Flamehaven-Filesearch
-docker build -t flamehaven-filesearch:1.5.0 .
+docker build -t flamehaven-filesearch:1.5.2 .
 ```
 
 ### Framework Integrations
@@ -304,7 +259,7 @@ security:
 </tr>
 <tr>
 <td>Test Suite</td>
-<td><code>360 tests</code></td>
+<td><code>443 tests</code></td>
 <td>All passing (pytest)</td>
 </tr>
 <tr>
@@ -331,38 +286,53 @@ Upload (50MB file):     3,200ms  (with indexing)
 
 ## Architecture 🏗️
 
+```mermaid
+flowchart TD
+    Client(["Client\n(HTTP / SDK)"])
+
+    subgraph API["REST API Layer (FastAPI)"]
+        Upload["/api/upload"]
+        Search["/api/search"]
+        Admin["/api/admin"]
+    end
+
+    subgraph Engine["Engine Layer"]
+        FP["FileParser\n+ BackendRegistry\n(34 formats)"]
+        Cache["ParseCache\n(mtime-based)"]
+        Chunker["TextChunker\n+ ContextExtractor"]
+        DSP["DSP v2.0\nEmbedding Generator\n(&lt;1ms, zero-ML)"]
+        Scorer["SemanticScorer\n+ TypoCorrector"]
+    end
+
+    subgraph Storage["Storage Layer"]
+        SQLite[("SQLite\nMetadata Store")]
+        Vec[("Vector Store\n(local / pgvector)")]
+        Redis[("Redis Cache\n(optional)")]
+    end
+
+    Gemini["Google Gemini API\n(reasoning)"]
+    Metrics["Metrics Logger"]
+
+    Client --> Upload & Search & Admin
+    Upload --> FP
+    FP <-->|"cache hit/miss"| Cache
+    FP --> Chunker
+    Chunker --> DSP
+    DSP --> Vec
+    FP --> SQLite
+
+    Search --> Scorer
+    Scorer --> DSP
+    DSP --> Vec
+    Scorer --> Gemini
+    Gemini --> Client
+
+    Admin --> Metrics
+    Admin --> SQLite
+    Storage <-->|"read / write"| Redis
 ```
-┌─────────────────┐
-│  Your Documents │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────────────────────────────────────────┐
-│                  REST API Layer                      │
-│  ┌──────────────┐  ┌──────────────┐  ┌───────────┐ │
-│  │   Upload     │  │    Search    │  │   Admin   │ │
-│  │   Endpoint   │  │   Endpoint   │  │ Dashboard │ │
-│  └──────┬───────┘  └──────┬───────┘  └─────┬─────┘ │
-└─────────┼──────────────────┼─────────────────┼──────┘
-          │                  │                 │
-          ▼                  ▼                 ▼
-┌──────────────────┐  ┌──────────────────┐  ┌──────────┐
-│  File Parser     │  │ Semantic Search  │  │  Metrics │
-│  (PDF/DOCX/TXT)  │  │  DSP v2.0       │  │  Logger  │
-└────────┬─────────┘  └────────┬─────────┘  └──────────┘
-         │                     │
-         ▼                     ▼
-┌──────────────────┐  ┌──────────────────┐
-│  Store Manager   │  │  Gemini API      │
-│  (SQLite + Vec)  │  │  (Reasoning)     │
-└────────┬─────────┘  └──────────────────┘
-         │
-         ▼
-┌──────────────────┐
-│  Redis Cache     │
-│  (Optional)      │
-└──────────────────┘
-```
+
+> Full layer detail: [Architecture.md](docs/wiki/Architecture.md)
 
 ---
 
@@ -395,26 +365,30 @@ curl -X DELETE http://localhost:8000/api/admin/keys/old_key_id \
 
 ## Roadmap 🗺️
 
-Full roadmap lives in `ROADMAP.md`. Summary below:
+Full roadmap: [ROADMAP.md](ROADMAP.md)
 
 ### v1.4.x (Completed)
 - [x] Multimodal search (image + text)
 - [x] HNSW vector indexing for faster search
 - [x] OAuth2/OIDC integration
-- [x] PostgreSQL backend option (metadata + vector store)
-- [x] Usage-budget controls and reporting (v1.4.1)
-- [x] pgvector tuning and reliability hardening (v1.4.1)
-- [x] Code quality audit + CI/CD ruff integration (v1.4.2)
+- [x] PostgreSQL backend (metadata + pgvector)
+- [x] Usage-budget controls and reporting
+- [x] pgvector tuning and reliability hardening
+- [x] CI/CD — ruff replaces flake8; pipelines fully green
+
+### v1.5.x (Completed)
+- [x] Universal Document Parser — 34 formats, zero doc-AI dependency (v1.5.0)
+- [x] Internal text chunker — structure-aware + token-aware, zero ML deps (v1.5.0)
+- [x] Framework integrations — LangChain, LlamaIndex, Haystack, CrewAI (v1.5.0)
+- [x] Backend Plugin Architecture — `AbstractFormatBackend` + `BackendRegistry` (v1.5.2)
+- [x] Parse cache — mtime-based, `extract_text(use_cache=True)` (v1.5.2)
+- [x] ContextExtractor — sliding-window RAG chunk enrichment (v1.5.2)
+- [x] 443 tests; AI-Slop-Detector critical deficits: 0 (v1.5.2)
 
 ### v2.0.0 (Q3 2026)
-- [x] XLSX, PPTX, RTF format support (shipped in v1.4.x)
-- [x] WebSocket streaming for real-time results (shipped in v1.4.x)
-- [ ] Multi-language support (15+ languages) — multilingual stopwords + jieba partial
+- [ ] Multi-language support (15+ languages) — multilingual stopwords + jieba
 - [ ] Kubernetes Helm charts
 - [ ] Distributed indexing
-
-### Community Requests
-See `ROADMAP.md` for backlog curation and request intake.
 
 ---
 
@@ -562,6 +536,6 @@ Built with amazing open source tools:
 
 Built with 🔥 by the Flamehaven Core Team
 
-*Last updated: April 16, 2026 • Version 1.4.2*
+*Last updated: April 19, 2026 • Version 1.5.2*
 
 </div>
