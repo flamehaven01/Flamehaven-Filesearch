@@ -1,4 +1,4 @@
-# API Reference (v1.5.0)
+# API Reference (v1.6.1)
 
 All endpoints return JSON unless otherwise noted. Default base URL:
 `http://localhost:8000`.
@@ -153,6 +153,44 @@ Clears the system cache (Admin permission required).
 ---
 
 ## 📊 Observability
+
+### `GET /health`
+
+No authentication required.
+
+**Response (v1.6.1+):**
+
+```json
+{
+  "status": "healthy",
+  "version": "1.4.2",
+  "uptime_seconds": 3600.0,
+  "uptime_formatted": "1h 0m 0s",
+  "uptime": "1h 0m 0s",
+  "searcher_initialized": true,
+  "timestamp": "2026-04-20T12:00:00Z",
+  "system": {
+    "cpu_percent": 12.5,
+    "memory_percent": 45.2,
+    "memory_available_mb": 8192.0,
+    "disk_percent": 30.1,
+    "disk_free_gb": 120.5
+  },
+  "llm_provider": "ollama",
+  "llm_model": "ollama/gemma4:27b"
+}
+```
+
+`llm_provider` and `llm_model` (added v1.6.1) let the frontend and monitoring
+systems detect the active backend without reading env vars. `llm_model` is
+`"<provider>/<model>"` for non-Gemini providers, or the Gemini model name for
+the Gemini path.
+
+### `GET /metrics` (alias: `GET /api/metrics`)
+
+Returns structured JSON including config, cache stats, Prometheus counters, and
+Chronos-Grid stats. `config` block now includes `llm_provider`, `local_model`,
+`ollama_base_url` (added v1.6.1).
 
 ### `GET /prometheus`
 Exposes 25+ metrics, including:

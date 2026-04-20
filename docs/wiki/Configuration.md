@@ -3,15 +3,62 @@
 Flamehaven FileSearch loads settings from the `Config` dataclass, environment
 variables, and CLI flags. Use this document as the single source of truth.
 
+**Last updated:** v1.6.1
+
 ---
 
-## 1. Config Dataclass
+## 1. LLM Provider Selection
+
+Set `LLM_PROVIDER` to choose the backend. The active provider is exposed at
+runtime via `/health` (`llm_provider`, `llm_model`) and `/api/metrics` (`config`).
+
+| `LLM_PROVIDER` | Required env vars | Notes |
+|---|---|---|
+| `gemini` *(default)* | `GEMINI_API_KEY` | Google Gemini file-search API |
+| `ollama` | `LOCAL_MODEL`, `OLLAMA_BASE_URL` | Local inference via Ollama — zero API cost. Supports Gemma, Qwen, Llama, Mistral, Phi … |
+| `openai` | `OPENAI_API_KEY` | OpenAI GPT models |
+| `anthropic` | `ANTHROPIC_API_KEY` | Anthropic Claude models |
+| `openai_compatible` | `OPENAI_API_KEY`, `OPENAI_BASE_URL` | vLLM, LM Studio, Kimi, etc. |
+
+```bash
+# Gemini (default)
+export GEMINI_API_KEY="AIza..."
+
+# Fully local — Ollama
+export LLM_PROVIDER=ollama
+export LOCAL_MODEL=gemma4:27b   # Google Gemma 4 — 128K ctx (gemma4:4b / gemma4:2b for lighter hardware)
+# Other models: gemma3:27b, qwen2.5:7b, llama3.2, mistral, phi4
+export OLLAMA_BASE_URL=http://localhost:11434
+
+# OpenAI
+export LLM_PROVIDER=openai
+export OPENAI_API_KEY="sk-..."
+
+# Anthropic
+export LLM_PROVIDER=anthropic
+export ANTHROPIC_API_KEY="sk-ant-..."
+
+# OpenAI-compatible (e.g. LM Studio)
+export LLM_PROVIDER=openai_compatible
+export OPENAI_API_KEY=none              # some endpoints accept any string
+export OPENAI_BASE_URL=http://localhost:1234/v1
+```
+
+---
+
+## 2. Config Dataclass
 
 `flamehaven_filesearch.config.Config`
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
+| `llm_provider` | `str` | `gemini` | Active LLM backend. See §1 for valid values. |
 | `api_key` | `Optional[str]` | `None` | Gemini API key. Loaded from `GEMINI_API_KEY` or `GOOGLE_API_KEY` if omitted. |
+| `openai_api_key` | `Optional[str]` | `None` | OpenAI / OpenAI-compatible API key (`OPENAI_API_KEY`). |
+| `anthropic_api_key` | `Optional[str]` | `None` | Anthropic API key (`ANTHROPIC_API_KEY`). |
+| `ollama_base_url` | `str` | `http://localhost:11434` | Ollama REST base URL (`OLLAMA_BASE_URL`). |
+| `local_model` | `str` | `gemma4:27b` | Model name passed to Ollama (`LOCAL_MODEL`). |
+| `openai_base_url` | `Optional[str]` | `None` | Override for OpenAI-compatible endpoints (`OPENAI_BASE_URL`). |
 | `max_file_size_mb` | `int` | `50` | Hard limit per file upload. Applies to REST + SDK. |
 | `upload_timeout_sec` | `int` | `60` | Maximum time to wait for Gemini ingest operations. |
 | `default_model` | `str` | `gemini-2.5-flash` | Model passed to `google-genai`. |
@@ -50,7 +97,8 @@ variables, and CLI flags. Use this document as the single source of truth.
 
 ### Validation Rules
 
-- `api_key` must be non-empty when `require_api_key=True`.
+- `api_key` required only when `llm_provider=gemini` and `require_api_key=True`.
+- `llm_provider` must be one of: `gemini`, `openai`, `anthropic`, `ollama`, `openai_compatible`, `kimi`, `vllm`, `lmstudio`.
 - `max_file_size_mb` > 0.
 - `0.0 ≤ temperature ≤ 1.0`.
 - `vector_backend` must be `memory` or `postgres`.
@@ -62,11 +110,17 @@ variables, and CLI flags. Use this document as the single source of truth.
 
 ---
 
-## 2. Environment Variables
+## 3. Environment Variables
 
 | Variable | Purpose | Example |
 |----------|---------|---------|
-| `GEMINI_API_KEY` / `GOOGLE_API_KEY` | Primary authentication | `export GEMINI_API_KEY="sk-..."` |
+| `LLM_PROVIDER` | Select LLM backend (see §1) | `export LLM_PROVIDER=ollama` |
+| `LOCAL_MODEL` | Ollama model name | `export LOCAL_MODEL=gemma4:27b` |
+| `OLLAMA_BASE_URL` | Ollama REST endpoint | `export OLLAMA_BASE_URL=http://localhost:11434` |
+| `OPENAI_API_KEY` | OpenAI / compatible key | `export OPENAI_API_KEY="sk-..."` |
+| `OPENAI_BASE_URL` | OpenAI-compatible base URL | `export OPENAI_BASE_URL=http://localhost:1234/v1` |
+| `ANTHROPIC_API_KEY` | Anthropic Claude key | `export ANTHROPIC_API_KEY="sk-ant-..."` |
+| `GEMINI_API_KEY` / `GOOGLE_API_KEY` | Gemini authentication | `export GEMINI_API_KEY="AIza..."` |
 | `DEFAULT_MODEL` | Override `Config.default_model` | `export DEFAULT_MODEL="gemini-2.0-pro"` |
 | `MAX_FILE_SIZE_MB` | Increase upload limit | `export MAX_FILE_SIZE_MB=200` |
 | `UPLOAD_TIMEOUT_SEC` | Slow network support | `export UPLOAD_TIMEOUT_SEC=180` |
@@ -107,7 +161,7 @@ variables, and CLI flags. Use this document as the single source of truth.
 
 ---
 
-## 3. CLI Flags
+## 4. CLI Flags
 
 `flamehaven-api` honours environment variables first, but you can override with
 flags:
@@ -123,7 +177,7 @@ HOST=0.0.0.0 PORT=9000 WORKERS=4 RELOAD=false flamehaven-api
 
 ---
 
-## 4. Rate Limiting Matrix
+## 5. Rate Limiting Matrix
 
 | Endpoint | Default | Env Override |
 |----------|---------|--------------|
@@ -141,7 +195,7 @@ Rate limits follow SlowAPI syntax (`N/period`). Supported units: `second`,
 
 ---
 
-## 5. Cache Configuration
+## 6. Cache Configuration
 
 Search results use `cachetools.TTLCache`. Tune via:
 
@@ -159,7 +213,7 @@ reset_all_caches()
 
 ---
 
-## 6. File Storage
+## 7. File Storage
 
 - Uploaded files are streamed to a temporary directory (`tempfile.mkdtemp()`).
 - When `google-genai` SDK is missing, the fallback in-memory store
@@ -175,7 +229,7 @@ reset_all_caches()
 
 ---
 
-## 7. Configuration Tips
+## 8. Configuration Tips
 
 1. **Per-environment `.env`**: Create `.env.development`, `.env.production`, and
    load them via process manager.

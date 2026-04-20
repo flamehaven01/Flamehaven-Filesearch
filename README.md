@@ -25,9 +25,13 @@ Stop sending your sensitive documents to third-party services. FLAMEHAVEN FileSe
 # Gemini (cloud) — one command, three minutes
 docker run -d -p 8000:8000 -e GEMINI_API_KEY="your_key" flamehaven-filesearch:1.6.1
 
-# Ollama (fully local, zero API cost)
-docker run -d -p 8000:8000 -e LLM_PROVIDER=ollama -e LOCAL_MODEL=gemma4:27b \
-  -e OLLAMA_BASE_URL=http://host.docker.internal:11434 flamehaven-filesearch:1.6.1
+# Ollama — fully local, zero API cost (Gemma, Llama, Mistral, Qwen, Phi …)
+# Step 1: pull a model  →  ollama pull gemma4:27b
+docker run -d -p 8000:8000 \
+  -e LLM_PROVIDER=ollama \
+  -e LOCAL_MODEL=gemma4:27b \
+  -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
+  flamehaven-filesearch:1.6.1
 ```
 
 <table>
@@ -208,7 +212,7 @@ FLAMEHAVEN supports four LLM backends — switch with a single env var:
 | `LLM_PROVIDER` | Required variables | Notes |
 |---|---|---|
 | `gemini` (default) | `GEMINI_API_KEY` | Google Gemini file-search API |
-| `ollama` | `LOCAL_MODEL`, `OLLAMA_BASE_URL` | Local inference, zero API cost |
+| `ollama` | `LOCAL_MODEL`, `OLLAMA_BASE_URL` | Local inference via Ollama — Gemma 4/3, Llama 3.2, Qwen 2.5, Mistral, Phi-4 … |
 | `openai` | `OPENAI_API_KEY` | OpenAI or any OpenAI-compatible endpoint |
 | `anthropic` | `ANTHROPIC_API_KEY` | Anthropic Claude |
 | `openai_compatible` | `OPENAI_API_KEY`, `OPENAI_BASE_URL` | vLLM, LM Studio, Kimi, etc. |

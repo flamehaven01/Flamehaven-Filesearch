@@ -1,7 +1,7 @@
 # Architecture Overview
 
 Flamehaven FileSearch balances simplicity with production-grade safeguards. This
-document describes the moving parts as of **v1.6.0**, featuring:
+document describes the moving parts as of **v1.6.1**, featuring:
 - **Gravitas DSP Engine** (v1.3.1+)
 - **Multimodal Search** (v1.4.0+)
 - **pgvector with HNSW** (v1.4.0+)
@@ -10,8 +10,9 @@ document describes the moving parts as of **v1.6.0**, featuring:
 - **Universal Document Parser, Internal Chunker, Framework Integrations** (v1.5.0)
 - **Dead code removal, critical complexity fixes, 360-test suite** (v1.5.1)
 - **Parse Cache, ContextExtractor, Backend Plugin Architecture** (v1.5.2)
-- **Multi-provider LLM support** (v1.5.3)
+- **Multi-provider LLM support — Gemini / OpenAI / Anthropic / Ollama** (v1.5.3)
 - **BM25+RRF Hybrid Search, KnowledgeAtom, Mixin Architecture** (v1.6.0)
+- **CC reduction, GravitasPacker dispatch table, `/health` provider exposure, frontend E2E** (v1.6.1)
 
 ---
 
@@ -44,7 +45,7 @@ Request → │ FastAPI Router│ ─────> │ Middleware  │ ──┐
 
 ---
 
-## 2. Core Architecture (v1.6.0 — Mixin Pattern)
+## 2. Core Architecture (v1.6.1 — Mixin Pattern)
 
 `FlamehavenFileSearch` is now a thin orchestrator composed of three focused mixins:
 
@@ -75,6 +76,30 @@ _search_cloud.py (265 lines) — CloudSearchMixin
   space without heavy ML dependencies.
 - **Hybrid Mode** – BM25 + ChronosGrid semantic merged via Reciprocal Rank
   Fusion (RRF, k=60). See [Section 2a](#2a-bm25--rrf-hybrid-search) below.
+
+### LLM Provider Routing
+
+Set `LLM_PROVIDER` to control which backend generates answers:
+
+```
+_use_provider_rag = (llm_provider != "gemini")
+
+if _use_provider_rag:
+    LocalSearchMixin._provider_search()   # BM25/semantic retrieval + external LLM
+        → OllamaProvider  (POST /api/generate via httpx)
+        → OpenAIProvider  (openai SDK or compatible endpoint)
+        → AnthropicProvider (anthropic SDK)
+
+elif _use_native_client:
+    CloudSearchMixin._gemini_search_call()  # Gemini file_search API (cloud RAG)
+
+else:
+    LocalSearchMixin._local_search()         # local BM25 / semantic only
+```
+
+The active provider and model are exposed at `/health` as `llm_provider` and
+`llm_model` (e.g. `"ollama/gemma4:27b"`), and in `/api/metrics` via
+`config.llm_provider` / `config.local_model`.
 
 ### 2a. BM25 + RRF Hybrid Search
 
@@ -146,9 +171,9 @@ The new **Chronos-Grid** integration handles high-speed vector storage and simil
 
 ---
 
-## 6. Testing & Quality (v1.6.0)
+## 6. Testing & Quality (v1.6.1)
 
-- **Test Framework**: `pytest` — 443 tests pass, 13 skipped.
+- **Test Framework**: `pytest` — 476 tests pass, 6 skipped.
 - **Lint**: `black` (format) + `ruff` (lint/unused imports) — both enforced in CI.
 - **Validation**: `validators.py` enforces security policies (Filename 200-char max, FileSize, SearchQuery XSS/SQLi checks).
 - **SIDRCE Certification**: Omega 0.9894 (S++) — AI-Slop-Detector P0-P5 clean.
