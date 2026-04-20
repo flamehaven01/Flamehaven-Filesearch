@@ -337,6 +337,8 @@ class HealthResponse(BaseModel):
     searcher_initialized: bool
     timestamp: str
     system: dict
+    llm_provider: Optional[str] = None
+    llm_model: Optional[str] = None
 
 
 class MetricsResponse(BaseModel):
@@ -484,6 +486,14 @@ async def health_check(request: Request):
     """
     uptime = time.time() - startup_time
 
+    llm_provider = searcher.config.llm_provider if searcher else None
+    if searcher and searcher._use_provider_rag and searcher._llm_provider:
+        llm_model = searcher._llm_provider.provider_name
+    elif searcher:
+        llm_model = searcher.config.default_model
+    else:
+        llm_model = None
+
     return {
         "status": "healthy" if searcher else "unhealthy",
         "version": "1.4.2",
@@ -493,6 +503,8 @@ async def health_check(request: Request):
         "searcher_initialized": searcher is not None,
         "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "system": get_system_info(),
+        "llm_provider": llm_provider,
+        "llm_model": llm_model,
     }
 
 

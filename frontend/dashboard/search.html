@@ -56,7 +56,7 @@
           </div>
           <div class="flex flex-col">
             <span class="text-text-main-dark text-base font-bold">Filesearch Ops</span>
-            <span class="text-text-secondary-dark text-xs">v1.4.2</span>
+            <span class="text-text-secondary-dark text-xs">v1.6.1</span>
           </div>
         </div>
         <nav class="flex flex-col gap-1 mt-2">
@@ -90,6 +90,10 @@
         <div id="api-status-badge" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-dark border border-border-dark">
           <span id="api-dot" class="pulse-dot h-2 w-2 rounded-full bg-gray-500"></span>
           <span id="api-status-text" class="text-xs text-text-secondary-dark">Checking API...</span>
+        </div>
+        <div id="provider-badge" class="hidden items-center gap-2 px-3 py-2 rounded-lg bg-surface-dark border border-border-dark">
+          <span class="material-symbols-outlined text-text-secondary-dark text-sm">model_training</span>
+          <span id="provider-text" class="text-xs text-text-secondary-dark truncate"></span>
         </div>
         <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-text-secondary-dark hover:bg-surface-dark" href="https://github.com/flamehaven01/Flamehaven-Filesearch" target="_blank">
           <span class="material-symbols-outlined text-xl">help</span>
@@ -143,13 +147,22 @@
             Advanced Options
           </summary>
           <div class="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 pl-5">
-            <div>
+            <!-- Gemini model selector (shown only when provider=gemini) -->
+            <div id="model-select-wrap">
               <label class="text-text-secondary-dark text-xs font-semibold block mb-1.5">Model</label>
               <select id="model" class="w-full h-10 rounded-lg bg-surface-dark border border-border-dark text-white text-sm px-3 focus:outline-none focus:ring-2 focus:ring-primary/50">
                 <option value="default">default</option>
                 <option value="gemini-2.5-flash">gemini-2.5-flash</option>
                 <option value="gemini-2.0-flash">gemini-2.0-flash</option>
               </select>
+            </div>
+            <!-- Local model info (shown when provider != gemini) -->
+            <div id="local-model-wrap" class="hidden">
+              <label class="text-text-secondary-dark text-xs font-semibold block mb-1.5">Active Model</label>
+              <div class="w-full h-10 rounded-lg bg-surface-dark border border-border-dark text-text-secondary-dark text-sm px-3 flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm text-primary">computer</span>
+                <span id="local-model-name" class="truncate font-mono text-xs"></span>
+              </div>
             </div>
             <div>
               <div class="flex justify-between mb-1.5">
@@ -249,8 +262,29 @@
           document.getElementById("api-dot").className = `pulse-dot h-2 w-2 rounded-full ${online ? "bg-success" : "bg-error"}`;
           document.getElementById("api-status-text").textContent = online ? "API Online" : "API Offline";
 
-          // Populate stores
           if (online) {
+            // Show LLM provider info
+            const health = await r.json().catch(() => ({}));
+            const provider = health.llm_provider || "gemini";
+            const llmModel = health.llm_model || "";
+            const providerBadge = document.getElementById("provider-badge");
+            const providerText = document.getElementById("provider-text");
+            if (providerBadge && providerText) {
+              providerText.textContent = llmModel || provider;
+              providerBadge.classList.remove("hidden");
+              providerBadge.classList.add("flex");
+            }
+
+            // Show/hide model selector based on provider
+            const isGemini = provider === "gemini";
+            const modelWrap = document.getElementById("model-select-wrap");
+            const localWrap = document.getElementById("local-model-wrap");
+            const localName = document.getElementById("local-model-name");
+            if (modelWrap) modelWrap.classList.toggle("hidden", !isGemini);
+            if (localWrap) localWrap.classList.toggle("hidden", isGemini);
+            if (!isGemini && localName) localName.textContent = llmModel || provider;
+
+            // Populate stores
             const mResp = await fetch("/api/metrics").catch(() => null);
             if (mResp && mResp.ok) {
               const m = await mResp.json();
@@ -328,10 +362,12 @@
         if (!q) { toast("Please enter a query", true); return; }
 
         setLoading(true);
+        const geminiModelWrap = document.getElementById("model-select-wrap");
+        const isGeminiProvider = !geminiModelWrap?.classList.contains("hidden");
         const payload = {
           query: q,
           store_name: storeEl?.value || "default",
-          model: modelEl?.value === "default" ? undefined : modelEl?.value,
+          model: isGeminiProvider && modelEl?.value !== "default" ? modelEl?.value : undefined,
           temperature: Number(tempEl?.value || 0.5),
           max_tokens: Number(tokensEl?.value || 1024),
           search_mode: modeEl?.value || "keyword",

@@ -276,7 +276,6 @@ class TestBuildSnippet:
         assert "BM25" in snippet or "bm25" in snippet.lower()
 
     def test_no_match_returns_empty(self, searcher):
-        content = "completely unrelated content"
         snippet = searcher._build_snippet("", "query")
         assert snippet == ""
 

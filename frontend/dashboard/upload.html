@@ -57,7 +57,7 @@
           </div>
           <div class="flex flex-col">
             <span class="text-text-main-dark text-base font-bold">Filesearch Ops</span>
-            <span class="text-text-secondary-dark text-xs">v1.4.2</span>
+            <span class="text-text-secondary-dark text-xs">v1.6.1</span>
           </div>
         </div>
         <nav class="flex flex-col gap-1 mt-2">
@@ -117,7 +117,8 @@
           </div>
           <div>
             <label class="text-text-secondary-dark text-xs font-semibold uppercase tracking-wider block mb-1.5">Store Name</label>
-            <input id="uploadStore" class="w-full h-10 rounded-lg bg-surface-dark border border-border-dark text-white text-sm px-3 focus:outline-none focus:ring-2 focus:ring-primary/50" value="default" placeholder="default" />
+            <input id="uploadStore" list="store-suggestions" class="w-full h-10 rounded-lg bg-surface-dark border border-border-dark text-white text-sm px-3 focus:outline-none focus:ring-2 focus:ring-primary/50" value="default" placeholder="default" autocomplete="off" />
+            <datalist id="store-suggestions"></datalist>
           </div>
         </div>
 
@@ -126,8 +127,8 @@
           <span class="material-symbols-outlined text-4xl text-text-secondary-dark block mb-3">cloud_upload</span>
           <p class="text-text-main-dark text-base font-semibold mb-1">Drop files here</p>
           <p class="text-text-secondary-dark text-sm">or <button id="btn-select-files" class="text-primary hover:underline font-medium">click to browse</button></p>
-          <p class="text-text-secondary-dark text-xs mt-2">PDF, TXT, DOCX, XLSX, PPTX — max 50MB each</p>
-          <input id="fileInput" type="file" multiple class="hidden" accept=".txt,.pdf,.docx,.xlsx,.pptx,.md,.csv,.json,.rtf" />
+          <p class="text-text-secondary-dark text-xs mt-2">PDF, DOCX, XLSX, PPTX, HTML, CSV, JSON, YAML, TXT, MD, RTF, LaTeX, code files — max 50MB each</p>
+          <input id="fileInput" type="file" multiple class="hidden" accept=".txt,.pdf,.docx,.doc,.dotx,.docm,.xlsx,.xls,.xlsm,.pptx,.md,.csv,.json,.rtf,.html,.htm,.xhtml,.xml,.yaml,.yml,.py,.js,.ts,.sh,.bat,.sql,.tex,.latex,.vtt,.text,.qmd,.rmd" />
         </div>
 
         <!-- File List -->
@@ -187,15 +188,30 @@
         setTimeout(() => el.remove(), 5000);
       };
 
-      // API status
-      fetch("/health").then(r => {
-        const online = r.ok;
-        document.getElementById("api-dot").className = `pulse-dot h-2 w-2 rounded-full ${online ? "bg-success" : "bg-error"}`;
-        document.getElementById("api-status-text").textContent = online ? "API Online" : "API Offline";
-      }).catch(() => {
-        document.getElementById("api-dot").className = "pulse-dot h-2 w-2 rounded-full bg-error";
-        document.getElementById("api-status-text").textContent = "API Offline";
-      });
+      // API status + populate store suggestions
+      const initStatus = async () => {
+        try {
+          const r = await fetch("/health");
+          const online = r.ok;
+          document.getElementById("api-dot").className = `pulse-dot h-2 w-2 rounded-full ${online ? "bg-success" : "bg-error"}`;
+          document.getElementById("api-status-text").textContent = online ? "API Online" : "API Offline";
+          if (online) {
+            const mResp = await fetch("/api/metrics").catch(() => null);
+            if (mResp && mResp.ok) {
+              const m = await mResp.json();
+              const stores = Array.isArray(m.stores) ? m.stores : Object.keys(m.stores || {});
+              const dl = document.getElementById("store-suggestions");
+              if (dl && stores.length > 0) {
+                dl.innerHTML = stores.map(s => `<option value="${s}">`).join("");
+              }
+            }
+          }
+        } catch (_) {
+          document.getElementById("api-dot").className = "pulse-dot h-2 w-2 rounded-full bg-error";
+          document.getElementById("api-status-text").textContent = "API Offline";
+        }
+      };
+      initStatus();
 
       const storeEl = document.getElementById("uploadStore");
       const fileInput = document.getElementById("fileInput");

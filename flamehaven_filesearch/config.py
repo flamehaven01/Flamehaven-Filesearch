@@ -169,6 +169,9 @@ class Config:
         """Convert config to dictionary"""
         return {
             "api_key": "***" if self.api_key else None,
+            "llm_provider": self.llm_provider,
+            "local_model": self.local_model,
+            "ollama_base_url": self.ollama_base_url,
             "max_file_size_mb": self.max_file_size_mb,
             "upload_timeout_sec": self.upload_timeout_sec,
             "default_model": self.default_model,

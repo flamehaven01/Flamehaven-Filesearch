@@ -7,7 +7,7 @@ Adapted to use string URIs as doc IDs for cross-list fusion.
 import math
 import re
 from collections import Counter, defaultdict
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List
 
 
 class BM25:
