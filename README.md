@@ -22,8 +22,12 @@
 Stop sending your sensitive documents to third-party services. FLAMEHAVEN FileSearch is a production-grade RAG search engine — BM25+hybrid retrieval, 34 file formats, multi-LLM (Gemini, OpenAI, Claude, Ollama) — running self-hosted in minutes, not days.
 
 ```bash
-# One command. Three minutes. Done.
+# Gemini (cloud) — one command, three minutes
 docker run -d -p 8000:8000 -e GEMINI_API_KEY="your_key" flamehaven-filesearch:1.6.1
+
+# Ollama (fully local, zero API cost)
+docker run -d -p 8000:8000 -e LLM_PROVIDER=ollama -e LOCAL_MODEL=gemma4:27b \
+  -e OLLAMA_BASE_URL=http://host.docker.internal:11434 flamehaven-filesearch:1.6.1
 ```
 
 <table>
@@ -197,11 +201,42 @@ tool = FlamehavenCrewAITool()           # pass to your agent's tools list
 
 ## Configuration ⚙️
 
+### LLM Provider Selection
+
+FLAMEHAVEN supports four LLM backends — switch with a single env var:
+
+| `LLM_PROVIDER` | Required variables | Notes |
+|---|---|---|
+| `gemini` (default) | `GEMINI_API_KEY` | Google Gemini file-search API |
+| `ollama` | `LOCAL_MODEL`, `OLLAMA_BASE_URL` | Local inference, zero API cost |
+| `openai` | `OPENAI_API_KEY` | OpenAI or any OpenAI-compatible endpoint |
+| `anthropic` | `ANTHROPIC_API_KEY` | Anthropic Claude |
+| `openai_compatible` | `OPENAI_API_KEY`, `OPENAI_BASE_URL` | vLLM, LM Studio, Kimi, etc. |
+
+```bash
+# Gemini (default)
+export GEMINI_API_KEY="your_google_gemini_api_key"
+
+# Ollama (fully local)
+export LLM_PROVIDER=ollama
+export LOCAL_MODEL=gemma4:27b          # or gemma4:4b, qwen2.5:7b, llama3.2 …
+export OLLAMA_BASE_URL=http://localhost:11434
+
+# OpenAI
+export LLM_PROVIDER=openai
+export OPENAI_API_KEY="sk-..."
+export DEFAULT_MODEL=gpt-4o-mini       # optional override
+
+# Anthropic
+export LLM_PROVIDER=anthropic
+export ANTHROPIC_API_KEY="sk-ant-..."
+```
+
 ### Required Environment Variables
 
 ```bash
-export GEMINI_API_KEY="your_google_gemini_api_key"
 export FLAMEHAVEN_ADMIN_KEY="your_secure_admin_password"
+# Plus the provider credentials above (at least one provider)
 ```
 
 ### Optional Configuration
@@ -211,6 +246,9 @@ export HOST="0.0.0.0"              # Bind address
 export PORT="8000"                  # Server port
 export REDIS_HOST="localhost"       # Distributed caching
 export REDIS_PORT="6379"            # Redis port
+export MAX_OUTPUT_TOKENS="1024"     # Max answer tokens
+export TEMPERATURE="0.5"            # Model temperature (0.0–1.0)
+export MAX_SOURCES="5"              # Max source documents per answer
 ```
 
 ### Advanced Configuration
@@ -311,7 +349,11 @@ flowchart TD
         Redis[("Redis Cache\n(optional)")]
     end
 
-    Gemini["Google Gemini API\n(reasoning)"]
+    subgraph LLM["LLM Provider (env: LLM_PROVIDER)"]
+        Gemini["Gemini\n(cloud)"]
+        Ollama["Ollama\n(local)"]
+        OAI["OpenAI /\nAnthropic /\nCompatible"]
+    end
     Metrics["Metrics Logger"]
 
     Client --> Upload & Search & Admin
@@ -325,8 +367,10 @@ flowchart TD
     Search --> Scorer
     Scorer --> DSP
     DSP --> Vec
-    Scorer --> Gemini
-    Gemini --> Client
+    Scorer -->|"gemini"| Gemini
+    Scorer -->|"ollama"| Ollama
+    Scorer -->|"openai/anthropic"| OAI
+    LLM --> Client
 
     Admin --> Metrics
     Admin --> SQLite
@@ -392,6 +436,18 @@ Full roadmap: [ROADMAP.md](ROADMAP.md)
 - [x] Stable URI scheme — `local://<store>/<quote(abs_path)>`, collision-free
 - [x] core.py mixin segmentation — 1258 → 221 lines, 3 focused modules
 - [x] Fix: `search_stream` double intent-refine bug
+
+### v1.6.1 (Completed)
+- [x] CC reduction — `seek_vector_resonance` CC 8→2, `_get_admin_user` CC 10→1
+- [x] Dispatch table pattern — `_transform_dict` unifies GravitasPacker compress/decompress
+- [x] `_record_upload_failure` helper — eliminates 2× duplicated metrics blocks in api.py
+- [x] `/health` exposes `llm_provider` + `llm_model` — frontend can detect active backend
+- [x] `config.to_dict()` exposes `llm_provider`, `local_model`, `ollama_base_url`
+- [x] Frontend: provider-aware model selector (Gemini dropdown ↔ local model badge)
+- [x] Frontend: upload accept list expanded to all 34 supported formats
+- [x] Frontend: store datalist auto-populated from `/api/metrics`
+- [x] Frontend: version badge synced to `v1.6.1` across all 6 dashboard pages
+- [x] Ruff F401/F841 — 5 lint errors resolved, CI green
 
 ### v2.0.0 (Q3 2026)
 - [ ] Multi-language support (15+ languages) — multilingual stopwords + jieba
@@ -545,6 +601,6 @@ Built with amazing open source tools:
 
 Built with 🔥 by the Flamehaven Core Team
 
-*Last updated: April 19, 2026 • Version 1.6.1*
+*Last updated: April 20, 2026 • Version 1.6.1*
 
 </div>
