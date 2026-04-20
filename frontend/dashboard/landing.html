@@ -186,9 +186,14 @@
         <div class="rounded-xl border border-border-dark bg-surface-dark/70 p-5">
           <div class="flex items-center justify-between mb-4">
             <h2 class="text-text-main-dark text-base font-bold">Active Stores</h2>
-            <a href="upload.html" class="text-primary text-sm hover:underline flex items-center gap-1">
-              <span class="material-symbols-outlined text-base">add</span>Add files
-            </a>
+            <div class="flex items-center gap-3">
+              <a href="upload.html" class="text-primary text-sm hover:underline flex items-center gap-1">
+                <span class="material-symbols-outlined text-base">upload_file</span>Upload
+              </a>
+              <a href="admin.html#stores" class="text-text-secondary-dark text-sm hover:text-primary hover:underline flex items-center gap-1 transition-colors">
+                <span class="material-symbols-outlined text-base">manage_history</span>Manage
+              </a>
+            </div>
           </div>
           <div id="stores-list" class="flex flex-wrap gap-2 min-h-[2rem]">
             <span class="text-text-secondary-dark text-sm">Loading...</span>

@@ -142,6 +142,52 @@ Process multiple queries in a single request.
 
 ---
 
+## 🗂️ Store Management
+
+All store endpoints require a valid API key (`stores` permission).
+
+### `POST /api/stores`
+
+Create a new named store.
+
+**Body:**
+```json
+{ "name": "my-project" }
+```
+
+**Response:**
+```json
+{
+  "status": "success",
+  "store_name": "my-project",
+  "resource": "stores/my-project",
+  "request_id": "..."
+}
+```
+
+### `GET /api/stores`
+
+List all stores.
+
+**Response:**
+```json
+{
+  "status": "success",
+  "count": 2,
+  "stores": { "default": "stores/default", "my-project": "stores/my-project" }
+}
+```
+
+### `DELETE /api/stores/{store_name}`
+
+Delete a store and all its indexed content.
+
+**Response:** `{ "status": "success" }`
+
+> **Dashboard:** The **Admin → Stores** tab provides a full UI for these three endpoints (create, list, delete).
+
+---
+
 ## 🛠️ Admin & Cache Control
 
 ### `GET /api/admin/cache/stats`
@@ -149,6 +195,42 @@ Returns real-time cache statistics, including **GravitasPacker** compression rat
 
 ### `POST /api/admin/cache/flush`
 Clears the system cache (Admin permission required).
+
+### `GET /api/admin/usage`
+
+Returns aggregated usage statistics for the current admin user.
+
+Query params: `days` (default: 30).
+
+**Response:**
+```json
+{
+  "total_requests": 12400,
+  "total_tokens": 8200000,
+  "total_bytes": 524288000,
+  "avg_duration_ms": 142.3,
+  "success_rate": 0.987,
+  "top_endpoints": [["/api/search", 9800], ["/api/upload/single", 2100]]
+}
+```
+
+### `GET /api/admin/usage/detailed`
+
+Detailed per-key usage for the past N hours. Params: `api_key_id` (optional), `hours` (default: 24).
+
+### `GET /api/admin/vector/stats`
+
+Returns index statistics for the PostgreSQL pgvector backend. No-op on the default in-memory backend.
+
+### `POST /api/admin/vector/reindex`
+
+Rebuilds the HNSW vector index. Causes brief query degradation during rebuild. PostgreSQL backend only.
+
+### `POST /api/admin/vector/vacuum`
+
+Runs `VACUUM ANALYZE` on the vector table. Recommended after bulk deletes or large ingestion runs.
+
+> **Dashboard:** The **Admin → Ops** tab surfaces Usage Stats + all three vector operations with inline JSON output.
 
 ---
 

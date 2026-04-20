@@ -149,6 +149,12 @@
           <button id="tab-keys" class="flex flex-col items-center border-b-2 border-primary text-text-main-dark pb-3 pt-2 text-sm font-bold tracking-wide">
             API Keys
           </button>
+          <button id="tab-stores" class="flex flex-col items-center border-b-2 border-transparent text-text-secondary-dark pb-3 pt-2 text-sm font-medium hover:text-text-main-dark transition-colors">
+            Stores
+          </button>
+          <button id="tab-ops" class="flex flex-col items-center border-b-2 border-transparent text-text-secondary-dark pb-3 pt-2 text-sm font-medium hover:text-text-main-dark transition-colors">
+            Ops
+          </button>
           <button id="tab-audit" class="flex flex-col items-center border-b-2 border-transparent text-text-secondary-dark pb-3 pt-2 text-sm font-medium hover:text-text-main-dark transition-colors">
             System Info
           </button>
@@ -183,6 +189,71 @@
                 <tr><td colspan="7" class="px-5 py-8 text-center text-text-secondary-dark text-sm">Loading keys...</td></tr>
               </tbody>
             </table>
+          </div>
+        </div>
+
+        <!-- Stores Tab -->
+        <div id="panel-stores" class="hidden">
+          <!-- Create store -->
+          <div class="rounded-xl border border-border-dark bg-surface-dark/70 p-5 mb-4">
+            <h2 class="text-white text-sm font-bold mb-3">Create Store</h2>
+            <div class="flex gap-2">
+              <input id="newStoreName" type="text" placeholder="store-name" maxlength="64" class="flex-1 h-10 rounded-lg bg-surface-dark border border-border-dark text-white text-sm px-3 focus:outline-none focus:ring-2 focus:ring-primary/50 placeholder:text-text-secondary-dark" />
+              <button id="btn-create-store" class="flex h-10 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-bold text-white hover:bg-primary/85 transition-all">
+                <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' 1">add</span>
+                Create
+              </button>
+            </div>
+          </div>
+          <!-- Store list -->
+          <div class="rounded-xl border border-border-dark bg-surface-dark/70 p-5">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-white text-sm font-bold">Active Stores</h2>
+              <button id="btn-refresh-stores" class="flex h-8 items-center gap-1.5 rounded-lg bg-surface-dark border border-border-dark px-3 text-xs font-medium text-text-secondary-dark hover:text-text-main-dark hover:border-primary/50 transition-all">
+                <span id="stores-refresh-icon" class="material-symbols-outlined text-sm">refresh</span>
+                Refresh
+              </button>
+            </div>
+            <div id="stores-panel-list" class="space-y-2 min-h-[3rem]">
+              <p class="text-text-secondary-dark text-sm">Loading stores...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ops Tab -->
+        <div id="panel-ops" class="hidden">
+          <!-- Usage Stats -->
+          <div class="rounded-xl border border-border-dark bg-surface-dark/70 p-5 mb-4">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-white text-sm font-bold">Usage Statistics (last 30 days)</h2>
+              <button id="btn-refresh-usage" class="flex h-8 items-center gap-1.5 rounded-lg bg-surface-dark border border-border-dark px-3 text-xs font-medium text-text-secondary-dark hover:text-text-main-dark hover:border-primary/50 transition-all">
+                <span class="material-symbols-outlined text-sm">refresh</span>
+                Refresh
+              </button>
+            </div>
+            <div id="usage-stats-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <p class="text-text-secondary-dark text-sm col-span-3">Click Refresh to load usage data.</p>
+            </div>
+          </div>
+          <!-- Vector Ops -->
+          <div class="rounded-xl border border-border-dark bg-surface-dark/70 p-5">
+            <h2 class="text-white text-sm font-bold mb-1">Vector Store Ops</h2>
+            <p class="text-text-secondary-dark text-xs mb-4">PostgreSQL pgvector backend required. These ops are no-ops on the default in-memory backend.</p>
+            <div class="flex flex-wrap gap-2">
+              <button id="btn-vector-stats" class="flex h-9 items-center gap-1.5 rounded-lg bg-surface-dark border border-border-dark px-3 text-sm text-text-secondary-dark hover:text-text-main-dark hover:border-primary/50 transition-all">
+                <span class="material-symbols-outlined text-base">query_stats</span>
+                Stats
+              </button>
+              <button id="btn-vector-reindex" class="flex h-9 items-center gap-1.5 rounded-lg bg-surface-dark border border-border-dark px-3 text-sm text-text-secondary-dark hover:text-text-main-dark hover:border-yellow-400/50 transition-all">
+                <span class="material-symbols-outlined text-base">refresh</span>
+                Reindex HNSW
+              </button>
+              <button id="btn-vector-vacuum" class="flex h-9 items-center gap-1.5 rounded-lg bg-surface-dark border border-border-dark px-3 text-sm text-text-secondary-dark hover:text-text-main-dark hover:border-yellow-400/50 transition-all">
+                <span class="material-symbols-outlined text-base">cleaning_services</span>
+                Vacuum Analyze
+              </button>
+            </div>
+            <pre id="vector-ops-result" class="hidden mt-4 text-text-secondary-dark text-xs leading-relaxed whitespace-pre-wrap max-h-48 overflow-auto rounded-lg bg-surface-dark border border-border-dark p-3"></pre>
           </div>
         </div>
 
@@ -228,24 +299,36 @@
       });
 
       // Tab switching
-      const tabKeys = document.getElementById("tab-keys");
-      const tabAudit = document.getElementById("tab-audit");
-      const panelKeys = document.getElementById("panel-keys");
-      const panelAudit = document.getElementById("panel-audit");
+      const tabKeys   = document.getElementById("tab-keys");
+      const tabStores = document.getElementById("tab-stores");
+      const tabOps    = document.getElementById("tab-ops");
+      const tabAudit  = document.getElementById("tab-audit");
+      const panelKeys   = document.getElementById("panel-keys");
+      const panelStores = document.getElementById("panel-stores");
+      const panelOps    = document.getElementById("panel-ops");
+      const panelAudit  = document.getElementById("panel-audit");
 
-      tabKeys?.addEventListener("click", () => {
-        tabKeys.className = "flex flex-col items-center border-b-2 border-primary text-text-main-dark pb-3 pt-2 text-sm font-bold tracking-wide";
-        tabAudit.className = "flex flex-col items-center border-b-2 border-transparent text-text-secondary-dark pb-3 pt-2 text-sm font-medium hover:text-text-main-dark transition-colors";
-        panelKeys.classList.remove("hidden");
-        panelAudit.classList.add("hidden");
+      const TAB_ACTIVE   = "flex flex-col items-center border-b-2 border-primary text-text-main-dark pb-3 pt-2 text-sm font-bold tracking-wide";
+      const TAB_INACTIVE = "flex flex-col items-center border-b-2 border-transparent text-text-secondary-dark pb-3 pt-2 text-sm font-medium hover:text-text-main-dark transition-colors";
+
+      const showTab = (activeTab, activePanel) => {
+        [tabKeys, tabStores, tabOps, tabAudit].forEach(t => { if (t) t.className = TAB_INACTIVE; });
+        [panelKeys, panelStores, panelOps, panelAudit].forEach(p => { if (p) p.classList.add("hidden"); });
+        if (activeTab) activeTab.className = TAB_ACTIVE;
+        if (activePanel) activePanel.classList.remove("hidden");
+      };
+
+      tabKeys?.addEventListener("click", () => showTab(tabKeys, panelKeys));
+
+      tabStores?.addEventListener("click", () => {
+        showTab(tabStores, panelStores);
+        loadStores();
       });
 
-      tabAudit?.addEventListener("click", async () => {
-        tabAudit.className = "flex flex-col items-center border-b-2 border-primary text-text-main-dark pb-3 pt-2 text-sm font-bold tracking-wide";
-        tabKeys.className = "flex flex-col items-center border-b-2 border-transparent text-text-secondary-dark pb-3 pt-2 text-sm font-medium hover:text-text-main-dark transition-colors";
-        panelAudit.classList.remove("hidden");
-        panelKeys.classList.add("hidden");
+      tabOps?.addEventListener("click", () => showTab(tabOps, panelOps));
 
+      tabAudit?.addEventListener("click", async () => {
+        showTab(tabAudit, panelAudit);
         try {
           const r = await fetch("/health");
           const data = await r.json();
@@ -253,6 +336,146 @@
         } catch (e) {
           document.getElementById("sysInfoRaw").textContent = `Error: ${e.message}`;
         }
+      });
+
+      // ---- Stores tab ----
+      const loadStores = async () => {
+        const icon = document.getElementById("stores-refresh-icon");
+        if (icon) { icon.className = "material-symbols-outlined text-sm spin"; icon.textContent = "sync"; }
+        const listEl = document.getElementById("stores-panel-list");
+        if (listEl) listEl.innerHTML = `<p class="text-text-secondary-dark text-sm">Loading...</p>`;
+
+        try {
+          const resp = await fetch("/api/stores", { headers: authHeaders() });
+          if (!resp.ok) {
+            const msg = resp.status === 403 ? "Token required — paste your API key in the sidebar" : `HTTP ${resp.status}`;
+            if (listEl) listEl.innerHTML = `<p class="text-error text-sm">${msg}</p>`;
+            return;
+          }
+          const data = await resp.json();
+          const names = Array.isArray(data.stores)
+            ? data.stores
+            : Object.keys(data.stores || {});
+
+          if (names.length === 0) {
+            if (listEl) listEl.innerHTML = `<p class="text-text-secondary-dark text-sm">No stores yet.</p>`;
+            return;
+          }
+          if (listEl) listEl.innerHTML = names.map(s => `
+            <div class="flex items-center justify-between px-4 py-2.5 rounded-lg border border-border-dark bg-surface-dark/40 fade-in">
+              <span class="text-text-main-dark text-sm font-mono">${s}</span>
+              <button class="delete-store-btn flex items-center gap-1 px-2.5 py-1 rounded-lg text-text-secondary-dark hover:text-error hover:bg-error/10 transition-colors text-xs" data-store="${s}">
+                <span class="material-symbols-outlined text-sm">delete</span>
+                Delete
+              </button>
+            </div>`).join("");
+
+          listEl.querySelectorAll(".delete-store-btn").forEach(btn => {
+            btn.addEventListener("click", async () => {
+              const name = btn.dataset.store;
+              if (!confirm(`Delete store "${name}"? All indexed files will be removed.`)) return;
+              btn.disabled = true;
+              try {
+                const r = await fetch(`/api/stores/${encodeURIComponent(name)}`, {
+                  method: "DELETE",
+                  headers: authHeaders(),
+                });
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                toast(`Store "${name}" deleted`, false);
+                await loadStores();
+              } catch (e) {
+                toast(`Delete failed: ${e.message}`, true);
+                btn.disabled = false;
+              }
+            });
+          });
+        } catch (e) {
+          if (listEl) listEl.innerHTML = `<p class="text-error text-sm">Error: ${e.message}</p>`;
+        } finally {
+          if (icon) { icon.className = "material-symbols-outlined text-sm"; icon.textContent = "refresh"; }
+        }
+      };
+
+      document.getElementById("btn-refresh-stores")?.addEventListener("click", loadStores);
+
+      document.getElementById("btn-create-store")?.addEventListener("click", async () => {
+        const inp = document.getElementById("newStoreName");
+        const name = inp?.value?.trim();
+        if (!name) { toast("Enter a store name", true); return; }
+        try {
+          const resp = await fetch("/api/stores", {
+            method: "POST",
+            headers: authHeaders(),
+            body: JSON.stringify({ name }),
+          });
+          const data = await resp.json();
+          if (!resp.ok) { toast(`Failed: ${data.detail || resp.status}`, true); return; }
+          toast(`Store "${name}" created`, false);
+          if (inp) inp.value = "";
+          await loadStores();
+        } catch (e) {
+          toast(`Error: ${e.message}`, true);
+        }
+      });
+
+      // ---- Ops tab ----
+      const usageStat = (label, value, sub = "") => `
+        <div class="rounded-lg border border-border-dark bg-surface-dark/40 p-4">
+          <p class="text-text-secondary-dark text-xs font-semibold uppercase tracking-wider mb-1">${label}</p>
+          <p class="text-text-main-dark text-xl font-bold">${value}</p>
+          ${sub ? `<p class="text-text-secondary-dark text-xs mt-0.5">${sub}</p>` : ""}
+        </div>`;
+
+      document.getElementById("btn-refresh-usage")?.addEventListener("click", async () => {
+        const grid = document.getElementById("usage-stats-grid");
+        if (grid) grid.innerHTML = `<p class="text-text-secondary-dark text-sm col-span-3">Loading...</p>`;
+        try {
+          const resp = await fetch("/api/admin/usage", { headers: authHeaders() });
+          if (!resp.ok) {
+            const msg = resp.status === 403 ? "Admin token required" : `HTTP ${resp.status}`;
+            if (grid) grid.innerHTML = `<p class="text-error text-sm col-span-3">${msg}</p>`;
+            return;
+          }
+          const d = await resp.json();
+          const rate = d.success_rate != null ? `${(d.success_rate * 100).toFixed(1)}%` : "--";
+          const dur  = d.avg_duration_ms != null ? `${d.avg_duration_ms.toFixed(0)} ms` : "--";
+          const gb   = d.total_bytes != null ? `${(d.total_bytes / 1e9).toFixed(2)} GB` : "--";
+          if (grid) grid.innerHTML =
+            usageStat("Total Requests", (d.total_requests ?? "--").toLocaleString()) +
+            usageStat("Total Tokens",   (d.total_tokens   ?? "--").toLocaleString()) +
+            usageStat("Data Processed", gb) +
+            usageStat("Success Rate",   rate) +
+            usageStat("Avg Latency",    dur) +
+            (d.top_endpoints?.length
+              ? usageStat("Top Endpoint", d.top_endpoints[0][0] || "--", `${d.top_endpoints[0][1] || 0} calls`)
+              : "");
+        } catch (e) {
+          if (grid) grid.innerHTML = `<p class="text-error text-sm col-span-3">Error: ${e.message}</p>`;
+        }
+      });
+
+      const vectorOp = async (url, method = "GET") => {
+        const resultEl = document.getElementById("vector-ops-result");
+        if (resultEl) { resultEl.classList.remove("hidden"); resultEl.textContent = "Running..."; }
+        try {
+          const resp = await fetch(url, { method, headers: authHeaders() });
+          const data = await resp.json();
+          if (resultEl) resultEl.textContent = JSON.stringify(data, null, 2);
+          if (!resp.ok) toast(`Failed: ${data.detail || resp.status}`, true);
+        } catch (e) {
+          if (resultEl) resultEl.textContent = `Error: ${e.message}`;
+          toast(`Error: ${e.message}`, true);
+        }
+      };
+
+      document.getElementById("btn-vector-stats")?.addEventListener("click",   () => vectorOp("/api/admin/vector/stats"));
+      document.getElementById("btn-vector-reindex")?.addEventListener("click", () => {
+        if (!confirm("Rebuild HNSW index? Brief query degradation expected.")) return;
+        vectorOp("/api/admin/vector/reindex", "POST");
+      });
+      document.getElementById("btn-vector-vacuum")?.addEventListener("click",  () => {
+        if (!confirm("Run VACUUM ANALYZE on vector table?")) return;
+        vectorOp("/api/admin/vector/vacuum", "POST");
       });
 
       // Modal
@@ -413,6 +636,11 @@
       });
 
       loadKeys();
+
+      // Auto-activate tab from URL hash (#stores, #ops)
+      const hash = location.hash.replace("#", "");
+      if (hash === "stores") { showTab(tabStores, panelStores); loadStores(); }
+      else if (hash === "ops") { showTab(tabOps, panelOps); }
     })();
   </script>
 </body></html>

@@ -452,6 +452,9 @@ Full roadmap: [ROADMAP.md](ROADMAP.md)
 - [x] Frontend: store datalist auto-populated from `/api/metrics`
 - [x] Frontend: version badge synced to `v1.6.1` across all 6 dashboard pages
 - [x] Ruff F401/F841 — 5 lint errors resolved, CI green
+- [x] Admin: Stores tab — create / list / delete stores (`POST|GET|DELETE /api/stores`)
+- [x] Admin: Ops tab — usage stats (`GET /api/admin/usage`) + vector ops (stats / reindex / vacuum)
+- [x] Landing: "Manage" deep-link to `admin.html#stores` with hash-based tab routing
 
 ### v2.0.0 (Q3 2026)
 - [ ] Multi-language support (15+ languages) — multilingual stopwords + jieba

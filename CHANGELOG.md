@@ -7,7 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.6.1] - 2026-04-19
+## [1.6.1] - 2026-04-20
+
+### Added
+
+- **Admin dashboard — Stores tab** (`frontend/dashboard/admin.html`): Full store
+  management UI wired to the existing backend. Create store (`POST /api/stores`),
+  list stores (`GET /api/stores`), and delete store (`DELETE /api/stores/{name}`)
+  — all protected by the existing admin token already in the sidebar. Store rows
+  show name + confirm-gated delete button.
+
+- **Admin dashboard — Ops tab** (`frontend/dashboard/admin.html`): New tab
+  surfaces two previously uncovered backend subsystems:
+  - *Usage Statistics* (`GET /api/admin/usage`) — 6-metric overview grid
+    (total requests, tokens, data processed, success rate, avg latency, top
+    endpoint). Loads on demand via Refresh button.
+  - *Vector Store Ops* (`GET /api/admin/vector/stats`,
+    `POST /api/admin/vector/reindex`, `POST /api/admin/vector/vacuum`) — three
+    buttons for PostgreSQL pgvector maintenance; result displayed inline as
+    formatted JSON. Operations are confirm-gated to prevent accidental runs.
+
+- **Landing page store management link** (`frontend/dashboard/landing.html`):
+  "Manage" link on the Active Stores card deep-links to `admin.html#stores`
+  (URL hash auto-activates the Stores tab on load).
+
+- **Tab hash routing** (`admin.html`): `location.hash` on page load activates
+  the matching tab (`#stores` → Stores, `#ops` → Ops), enabling direct links
+  from other pages.
+
+### Frontend — E2E coverage (v1.6.1 complete)
+
+Previously uncovered backend endpoints now have frontend UI:
+
+| Endpoint | Method | Added in |
+|---|---|---|
+| `/api/stores` | POST | Stores tab (admin.html) |
+| `/api/stores` | GET | Stores tab (admin.html) |
+| `/api/stores/{name}` | DELETE | Stores tab (admin.html) |
+| `/api/admin/usage` | GET | Ops tab (admin.html) |
+| `/api/admin/vector/stats` | GET | Ops tab (admin.html) |
+| `/api/admin/vector/reindex` | POST | Ops tab (admin.html) |
+| `/api/admin/vector/vacuum` | POST | Ops tab (admin.html) |
+
+Remaining backend-only (intentional — advanced/flag-gated features):
+`POST /api/search/multimodal` (requires `MULTIMODAL_ENABLED=1`),
+`POST /api/batch-search`, `WS /ws/search`.
 
 ### Refactored
 
