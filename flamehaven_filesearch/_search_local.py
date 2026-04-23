@@ -48,6 +48,55 @@ class LocalSearchMixin:
         self._bm25_indices[store_name] = (bm25, [d.get("uri", "") for d in all_docs])
         self._bm25_dirty.discard(store_name)
 
+    # ------------------------------------------------------------------
+    # _run_hybrid_rerank helpers (P2)
+    # ------------------------------------------------------------------
+
+    def _collect_bm25_ranked(
+        self, store_name: str, query: str, bm25_top_k: int
+    ) -> List[Dict[str, Any]]:
+        """Return BM25-scored {id, score} list for the store."""
+        bm25, uri_map = self._bm25_indices.get(store_name, (None, []))
+        if not (bm25 and bm25.corpus_size):
+            return []
+        ranked = []
+        for item in bm25.search(query, top_k=bm25_top_k):
+            idx = item["id"]
+            if idx < len(uri_map) and uri_map[idx]:
+                ranked.append({"id": uri_map[idx], "score": item["score"]})
+        return ranked
+
+    def _collect_sem_ranked(
+        self, store_name: str, semantic_results: List
+    ) -> List[Dict[str, Any]]:
+        """Return semantic-scored {id, score} list from ChronosGrid results."""
+        ranked = []
+        for entry in semantic_results or []:
+            if not (isinstance(entry, tuple) and len(entry) >= 2):
+                continue
+            essence, score = entry[0], entry[1]
+            if not isinstance(essence, dict):
+                continue
+            uri = essence.get("uri", "")
+            if not uri:
+                fp = essence.get("file_path")
+                if fp:
+                    uri = f"local://{store_name}/{quote(str(Path(fp).resolve()), safe='')}"
+            if uri:
+                ranked.append({"id": uri, "score": float(score)})
+        return ranked
+
+    def _resolve_fused_docs(
+        self, store_name: str, fused: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """Resolve fused URI list to full doc dicts via stable URI lookup."""
+        results = []
+        for item in fused:
+            doc = self._get_doc_by_uri(store_name, item["id"])
+            if doc:
+                results.append(doc)
+        return results
+
     def _run_hybrid_rerank(
         self, store_name: str, query: str, semantic_results: List
     ) -> Tuple[List[Dict[str, Any]], float]:
@@ -59,50 +108,46 @@ class LocalSearchMixin:
         if store_name not in self._bm25_indices or store_name in self._bm25_dirty:
             self._rebuild_bm25(store_name)
 
-        # Adjust BM25 candidate pool based on meta-learner alpha recommendation.
         # alpha->0 (keyword-dominant): expand BM25 pool; alpha->1: contract it.
         alpha = (getattr(self, "_meta_alpha", {})).get(store_name, 0.5)
         bm25_multiplier = max(0.5, 1.5 - alpha)  # alpha=0.2->1.3x, 0.5->1.0x, 0.8->0.7x
         bm25_top_k = max(1, int(self.config.max_sources * 2 * bm25_multiplier))
 
-        bm25, uri_map = self._bm25_indices.get(store_name, (None, []))
-        bm25_ranked = []
-        if bm25 and bm25.corpus_size:
-            for item in bm25.search(query, top_k=bm25_top_k):
-                idx = item["id"]
-                if idx < len(uri_map) and uri_map[idx]:
-                    bm25_ranked.append({"id": uri_map[idx], "score": item["score"]})
-
-        sem_ranked = []
-        for entry in semantic_results or []:
-            if isinstance(entry, tuple) and len(entry) >= 2:
-                essence, score = entry[0], entry[1]
-                if not isinstance(essence, dict):
-                    continue
-                uri = essence.get("uri", "")
-                if not uri:
-                    fp = essence.get("file_path")
-                    if fp:
-                        uri = f"local://{store_name}/{quote(str(Path(fp).resolve()), safe='')}"
-                if uri:
-                    sem_ranked.append({"id": uri, "score": float(score)})
+        bm25_ranked = self._collect_bm25_ranked(store_name, query, bm25_top_k)
+        sem_ranked = self._collect_sem_ranked(store_name, semantic_results)
 
         fused = reciprocal_rank_fusion(
             [sem_ranked, bm25_ranked], k=60, top_k=self.config.max_sources
         )
 
-        # Compute rank-divergence confidence (LOGOS omega_scorer adaptation).
         bm25_uri_set = {r["id"] for r in bm25_ranked}
         sem_uri_set = {r["id"] for r in sem_ranked}
         raw_score = fused[0]["score"] if fused else 0.0
         confidence = compute_search_confidence(raw_score, bm25_uri_set, sem_uri_set)
 
-        results = []
-        for item in fused:
-            doc = self._get_doc_by_uri(store_name, item["id"])
-            if doc:
-                results.append(doc)
-        return results, confidence
+        return self._resolve_fused_docs(store_name, fused), confidence
+
+    # ------------------------------------------------------------------
+    # _local_search helpers (P4)
+    # ------------------------------------------------------------------
+
+    def _forge_augment_sources(
+        self,
+        sources: List[Dict[str, Any]],
+        docs: List[Dict[str, Any]],
+        query: str,
+    ) -> List[Dict[str, Any]]:
+        """Append keyword-matched docs to FORGE sources up to max_sources."""
+        seen_uris = {s["uri"] for s in sources}
+        for doc in docs:
+            if len(sources) >= self.config.max_sources:
+                break
+            if doc["uri"] not in seen_uris and self._build_snippet(
+                doc.get("content", ""), query
+            ):
+                sources.append({"title": doc["title"], "uri": doc["uri"]})
+                seen_uris.add(doc["uri"])
+        return sources
 
     def _local_search(
         self,
@@ -164,16 +209,8 @@ class LocalSearchMixin:
                     {"title": d["title"], "uri": d["uri"]}
                     for d in fused_docs[: self.config.max_sources]
                 ]
-
-                # FORGE: BM25+semantic disagreed — augment with keyword matches
                 if verdict == "FORGE":
-                    seen_uris = {s["uri"] for s in sources}
-                    for doc in docs:
-                        if len(sources) >= self.config.max_sources:
-                            break
-                        if doc["uri"] not in seen_uris and self._build_snippet(doc.get("content", ""), query):
-                            sources.append({"title": doc["title"], "uri": doc["uri"]})
-                            seen_uris.add(doc["uri"])
+                    sources = self._forge_augment_sources(sources, docs, query)
 
                 snippets = [
                     self._build_snippet(d.get("content", ""), query)
@@ -248,43 +285,63 @@ class LocalSearchMixin:
                 store_name, current, new_alpha, meta_learner.store_trend(store_name),
             )
 
-    def _fallback_sources(self, store_name, query, search_mode, semantic_results, docs):
-        """Produce sources/answer when keyword match fails.
+    # ------------------------------------------------------------------
+    # _fallback_sources helpers (P3)
+    # ------------------------------------------------------------------
 
-        Semantic and multimodal modes resolve semantic hits to docs and build
-        snippet-based answers. Plain keyword mode returns list of all docs.
-        """
+    def _resolve_semantic_sources(
+        self,
+        store_name: str,
+        query: str,
+        search_mode: str,
+        semantic_results: List,
+    ) -> Optional[Tuple[str, List[Dict[str, Any]]]]:
+        """Resolve semantic hits to (answer, sources) or None if no docs found."""
+        resolved = []
+        for entry in semantic_results[: self.config.max_sources * 2]:
+            if not (isinstance(entry, tuple) and entry):
+                continue
+            essence = entry[0]
+            uri = essence.get("uri", "")
+            if not uri:
+                fp = essence.get("file_path")
+                if fp:
+                    uri = f"local://{store_name}/{quote(str(Path(fp).resolve()), safe='')}"
+            doc = self._get_doc_by_uri(store_name, uri) if uri else None
+            if doc and doc not in resolved:
+                resolved.append(doc)
+        if not resolved:
+            return None
+        snippets = [
+            self._build_snippet(d.get("content", ""), query) or d.get("content", "")[:200]
+            for d in resolved[:5]
+        ]
+        answer = " ".join(s for s in snippets if s) or (
+            "Found related content via semantic search."
+            if search_mode == "semantic"
+            else "Found related items based on multimodal similarity."
+        )
+        sources = [
+            {"title": d["title"], "uri": d["uri"]}
+            for d in resolved[: self.config.max_sources]
+        ]
+        return answer, sources
+
+    def _fallback_sources(
+        self,
+        store_name: str,
+        query: str,
+        search_mode: str,
+        semantic_results: Optional[List],
+        docs: List[Dict[str, Any]],
+    ) -> Tuple[str, List[Dict[str, Any]]]:
+        """Produce sources/answer when keyword match fails."""
         if search_mode in ("semantic", "multimodal") and semantic_results:
-            resolved = []
-            for entry in semantic_results[: self.config.max_sources * 2]:
-                if not (isinstance(entry, tuple) and entry):
-                    continue
-                essence = entry[0]
-                uri = essence.get("uri", "")
-                if not uri:
-                    fp = essence.get("file_path")
-                    if fp:
-                        uri = f"local://{store_name}/{quote(str(Path(fp).resolve()), safe='')}"
-                doc = self._get_doc_by_uri(store_name, uri) if uri else None
-                if doc and doc not in resolved:
-                    resolved.append(doc)
+            resolved = self._resolve_semantic_sources(
+                store_name, query, search_mode, semantic_results
+            )
             if resolved:
-                snippets = [
-                    self._build_snippet(d.get("content", ""), query)
-                    or d.get("content", "")[:200]
-                    for d in resolved[:5]
-                ]
-                answer = " ".join(s for s in snippets if s) or (
-                    "Found related content via semantic search."
-                    if search_mode == "semantic"
-                    else "Found related items based on multimodal similarity."
-                )
-                sources = [
-                    {"title": d["title"], "uri": d["uri"]}
-                    for d in resolved[: self.config.max_sources]
-                ]
-                return answer, sources
-
+                return resolved
         return "No matching content found in stored files.", [
             {"title": doc["title"], "uri": doc["uri"]}
             for doc in docs[: self.config.max_sources]

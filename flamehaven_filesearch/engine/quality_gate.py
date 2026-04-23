@@ -11,7 +11,6 @@ Zero new dependencies: only Python stdlib (math, statistics).
 """
 from __future__ import annotations
 
-import math
 import statistics
 from typing import Dict, List, Set, Tuple
 
