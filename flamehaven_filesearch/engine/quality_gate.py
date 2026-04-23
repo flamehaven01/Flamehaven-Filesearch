@@ -7,19 +7,20 @@ Algorithms extracted and adapted from:
   LEDA 4.0.1 forge_loop.py        -> FORGE retry concept in SearchQualityGate
   LEDA 4.0.1 meta_learning.py     -> SearchMetaLearner
 
-Zero new dependencies: only Python stdlib (math, statistics).
+Zero new dependencies: only Python stdlib (statistics).
 """
+
 from __future__ import annotations
 
 import statistics
 from typing import Dict, List, Set, Tuple
 
 # -- Tuning constants (analogous to LOGOS jsd_gate=0.06, LEDA theta_low/high) --
-_DIV_GATE: float = 0.50    # Jaccard divergence at which confidence halves
+_DIV_GATE: float = 0.50  # Jaccard divergence at which confidence halves
 _THETA_PASS: float = 0.75  # confidence above this -> PASS
-_THETA_FORGE: float = 0.45 # confidence above this (but <= PASS) -> FORGE
-_ADAPT_EVERY: int = 100    # queries between MetaLearner adaptation cycles
-_MOMENTUM: float = 0.70    # EMA weight on current alpha (LEDA ema_alpha=0.30 complement)
+_THETA_FORGE: float = 0.45  # confidence above this (but <= PASS) -> FORGE
+_ADAPT_EVERY: int = 100  # queries between MetaLearner adaptation cycles
+_MOMENTUM: float = 0.70  # EMA weight on current alpha (LEDA ema_alpha=0.30 complement)
 
 
 def compute_search_confidence(
@@ -157,9 +158,7 @@ class SearchMetaLearner:
         for mode, conf in entries:
             by_mode.setdefault(mode, []).append(conf)
 
-        avg: Dict[str, float] = {
-            m: statistics.mean(v) for m, v in by_mode.items() if v
-        }
+        avg: Dict[str, float] = {m: statistics.mean(v) for m, v in by_mode.items() if v}
 
         sem_avg = avg.get("semantic", avg.get("hybrid", current_alpha))
         kw_avg = avg.get("keyword", current_alpha)

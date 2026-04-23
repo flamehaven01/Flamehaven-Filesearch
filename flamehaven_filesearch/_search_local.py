@@ -10,7 +10,11 @@ from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import quote
 
 from .engine.hybrid_search import BM25, reciprocal_rank_fusion
-from .engine.quality_gate import SearchQualityGate, SearchMetaLearner, compute_search_confidence
+from .engine.quality_gate import (
+    SearchQualityGate,
+    SearchMetaLearner,
+    compute_search_confidence,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -100,18 +104,13 @@ class LocalSearchMixin:
     def _run_hybrid_rerank(
         self, store_name: str, query: str, semantic_results: List
     ) -> Tuple[List[Dict[str, Any]], float]:
-        """BM25 + ChronosGrid semantic -> RRF -> resolved docs + confidence score.
-
-        Returns:
-            (resolved_docs, confidence) where confidence is rank-divergence-gated [0, 1].
-        """
+        """BM25 + ChronosGrid semantic -> RRF -> resolved docs + confidence score."""
         if store_name not in self._bm25_indices or store_name in self._bm25_dirty:
             self._rebuild_bm25(store_name)
 
         # alpha->0 (keyword-dominant): expand BM25 pool; alpha->1: contract it.
         alpha = (getattr(self, "_meta_alpha", {})).get(store_name, 0.5)
-        bm25_multiplier = max(0.5, 1.5 - alpha)  # alpha=0.2->1.3x, 0.5->1.0x, 0.8->0.7x
-        bm25_top_k = max(1, int(self.config.max_sources * 2 * bm25_multiplier))
+        bm25_top_k = int(self.config.max_sources * 2 * max(0.5, 1.5 - alpha))
 
         bm25_ranked = self._collect_bm25_ranked(store_name, query, bm25_top_k)
         sem_ranked = self._collect_sem_ranked(store_name, semantic_results)
@@ -120,11 +119,10 @@ class LocalSearchMixin:
             [sem_ranked, bm25_ranked], k=60, top_k=self.config.max_sources
         )
 
-        bm25_uri_set = {r["id"] for r in bm25_ranked}
-        sem_uri_set = {r["id"] for r in sem_ranked}
         raw_score = fused[0]["score"] if fused else 0.0
-        confidence = compute_search_confidence(raw_score, bm25_uri_set, sem_uri_set)
-
+        confidence = compute_search_confidence(
+            raw_score, {r["id"] for r in bm25_ranked}, {r["id"] for r in sem_ranked}
+        )
         return self._resolve_fused_docs(store_name, fused), confidence
 
     # ------------------------------------------------------------------
@@ -186,22 +184,28 @@ class LocalSearchMixin:
         }
 
         if not docs:
-            result = {
+            res = {
                 "status": "success",
                 "answer": "No documents indexed yet.",
                 "sources": [],
                 **base,
             }
             if search_mode in ["semantic", "hybrid", "multimodal"]:
-                result["semantic_results"] = semantic_results or []
-            return result
+                res["semantic_results"] = semantic_results or []
+            return res
 
-        quality_gate: SearchQualityGate = getattr(self, "_quality_gate", SearchQualityGate())
-        meta_learner: SearchMetaLearner = getattr(self, "_meta_learner", SearchMetaLearner())
+        quality_gate: SearchQualityGate = getattr(
+            self, "_quality_gate", SearchQualityGate()
+        )
+        meta_learner: SearchMetaLearner = getattr(
+            self, "_meta_learner", SearchMetaLearner()
+        )
 
         # Hybrid: BM25 + semantic RRF with quality gate
         if search_mode == "hybrid" and semantic_results:
-            fused_docs, confidence = self._run_hybrid_rerank(store_name, query, semantic_results)
+            fused_docs, confidence = self._run_hybrid_rerank(
+                store_name, query, semantic_results
+            )
             verdict = quality_gate.evaluate(confidence)
 
             if fused_docs:
@@ -270,7 +274,9 @@ class LocalSearchMixin:
             result["semantic_results"] = semantic_results or []
         return result
 
-    def _run_meta_adapt(self, store_name: str, meta_learner: "SearchMetaLearner") -> None:
+    def _run_meta_adapt(
+        self, store_name: str, meta_learner: "SearchMetaLearner"
+    ) -> None:
         """Apply MetaLearner alpha recommendation when adaptation cycle triggers."""
         if not meta_learner.should_adapt():
             return
@@ -282,7 +288,10 @@ class LocalSearchMixin:
             self._meta_alpha[store_name] = new_alpha
             logger.info(
                 "[QualityGate] store=%s alpha %.3f -> %.3f trend=%s",
-                store_name, current, new_alpha, meta_learner.store_trend(store_name),
+                store_name,
+                current,
+                new_alpha,
+                meta_learner.store_trend(store_name),
             )
 
     # ------------------------------------------------------------------
@@ -313,7 +322,8 @@ class LocalSearchMixin:
         if not resolved:
             return None
         snippets = [
-            self._build_snippet(d.get("content", ""), query) or d.get("content", "")[:200]
+            self._build_snippet(d.get("content", ""), query)
+            or d.get("content", "")[:200]
             for d in resolved[:5]
         ]
         answer = " ".join(s for s in snippets if s) or (

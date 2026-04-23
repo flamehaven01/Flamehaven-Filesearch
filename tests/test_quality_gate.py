@@ -2,13 +2,13 @@
 Tests for engine/quality_gate.py
 Covers: compute_search_confidence, SearchQualityGate, SearchMetaLearner.
 """
+
 import pytest
 from flamehaven_filesearch.engine.quality_gate import (
     SearchMetaLearner,
     SearchQualityGate,
     compute_search_confidence,
 )
-
 
 # ---------------------------------------------------------------------------
 # compute_search_confidence
