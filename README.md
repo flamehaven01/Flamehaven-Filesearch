@@ -6,9 +6,13 @@
 
 ### Self-hosted RAG search engine. Production-ready in 3 minutes.
 
+[![CI](https://github.com/flamehaven01/Flamehaven-Filesearch/actions/workflows/ci.yml/badge.svg)](https://github.com/flamehaven01/Flamehaven-Filesearch/actions/workflows/ci.yml)
+[![PyPI version](https://img.shields.io/pypi/v/flamehaven-filesearch.svg)](https://pypi.org/project/flamehaven-filesearch/)
+[![PyPI downloads](https://img.shields.io/pypi/dm/flamehaven-filesearch.svg?label=PyPI%20downloads)](https://pypi.org/project/flamehaven-filesearch/)
+[![GitHub stars](https://img.shields.io/github/stars/flamehaven01/Flamehaven-Filesearch?style=flat&label=stars)](https://github.com/flamehaven01/Flamehaven-Filesearch/stargazers)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.6.2-blue.svg)](CHANGELOG.md)
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Docker](https://img.shields.io/badge/docker-ready-brightgreen.svg)](https://hub.docker.com/r/flamehaven/filesearch)
 
 [Quick Start](#-quick-start) • [Features](#-features) • [Documentation](#-documentation) • [API Reference](http://localhost:8000/docs) • [Contributing](#-contributing)
