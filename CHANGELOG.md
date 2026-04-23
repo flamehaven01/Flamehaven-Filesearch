@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+---
+
 ## [1.6.2] - 2026-04-23
 
 ### Added
@@ -836,9 +840,9 @@ Remaining backend-only (intentional — advanced/flag-gated features):
 - Contributing guidelines
 - License (MIT)
 
-## [1.1.0] - 2025-11-13
+## [1.1.1] - 2025-11-13
 
-### 🚀 Major Upgrade: Security, Performance, and Production Readiness
+### Major Upgrade: Security, Performance, and Production Readiness
 
 **SIDRCE Score**: 0.94 (Certified) - Up from 0.842
 
@@ -1021,17 +1025,6 @@ See [UPGRADING.md](UPGRADING.md) for detailed migration guide.
 4. Review rate limits: Adjust if needed for your use case
 
 ---
-
-## [Unreleased]
-
-### Planned for v1.2.0
-- [ ] Authentication/API keys
-- [ ] Enhanced file type support
-- [ ] Batch search operations
-- [ ] Export search results
-- [ ] WebSocket support for streaming
-- [ ] Admin dashboard
-- [ ] Redis cache for multi-worker deployments
 
 ### Future Enhancements
 - Standard tier with advanced features
