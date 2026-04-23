@@ -28,11 +28,14 @@ Checklist (C1-C12):
     [C13] meta_learner _total increments after each search
     [C14] should_adapt() returns True at cycle boundary (adapt_every=10 for test)
 """
+
 import pytest
 
 from flamehaven_filesearch import FlamehavenFileSearch, Config
-from flamehaven_filesearch.engine.quality_gate import SearchQualityGate, SearchMetaLearner
-
+from flamehaven_filesearch.engine.quality_gate import (
+    SearchQualityGate,
+    SearchMetaLearner,
+)
 
 # ---------------------------------------------------------------------------
 # Shared test documents
@@ -60,6 +63,7 @@ _DOCS = {
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture(scope="module")
 def tmp_docs(tmp_path_factory):
@@ -93,6 +97,7 @@ def indexed_searcher(searcher, tmp_docs):
 # C1-C3: Initialization
 # ---------------------------------------------------------------------------
 
+
 class TestInitialization:
     def test_c1_quality_gate_instance(self, searcher):
         """[C1] _quality_gate is SearchQualityGate"""
@@ -110,6 +115,7 @@ class TestInitialization:
 # ---------------------------------------------------------------------------
 # C4-C5: Keyword path confidence priors
 # ---------------------------------------------------------------------------
+
 
 class TestKeywordConfidence:
     def test_c4_match_confidence_0_7(self, indexed_searcher):
@@ -134,6 +140,7 @@ class TestKeywordConfidence:
 # ---------------------------------------------------------------------------
 # C6-C8: Hybrid response schema
 # ---------------------------------------------------------------------------
+
 
 class TestHybridResponseSchema:
     def test_c6_confidence_key_present(self, indexed_searcher):
@@ -173,6 +180,7 @@ class TestHybridResponseSchema:
 # ---------------------------------------------------------------------------
 # C9-C10: FORGE path (monkeypatched)
 # ---------------------------------------------------------------------------
+
 
 class TestForgePath:
     def test_c9_forge_augments_sources(self, indexed_searcher, monkeypatch):
@@ -224,6 +232,7 @@ class TestForgePath:
 # C11-C12: INHIBIT path (monkeypatched)
 # ---------------------------------------------------------------------------
 
+
 class TestInhibitPath:
     def test_c11_inhibit_sets_low_confidence_true(self, indexed_searcher, monkeypatch):
         """[C11] INHIBIT verdict: low_confidence == True"""
@@ -271,6 +280,7 @@ class TestInhibitPath:
 # ---------------------------------------------------------------------------
 # C13-C14: Meta-learner wiring
 # ---------------------------------------------------------------------------
+
 
 class TestMetaLearnerWiring:
     def test_c13_total_increments_after_search(self, searcher, tmp_docs):
