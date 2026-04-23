@@ -7,6 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.6.2] - 2026-04-23
+
+### Added
+
+- **Quality Gate + Meta-Learner** (`engine/quality_gate.py`): Zero-dependency port
+  of LOGOS omega_scorer and LEDA 4.0.1 DS gate / meta-learning layer.
+
+  - `compute_search_confidence(raw_score, bm25_uris, semantic_uris)` — Jaccard rank
+    divergence replaces scipy JSD. Full BM25/semantic overlap → no penalty; zero
+    overlap above 0.5 divergence gate → confidence collapses to 0. Pure Python set
+    math, no new dependencies.
+
+  - `SearchQualityGate` — Evaluates confidence into three verdicts:
+    - **PASS** (confidence > 0.75): result returned as-is
+    - **FORGE** (0.45 < confidence ≤ 0.75): hybrid result augmented with
+      keyword-matched docs to cover gaps where BM25 and semantic disagreed
+    - **INHIBIT** (confidence ≤ 0.45): result flagged with `low_confidence: true`
+      in response so callers can decide how to surface uncertainty
+
+  - `SearchMetaLearner` — Per-store EMA alpha adaptation. Every 100 queries,
+    compares avg confidence for semantic/hybrid vs keyword paths. If semantic
+    dominates by >0.05, nudges alpha toward 0.8 (semantic-dominant); if keyword
+    dominates, nudges toward 0.2. EMA momentum 0.70. Clamps to [0.2, 0.8].
+    Alpha directly controls BM25 candidate pool size in `_run_hybrid_rerank`:
+    `bm25_top_k = max(1, int(max_sources * 2 * (1.5 - alpha)))`.
+
+- **`search_confidence` response field**: All local hybrid search responses now
+  include a `search_confidence` float [0, 1]. Semantic-only and keyword fallback
+  paths return 0.7 (match) or 0.3 (no match) as calibrated priors.
+
+- **`low_confidence` response field**: Set to `true` when quality gate returns
+  INHIBIT. Not present on PASS or FORGE results.
+
+- **Tests** (`tests/test_quality_gate.py`): 25 tests covering edge cases for
+  all three components — 99% line coverage on `quality_gate.py`.
+
+### Internals
+
+- `core.py`: `_quality_gate`, `_meta_learner`, `_meta_alpha` initialized in
+  `__init__` after BM25 block. `getattr` fallbacks in `_search_local.py` now
+  guaranteed to hit the real instances.
+- `engine/__init__.py`: Exports `SearchQualityGate`, `SearchMetaLearner`,
+  `compute_search_confidence`.
+
+---
+
 ## [1.6.1] - 2026-04-20
 
 ### Added

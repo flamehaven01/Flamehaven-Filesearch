@@ -130,13 +130,90 @@ search(query, search_mode="hybrid")
           ├─ _rebuild_bm25(store_name)  [if dirty]
           │   └─ BM25.fit(docs + atoms)
           │
-          ├─ BM25.search(query, top_k=max_sources*2)   → bm25_ranked
+          ├─ BM25.search(query, top_k=max_sources*2*bm25_multiplier)  → bm25_ranked
           ├─ sem_results → sem_ranked  (URI-keyed)
           │
           ├─ reciprocal_rank_fusion([sem_ranked, bm25_ranked], k=60)
           │
-          └─ [_get_doc_by_uri(uri) for each fused item]  → resolved docs
+          ├─ compute_search_confidence(raw_score, bm25_uris, sem_uris)
+          │   └─ Jaccard rank divergence gate → confidence [0, 1]
+          │
+          └─ [_get_doc_by_uri(uri) for each fused item]  → (resolved_docs, confidence)
+              │
+              └─ SearchQualityGate.evaluate(confidence)
+                  ├─ PASS   (> 0.75)  → return as-is
+                  ├─ FORGE  (> 0.45)  → augment with keyword-matched docs
+                  └─ INHIBIT (≤ 0.45) → add low_confidence: true to response
 ```
+
+---
+
+---
+
+## Quality Gate & Meta-Learner (v1.6.2)
+
+Added in **v1.6.2**. Implemented in `engine/quality_gate.py`. Zero new dependencies
+— pure Python stdlib (`math`, `statistics`).
+
+### Confidence Scoring
+
+```python
+from flamehaven_filesearch.engine.quality_gate import compute_search_confidence
+
+confidence = compute_search_confidence(
+    raw_score=0.8,          # top RRF score, normalised [0, 1]
+    bm25_uris=bm25_uri_set, # Set[str] — top-k URIs from BM25
+    semantic_uris=sem_uri_set, # Set[str] — top-k URIs from semantic
+)
+```
+
+**Formula:**
+```
+divergence  = 1 - |bm25 ∩ semantic| / |bm25 ∪ semantic|   # Jaccard
+confidence  = raw_score * max(0, 1 - divergence / 0.5)
+```
+
+| Divergence | Factor | Meaning |
+|---|---|---|
+| 0.0 (full overlap) | 1.00 | Both paths agreed — high trust |
+| 0.25 | 0.50 | Moderate disagreement |
+| ≥ 0.50 (no overlap) | 0.00 | Complete disagreement — collapsed |
+
+### Quality Gate Verdicts
+
+| Verdict | Condition | Action |
+|---|---|---|
+| **PASS** | confidence > 0.75 | Return fused results as-is |
+| **FORGE** | 0.45 < confidence ≤ 0.75 | Augment with keyword-matched docs (fill gaps) |
+| **INHIBIT** | confidence ≤ 0.45 | Return results + `low_confidence: true` in response |
+
+FORGE verdict: after RRF resolution, iterates over `docs` and appends any
+non-duplicate URI that produces a valid `_build_snippet()` hit, up to `max_sources`.
+
+### Meta-Learner Alpha Adaptation
+
+`SearchMetaLearner` tracks per-store `(mode, confidence)` history. Every 100
+queries, it compares average confidence for semantic/hybrid vs keyword paths and
+recommends a new alpha via EMA:
+
+```
+alpha_new = 0.70 * alpha_current + 0.30 * alpha_target
+```
+
+Alpha controls BM25 candidate pool size in `_run_hybrid_rerank`:
+
+```python
+bm25_multiplier = max(0.5, 1.5 - alpha)
+bm25_top_k = max(1, int(max_sources * 2 * bm25_multiplier))
+```
+
+| alpha | bm25_multiplier | BM25 pool (max_sources=5) |
+|---|---|---|
+| 0.2 (keyword-dominant) | 1.3× | 13 candidates |
+| 0.5 (balanced) | 1.0× | 10 candidates |
+| 0.8 (semantic-dominant) | 0.7× | 7 candidates |
+
+Alpha is clamped to [0.2, 0.8]. Stored per-store in `self._meta_alpha`.
 
 ---
 

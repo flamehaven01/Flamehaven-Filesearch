@@ -13,6 +13,7 @@ document describes the moving parts as of **v1.6.1**, featuring:
 - **Multi-provider LLM support — Gemini / OpenAI / Anthropic / Ollama** (v1.5.3)
 - **BM25+RRF Hybrid Search, KnowledgeAtom, Mixin Architecture** (v1.6.0)
 - **CC reduction, GravitasPacker dispatch table, `/health` provider exposure, frontend E2E** (v1.6.1)
+- **Quality Gate + Meta-Learner: confidence-scored hybrid, FORGE/INHIBIT verdicts, EMA alpha** (v1.6.2)
 
 ---
 
@@ -119,8 +120,14 @@ Fusion inputs:
   List B: BM25 scored results           (BM25 score-ranked)
   ID key: stable URI string (collision-free across lists)
 
-Output: top-k docs resolved via _get_doc_by_uri()
+Output: (top-k docs, confidence) via _get_doc_by_uri() + compute_search_confidence()
 ```
+
+**Quality Gate (v1.6.2):** After RRF, `SearchQualityGate.evaluate(confidence)`
+returns `PASS` / `FORGE` / `INHIBIT`. FORGE augments results with keyword hits.
+INHIBIT adds `low_confidence: true` to the response. `SearchMetaLearner` adjusts
+the BM25 pool size every 100 queries via EMA alpha. See
+[Hybrid_Search.md](Hybrid_Search.md#quality-gate--meta-learner-v162).
 
 ### 2b. KnowledgeAtom 2-Level Indexing
 

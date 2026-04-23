@@ -1,4 +1,4 @@
-# API Reference (v1.6.1)
+# API Reference (v1.6.2)
 
 All endpoints return JSON unless otherwise noted. Default base URL:
 `http://localhost:8000`.
@@ -56,25 +56,40 @@ PostgreSQL vector backend when `VECTOR_BACKEND=postgres`.
 | `threshold` | `float` | 0.5 | Similarity threshold for semantic results. |
 | `vector_backend` | `string` | `auto` | `auto`, `memory`, `postgres`, or `chronos`. |
 
-**Response (v1.4.0 Schema):**
+**Response (v1.6.2 Schema):**
 
 ```json
 {
   "status": "success",
   "answer": "...",
+  "sources": [
+    { "title": "audit_report.pdf", "uri": "local://docs/..." }
+  ],
   "refined_query": "SR9 resonance and DI2 capsule integrity check",
   "search_mode": "hybrid",
   "vector_backend": "auto",
   "search_intent": "informational_technical",
-  "semantic_results": [
-    {
-      "title": "audit_report.pdf",
-      "score": 0.892,
-      "page": 12,
-      "snippet": "..."
-    }
-  ],
+  "search_confidence": 0.82,
+  "semantic_results": [...],
   "request_id": "..."
+}
+```
+
+`search_confidence` [0, 1] — Jaccard rank divergence-gated confidence for hybrid
+results. Present on all local search responses. Values:
+- `0.7` — keyword mode with match
+- `0.3` — keyword mode, no match (fallback)
+- Computed — hybrid mode (BM25 ∩ semantic agreement)
+
+`low_confidence` — Boolean, present only when quality gate returns **INHIBIT**
+(confidence ≤ 0.45). Not present on PASS or FORGE results.
+
+```json
+{
+  "status": "success",
+  "answer": "...",
+  "search_confidence": 0.21,
+  "low_confidence": true
 }
 ```
 

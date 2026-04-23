@@ -7,7 +7,7 @@
 ### Self-hosted RAG search engine. Production-ready in 3 minutes.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.6.1-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.6.2-blue.svg)](CHANGELOG.md)
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/docker-ready-brightgreen.svg)](https://hub.docker.com/r/flamehaven/filesearch)
 
@@ -66,6 +66,7 @@ Open source & MIT licensed</p>
 | Capability | Detail |
 |---|---|
 | **Search Modes** | Keyword, semantic, and hybrid (BM25+RRF) with automatic typo correction |
+| **Quality Gate** | Confidence-scored hybrid results (PASS/FORGE/INHIBIT). FORGE augments with keyword fallback; INHIBIT flags `low_confidence`. Self-adapting BM25 pool via EMA meta-learner. Zero new dependencies. |
 | **34 File Formats** | PDF, DOCX/DOC, XLSX, PPTX, RTF, HTML, CSV, LaTeX, WebVTT, images + plain text — see [Document Parsing](docs/wiki/Document_Parsing.md) |
 | **RAG Pipeline** | Structure-aware chunking, KnowledgeAtom 2-level indexing, sliding-window context enrichment, mtime parse cache |
 | **Ultra-Fast Vectors** | DSP v2.0 generates embeddings in <1ms — no ML frameworks required |
@@ -456,6 +457,13 @@ Full roadmap: [ROADMAP.md](ROADMAP.md)
 - [x] Admin: Ops tab — usage stats (`GET /api/admin/usage`) + vector ops (stats / reindex / vacuum)
 - [x] Landing: "Manage" deep-link to `admin.html#stores` with hash-based tab routing
 
+### v1.6.2 (Completed)
+- [x] `engine/quality_gate.py` — `SearchQualityGate` (PASS/FORGE/INHIBIT), `SearchMetaLearner` (EMA alpha adaptation), `compute_search_confidence` (Jaccard rank divergence, zero new deps)
+- [x] Hybrid search: confidence-scored results with FORGE keyword augmentation and INHIBIT flag
+- [x] `search_confidence` + `low_confidence` fields in search response schema
+- [x] BM25 pool size self-adapts via meta-learner alpha (keyword-dominant → larger pool)
+- [x] 25 tests, 99% coverage on `quality_gate.py`
+
 ### v2.0.0 (Q3 2026)
 - [ ] Multi-language support (15+ languages) — multilingual stopwords + jieba
 - [ ] Kubernetes Helm charts
@@ -608,6 +616,6 @@ Built with amazing open source tools:
 
 Built with 🔥 by the Flamehaven Core Team
 
-*Last updated: April 20, 2026 • Version 1.6.1*
+*Last updated: April 23, 2026 • Version 1.6.2*
 
 </div>
