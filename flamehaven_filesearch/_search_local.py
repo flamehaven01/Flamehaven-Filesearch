@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import quote
 
 from .engine.hybrid_search import BM25, reciprocal_rank_fusion
+from .engine.quality_gate import SearchQualityGate, SearchMetaLearner, compute_search_confidence
 
 logger = logging.getLogger(__name__)
 
@@ -49,15 +50,25 @@ class LocalSearchMixin:
 
     def _run_hybrid_rerank(
         self, store_name: str, query: str, semantic_results: List
-    ) -> List[Dict[str, Any]]:
-        """BM25 + ChronosGrid semantic -> RRF -> resolved docs."""
+    ) -> Tuple[List[Dict[str, Any]], float]:
+        """BM25 + ChronosGrid semantic -> RRF -> resolved docs + confidence score.
+
+        Returns:
+            (resolved_docs, confidence) where confidence is rank-divergence-gated [0, 1].
+        """
         if store_name not in self._bm25_indices or store_name in self._bm25_dirty:
             self._rebuild_bm25(store_name)
+
+        # Adjust BM25 candidate pool based on meta-learner alpha recommendation.
+        # alpha->0 (keyword-dominant): expand BM25 pool; alpha->1: contract it.
+        alpha = (getattr(self, "_meta_alpha", {})).get(store_name, 0.5)
+        bm25_multiplier = max(0.5, 1.5 - alpha)  # alpha=0.2->1.3x, 0.5->1.0x, 0.8->0.7x
+        bm25_top_k = max(1, int(self.config.max_sources * 2 * bm25_multiplier))
 
         bm25, uri_map = self._bm25_indices.get(store_name, (None, []))
         bm25_ranked = []
         if bm25 and bm25.corpus_size:
-            for item in bm25.search(query, top_k=self.config.max_sources * 2):
+            for item in bm25.search(query, top_k=bm25_top_k):
                 idx = item["id"]
                 if idx < len(uri_map) and uri_map[idx]:
                     bm25_ranked.append({"id": uri_map[idx], "score": item["score"]})
@@ -79,12 +90,19 @@ class LocalSearchMixin:
         fused = reciprocal_rank_fusion(
             [sem_ranked, bm25_ranked], k=60, top_k=self.config.max_sources
         )
+
+        # Compute rank-divergence confidence (LOGOS omega_scorer adaptation).
+        bm25_uri_set = {r["id"] for r in bm25_ranked}
+        sem_uri_set = {r["id"] for r in sem_ranked}
+        raw_score = fused[0]["score"] if fused else 0.0
+        confidence = compute_search_confidence(raw_score, bm25_uri_set, sem_uri_set)
+
         results = []
         for item in fused:
             doc = self._get_doc_by_uri(store_name, item["id"])
             if doc:
                 results.append(doc)
-        return results
+        return results, confidence
 
     def _local_search(
         self,
@@ -133,14 +151,30 @@ class LocalSearchMixin:
                 result["semantic_results"] = semantic_results or []
             return result
 
-        # Hybrid: BM25 + semantic RRF
+        quality_gate: SearchQualityGate = getattr(self, "_quality_gate", SearchQualityGate())
+        meta_learner: SearchMetaLearner = getattr(self, "_meta_learner", SearchMetaLearner())
+
+        # Hybrid: BM25 + semantic RRF with quality gate
         if search_mode == "hybrid" and semantic_results:
-            fused_docs = self._run_hybrid_rerank(store_name, query, semantic_results)
+            fused_docs, confidence = self._run_hybrid_rerank(store_name, query, semantic_results)
+            verdict = quality_gate.evaluate(confidence)
+
             if fused_docs:
                 sources = [
                     {"title": d["title"], "uri": d["uri"]}
                     for d in fused_docs[: self.config.max_sources]
                 ]
+
+                # FORGE: BM25+semantic disagreed — augment with keyword matches
+                if verdict == "FORGE":
+                    seen_uris = {s["uri"] for s in sources}
+                    for doc in docs:
+                        if len(sources) >= self.config.max_sources:
+                            break
+                        if doc["uri"] not in seen_uris and self._build_snippet(doc.get("content", ""), query):
+                            sources.append({"title": doc["title"], "uri": doc["uri"]})
+                            seen_uris.add(doc["uri"])
+
                 snippets = [
                     self._build_snippet(d.get("content", ""), query)
                     or d.get("content", "")[:200]
@@ -150,13 +184,20 @@ class LocalSearchMixin:
                     " ".join(s for s in snippets if s)
                     or "Hybrid: BM25+semantic fusion."
                 )
-                return {
+                meta_learner.record(store_name, search_mode, confidence)
+                self._run_meta_adapt(store_name, meta_learner)
+
+                result = {
                     "status": "success",
                     "answer": answer,
                     "sources": sources,
+                    "search_confidence": confidence,
                     "semantic_results": semantic_results,
                     **base,
                 }
+                if verdict == "INHIBIT":
+                    result["low_confidence"] = True
+                return result
 
         # Keyword match
         matches: List[Tuple[Dict, str]] = []
@@ -169,17 +210,43 @@ class LocalSearchMixin:
             answer, sources = self._fallback_sources(
                 store_name, query, search_mode, semantic_results, docs
             )
+            confidence = 0.3
         else:
             sources = [
                 {"title": doc["title"], "uri": doc["uri"]}
                 for doc, _ in matches[: self.config.max_sources]
             ]
             answer = " ".join(snippet for _, snippet in matches[:5])
+            confidence = 0.7
 
-        result = {"status": "success", "answer": answer, "sources": sources, **base}
+        meta_learner.record(store_name, search_mode, confidence)
+        self._run_meta_adapt(store_name, meta_learner)
+
+        result = {
+            "status": "success",
+            "answer": answer,
+            "sources": sources,
+            "search_confidence": confidence,
+            **base,
+        }
         if search_mode in ["semantic", "hybrid", "multimodal"]:
             result["semantic_results"] = semantic_results or []
         return result
+
+    def _run_meta_adapt(self, store_name: str, meta_learner: "SearchMetaLearner") -> None:
+        """Apply MetaLearner alpha recommendation when adaptation cycle triggers."""
+        if not meta_learner.should_adapt():
+            return
+        if not hasattr(self, "_meta_alpha"):
+            self._meta_alpha: Dict[str, float] = {}
+        current = self._meta_alpha.get(store_name, 0.5)
+        new_alpha = meta_learner.recommend_alpha(store_name, current)
+        if new_alpha != current:
+            self._meta_alpha[store_name] = new_alpha
+            logger.info(
+                "[QualityGate] store=%s alpha %.3f -> %.3f trend=%s",
+                store_name, current, new_alpha, meta_learner.store_trend(store_name),
+            )
 
     def _fallback_sources(self, store_name, query, search_mode, semantic_results, docs):
         """Produce sources/answer when keyword match fails.

@@ -17,6 +17,7 @@ except ImportError:  # pragma: no cover - optional dependency
 
 from .config import Config
 from .engine import ChronosConfig, ChronosGrid, GravitasPacker, IntentRefiner
+from .engine.quality_gate import SearchQualityGate, SearchMetaLearner
 from .engine.llm_providers import AbstractLLMProvider, create_llm_provider
 from .engine.embedding_generator import get_embedding_generator
 from .multimodal import VisionModal, get_multimodal_processor
@@ -115,6 +116,10 @@ class FlamehavenFileSearch(IngestMixin, LocalSearchMixin, CloudSearchMixin):
         self._bm25_indices: Dict[str, Any] = {}
         # Stores needing BM25 rebuild before next hybrid search
         self._bm25_dirty: Set[str] = set()
+        # Quality gate + meta-learner (LOGOS/LEDA integration)
+        self._quality_gate = SearchQualityGate()
+        self._meta_learner = SearchMetaLearner()
+        self._meta_alpha: Dict[str, float] = {}
 
         if not self._use_native_client and "default" not in self.stores:
             self.create_store("default")
