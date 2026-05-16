@@ -25,6 +25,14 @@ from .encryption import encryption_service
 
 logger = logging.getLogger(__name__)
 
+# Absolute path derived from this module's location — always points to
+# D:\Sanctum\Flamehaven-Filesearch\data\flamehaven.db regardless of CWD.
+# Override with FLAMEHAVEN_DB_PATH env var if needed.
+_DEFAULT_DB_PATH: str = os.getenv(
+    "FLAMEHAVEN_DB_PATH",
+    str(Path(__file__).resolve().parent.parent / "data" / "flamehaven.db"),
+)
+
 
 class APIKeyInfo:
     """API Key information (without secret)"""
@@ -512,12 +520,56 @@ class APIKeyManager:
 _key_manager: Optional[APIKeyManager] = None
 
 
-def get_key_manager(db_path: str = "./data/flamehaven.db") -> APIKeyManager:
-    """Get or create API key manager instance"""
+def get_key_manager(db_path: Optional[str] = None) -> APIKeyManager:
+    """Get or create API key manager singleton."""
     global _key_manager
     if _key_manager is None:
-        _key_manager = APIKeyManager(db_path)
+        _key_manager = APIKeyManager(db_path or _DEFAULT_DB_PATH)
     return _key_manager
+
+
+def bootstrap_api_key(plain_key: str, name: str = "env-bootstrap") -> bool:
+    """
+    Ensure plain_key exists in the DB with full search/upload permissions.
+    No-op if the key is already present. Called at server startup when
+    FAS_API_KEY is set in env, so the configured key survives restarts.
+    Returns True if inserted, False if already present.
+    """
+    mgr = get_key_manager()
+    key_hash = mgr._hash_key(plain_key)
+    try:
+        with sqlite3.connect(mgr.db_path) as conn:
+            if conn.execute(
+                "SELECT id FROM api_keys WHERE key_hash = ?", (key_hash,)
+            ).fetchone():
+                return False
+            key_id = f"key_bs_{plain_key[-8:]}"
+            now = datetime.now(timezone.utc)
+            permissions = ["upload", "search", "stores"]
+            conn.execute(
+                "INSERT OR IGNORE INTO api_keys "
+                "(id, name, key_hash, user_id, created_at, expires_at, "
+                "rate_limit_per_minute, permissions, metadata, created_at_unix) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    key_id,
+                    encryption_service.encrypt(name),
+                    key_hash,
+                    encryption_service.encrypt("bootstrap"),
+                    now.isoformat() + "Z",
+                    None,
+                    100,
+                    encryption_service.encrypt(json.dumps(permissions)),
+                    None,
+                    now.timestamp(),
+                ),
+            )
+            conn.commit()
+        logger.info("[Bootstrap] API key '%s' inserted into %s", name, mgr.db_path)
+        return True
+    except sqlite3.Error as exc:
+        logger.error("[Bootstrap] Failed to bootstrap API key: %s", exc)
+        return False
 
 
 class IAMProvider(ABC):

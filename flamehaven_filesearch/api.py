@@ -451,6 +451,11 @@ def initialize_services(force: bool = False) -> None:
     searcher = _init_searcher(config)
     search_cache = _init_cache(config)
     _init_metrics()
+    # Ensure the configured FAS_API_KEY survives restarts (P1-2 fix).
+    fas_key = os.getenv("FAS_API_KEY", "")
+    if fas_key.startswith("sk_live_"):
+        from .auth import bootstrap_api_key
+        bootstrap_api_key(fas_key)
 
 
 # Helper functions
