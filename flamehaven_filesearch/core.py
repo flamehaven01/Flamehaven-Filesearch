@@ -224,6 +224,9 @@ class FlamehavenFileSearch(IngestMixin, LocalSearchMixin, CloudSearchMixin):
         if self._metadata_store:
             self._metadata_store.delete_store(store_name)
         self._local_store_docs.pop(store_name, None)
+        self._atom_store_docs.pop(store_name, None)
+        self._bm25_indices.pop(store_name, None)
+        self._bm25_dirty.discard(store_name)
         if self.vector_store:
             self.vector_store.delete_store(store_name)
         # Remove persisted snapshot
