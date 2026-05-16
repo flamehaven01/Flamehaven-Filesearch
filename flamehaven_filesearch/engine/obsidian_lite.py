@@ -18,7 +18,7 @@ from .text_chunker import chunk_text, resplit_chunks_character_windows
 _FRONTMATTER_RE = re.compile(r"\A---\s*\n(.*?)\n---\s*\n?", re.DOTALL)
 _HEADING_RE = re.compile(r"^(#{1,6})\s+(.+)$", re.MULTILINE)
 _WIKILINK_RE = re.compile(r"(?<!\!)\[\[([^\]]+)\]\]")
-_INLINE_TAG_RE = re.compile(r"(?<![\w/])#([A-Za-z0-9][A-Za-z0-9_/\-]*)")
+_INLINE_TAG_RE = re.compile(r"(?<![\w/])#(\w[\w/\-]*)", re.UNICODE)
 
 
 @dataclass
@@ -185,10 +185,15 @@ def _coerce_list(value: Any) -> List[str]:
     if isinstance(value, list):
         return [str(v).strip() for v in value if str(v).strip()]
     if isinstance(value, str):
-        if "," in value:
-            parts = [p.strip() for p in value.split(",")]
-            return [p for p in parts if p]
         cleaned = value.strip()
+        # Handle inline YAML arrays: [item1, item2, item3]
+        if cleaned.startswith("[") and cleaned.endswith("]"):
+            inner = cleaned[1:-1]
+            parts = [p.strip().strip("\"'") for p in inner.split(",")]
+            return [p for p in parts if p]
+        if "," in cleaned:
+            parts = [p.strip() for p in cleaned.split(",")]
+            return [p for p in parts if p]
         return [cleaned] if cleaned else []
     return [str(value).strip()]
 

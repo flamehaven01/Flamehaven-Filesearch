@@ -825,6 +825,7 @@ class LocalSearchMixin:
                 "answer": answer,
                 "sources": sources,
                 "search_confidence": exact_confidence,
+                "confidence_method": "rank_divergence",
                 "exact_note_match": True,
                 **base,
             }
@@ -882,6 +883,7 @@ class LocalSearchMixin:
                     "answer": answer,
                     "sources": sources,
                     "search_confidence": confidence,
+                    "confidence_method": "rank_divergence",
                     "semantic_results": semantic_results,
                     **base,
                 }
@@ -947,6 +949,7 @@ class LocalSearchMixin:
             "answer": answer,
             "sources": sources,
             "search_confidence": confidence,
+            "confidence_method": "rank_divergence",
             **base,
         }
         if exact_note and confidence >= 0.8:
@@ -1169,6 +1172,7 @@ class LocalSearchMixin:
             "store": store_name,
             "search_mode": search_mode,
             "search_confidence": round(search_confidence, 4),
+            "confidence_method": "path_heuristic",
         }
         if used_exact_note:
             result["exact_note_match"] = True

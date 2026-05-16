@@ -304,6 +304,11 @@ class SearchResponse(BaseModel):
     search_confidence: Optional[float] = None
     exact_note_match: Optional[bool] = None
     low_confidence: Optional[bool] = None
+    # Discriminator: consumers MUST NOT compare search_confidence numerically
+    # across derivations. "rank_divergence" = raw_rrf * agreement_factor
+    # (hybrid/_local_search). "path_heuristic" = fixed bucket by retrieval path
+    # (provider RAG, _provider_search). Absent when confidence is None.
+    confidence_method: Optional[str] = None
 
 
 class UploadResponse(BaseModel):

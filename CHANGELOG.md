@@ -155,10 +155,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Quality Gate + Meta-Learner** (`engine/quality_gate.py`): Zero-dependency port
   of LOGOS omega_scorer and LEDA 4.0.1 DS gate / meta-learning layer.
 
-  - `compute_search_confidence(raw_score, bm25_uris, semantic_uris)` — Jaccard rank
-    divergence replaces scipy JSD. Full BM25/semantic overlap → no penalty; zero
-    overlap above 0.5 divergence gate → confidence collapses to 0. Pure Python set
-    math, no new dependencies.
+  - `compute_search_confidence(raw_score, bm25_uris, semantic_uris)` — Agreement-aware
+    confidence: `raw_rrf × max(floor, (overlap + coverage) / 2)` where overlap =
+    |bm25∩sem| / min(|bm25|, |sem|) and coverage = |bm25∩sem| / max(|bm25|, |sem|).
+    Keeps a small residual floor when the two paths completely disagree (unlike the
+    earlier hard-collapse Jaccard gate) — important for real vaults where one path
+    hits file-level docs while the other hits chunk atoms from the same source. Pure
+    Python set math, no new dependencies.
 
   - `SearchQualityGate` — Evaluates confidence into three verdicts:
     - **PASS** (confidence > 0.75): result returned as-is

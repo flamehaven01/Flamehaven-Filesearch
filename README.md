@@ -478,7 +478,7 @@ Full roadmap: [ROADMAP.md](ROADMAP.md)
 - [x] Landing: "Manage" deep-link to `admin.html#stores` with hash-based tab routing
 
 ### v1.6.2 (Completed)
-- [x] `engine/quality_gate.py` — `SearchQualityGate` (PASS/FORGE/INHIBIT), `SearchMetaLearner` (EMA alpha adaptation), `compute_search_confidence` (Jaccard rank divergence, zero new deps)
+- [x] `engine/quality_gate.py` — `SearchQualityGate` (PASS/FORGE/INHIBIT), `SearchMetaLearner` (EMA alpha adaptation), `compute_search_confidence` (BM25/semantic agreement score with residual floor — `raw_rrf × max(floor, (overlap+coverage)/2)` — zero new deps)
 - [x] Hybrid search: confidence-scored results with FORGE keyword augmentation and INHIBIT flag
 - [x] `search_confidence` + `low_confidence` fields in search response schema
 - [x] BM25 pool size self-adapts via meta-learner alpha (keyword-dominant → larger pool)
