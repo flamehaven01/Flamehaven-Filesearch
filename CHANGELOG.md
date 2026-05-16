@@ -11,6 +11,143 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.6.3] - 2026-05-16
+
+### Fixed — post-patch bugfixes
+
+- **P0-1 — `live → file` typo overcorrection** (`engine/intent_refiner.py`):
+  `_apply_corrections` previously called `_find_similar` (Levenshtein≤2 fuzzy
+  match) against the file-search typo dict as a fallback. "live" is within
+  distance 2 of "flie" (transposition) → corrected to "file", corrupting all
+  queries containing the word "live". Fix: removed the `_find_similar` fallback
+  entirely. Only direct `TYPO_CORRECTIONS` dict lookup is used. The file-search
+  typo dict (`pythn`, `flie`, etc.) is domain-specific and fuzzy-matching it
+  against general vocabulary is universally incorrect. Verified: `"live selling
+  TikTok"` → `corrections=[]`, no `"file"` in `refined_query`.
+
+- **P0-2 — `exact_note_match` suppressed by P6 query expansion**
+  (`_search_local.py`): `_search_cloud.py::search` passes `query=refined` (the
+  post-expansion query) to `_local_search`. `_local_search` called
+  `_exact_note_resolution(docs, query, ...)` with the expanded query; synonym
+  terms dilute the title-match score below the 5.2 threshold → `None` returned.
+  Fix: both `_local_search` and `_provider_search` now call
+  `_exact_note_resolution` with `intent_info.original_query` (the unmodified
+  user query). BM25 and semantic paths continue using the expanded `refined`
+  query — only exact-note detection reverts to the original signal. Verified:
+  `"Hook Formulas"` → `conf=0.92, exact_note_match=True` (was `conf=0.70, None`
+  post-P6).
+
+### Added — patch set (P1–P6)
+
+- **P6 — Non-neural query expansion** (`engine/query_expansion.py` new,
+  `intent_refiner.py`, `config.py`): optional, deterministic recall lever for
+  the DSP embedding ceiling. Appends deployment-supplied synonyms to the
+  refined query; because DSP is signed-hash feature accumulation, synonyms
+  that occur in target docs inject overlapping hash features (and matching
+  BM25 terms), bridging "semantically related, zero lexical overlap" gaps
+  WITHOUT neural embeddings (INV-1 preserved). Engine ships only the
+  mechanism — NO built-in vocabulary; the synonym JSON map is supplied by
+  the deployment via `QUERY_EXPANSION_PATH`. Strict no-op when unset
+  (INV-5 preserved). Verified: 4 zero-overlap queries that previously
+  missed now return the correct domain doc as top hit. Residual limit:
+  only bridges gaps that are *mapped*; unmapped novel semantic relations
+  remain the structural DSP floor (closeable only via P3 neural).
+
+- **P5 — Auto re-ingest watcher** (`tools/watch_ingest.py`, new general utility):
+  watches a directory tree and re-uploads changed/new files via the REST API,
+  removing the "manual re-run on every edit" gap. Zero required deps: uses
+  `watchdog` if installed (event-based), else a stdlib polling fallback.
+  Change detection is content-based (`(size, sha1)` with an mtime-keyed hash
+  cache) so pure mtime touches / atomic saves do NOT trigger redundant uploads;
+  combined with the server's content-fingerprint dedup this is idempotent.
+  Documented limitation: REST exposes no per-doc delete, so removed files are
+  logged but their index entry persists until store rebuild. Generic (CLI/env
+  parametrized) — not coupled to any deployment.
+
+- **P1 — `search_confidence` in REST response** (`api.py` + `_search_local.py`):
+  `SearchResponse` Pydantic model now includes `search_confidence`, `exact_note_match`,
+  and `low_confidence` fields. Previously these were computed by `_local_search` but
+  silently stripped by the response model, causing clients to always see `confidence=n/a`.
+  Additionally, `_provider_search` (the path used by all non-Gemini providers, e.g.
+  `LLM_PROVIDER=ollama`) never computed confidence at all — now it derives a confidence
+  signal from the retrieval path: exact-note match → 0.84-0.92, semantic → 0.7,
+  substring → 0.55, lexical backstop → 0.45, none → 0.3. Verified: exact-note query
+  returns 0.92 + `exact_note_match: true`; semantic query returns 0.7.
+
+- **P2 — Configurable rate limits** (`api.py`): Upload and search rate limits now read
+  from environment variables at startup instead of being hardcoded string literals:
+  `UPLOAD_RATE_LIMIT` (default `10/minute`), `UPLOAD_MULTI_RATE_LIMIT` (`5/minute`),
+  `SEARCH_RATE_LIMIT` (`100/minute`). Useful for loosening limits during bulk ingest.
+
+- **P3 — Embedding provider abstraction** (`engine/embedding_generator.py`):
+  - New `OllamaEmbeddingProvider` class: calls Ollama `/api/embeddings` for neural-quality
+    embeddings (~88-92% similarity vs DSP 78.7%). Zero new pip dependencies — uses stdlib
+    + the existing `requests` install.
+  - New `create_embedding_provider(provider, ...)` factory function.
+  - Graceful DSP fallback: if Ollama is unreachable or model not pulled, transparently
+    falls back to DSP. After 3 consecutive failures, session-level fallback activates.
+  - Toggle via `EMBEDDING_PROVIDER=dsp|ollama` + `OLLAMA_EMBEDDING_MODEL=nomic-embed-text`.
+
+- **P4 — Snapshot persistence** (`persistence.py` new file + `core.py` + `_ingest.py`):
+  - New `FlamehavenPersistence` class: atomic JSON snapshots of `_local_store_docs` and
+    `_atom_store_docs` after each upload. Solves the #1 operational pain: server restart
+    previously required full re-ingest of all documents.
+  - On startup, `_restore_from_persistence()` reloads all stores and regenerates ChronosGrid
+    embeddings from persisted content (DSP: <1ms each, so 35 notes ≈ 35ms cold-start).
+  - On `delete_store()`, snapshot file is removed.
+  - Opt-in via `PERSIST_PATH=<dir>` env var. Disabled by default to preserve existing
+    zero-config behavior.
+  - New `Config` fields: `persist_path`, `embedding_provider`, `ollama_embedding_model`.
+
+### Added
+
+- **Obsidian light mode**: Markdown-first vault ingestion for `.md` files with:
+  - frontmatter, aliases, tags, wikilinks, and heading extraction
+  - structure-aware chunking with context enrichment
+  - dense-section resplit windows for oversized chunks
+  - KnowledgeAtom chunk injection with Obsidian metadata
+
+- **Real-vault probe utility** (`tools/obsidian_light_probe.py`): Offline smoke-test
+  helper for Markdown/Obsidian folders. Stores structured probe reports under `data/`.
+
+- **Versioned documentation for vault operation and release flow**:
+  - `docs/wiki/README.md`
+  - `docs/wiki/Obsidian_Light_Mode.md`
+  - `docs/wiki/Release_and_Tagging.md`
+
+### Changed
+
+- **Hybrid confidence logic**: Confidence scoring no longer collapses as easily on
+  file/chunk divergence. Hybrid responses now behave better on real vaults with
+  mixed file-level and chunk-level retrieval.
+
+- **Local search answer synthesis**: Semantic and provider-RAG paths now use
+  neighbor context and heading metadata when available.
+
+- **BM25 / semantic rerank behavior**:
+  - lexical filename and heading boosts added
+  - external reference folders lightly penalized
+  - same-document cluster dedupe added
+  - lexical backstop path added for title-heavy note lookups
+
+- **Exact note resolution**:
+  - title-dominant exact note path added
+  - multi-candidate title arbitration added for near-duplicate note families
+
+- **Ingest deduplication**:
+  - filename alias normalization
+  - content fingerprint checks
+  - duplicate local uploads skipped when the same note already exists under an
+    equivalent alias/content combination
+
+### Validation
+
+- Targeted test suite currently passes with the new Obsidian and exact-note logic.
+- Dense-vault probes were validated against `STRUCTURA/Library/Reserach Thesis`
+  and stored in `data/research_thesis_probe_v4.json` through `v6.json`.
+
+---
+
 ## [1.6.2] - 2026-04-23
 
 ### Added

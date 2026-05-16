@@ -71,6 +71,7 @@ Open source & MIT licensed</p>
 |---|---|
 | **Search Modes** | Keyword, semantic, and hybrid (BM25+RRF) with automatic typo correction |
 | **Quality Gate** | Confidence-scored hybrid results (PASS/FORGE/INHIBIT). FORGE augments with keyword fallback; INHIBIT flags `low_confidence`. Self-adapting BM25 pool via EMA meta-learner. Zero new dependencies. |
+| **Obsidian Light Mode** | Markdown-first vault ingest with frontmatter, aliases, tags, wikilinks, heading-aware chunking, context enrichment, exact note resolution |
 | **34 File Formats** | PDF, DOCX/DOC, XLSX, PPTX, RTF, HTML, CSV, LaTeX, WebVTT, images + plain text — see [Document Parsing](docs/wiki/Document_Parsing.md) |
 | **RAG Pipeline** | Structure-aware chunking, KnowledgeAtom 2-level indexing, sliding-window context enrichment, mtime parse cache |
 | **Ultra-Fast Vectors** | DSP v2.0 generates embeddings in <1ms — no ML frameworks required |
@@ -259,6 +260,21 @@ export MAX_OUTPUT_TOKENS="1024"     # Max answer tokens
 export TEMPERATURE="0.5"            # Model temperature (0.0–1.0)
 export MAX_SOURCES="5"              # Max source documents per answer
 ```
+
+### Obsidian / Local Vault Configuration
+
+For Markdown-heavy vaults, enable Obsidian light mode:
+
+```bash
+export OBSIDIAN_LIGHT_MODE=true
+export OBSIDIAN_CHUNK_MAX_TOKENS=256
+export OBSIDIAN_CHUNK_MIN_TOKENS=32
+export OBSIDIAN_CONTEXT_WINDOW=1
+export OBSIDIAN_RESPLIT_CHUNK_CHARS=1200
+export OBSIDIAN_RESPLIT_OVERLAP_CHARS=160
+```
+
+This path preserves note structure and improves retrieval on dense vaults with many related notes. Operational details: [Obsidian Light Mode](docs/wiki/Obsidian_Light_Mode.md)
 
 ### Advanced Configuration
 
@@ -549,6 +565,7 @@ Use the links below to jump to the most relevant guide.
 |-------|-------------|
 | [Document Parsing](docs/wiki/Document_Parsing.md) | Supported formats, internal parsers, RAG chunking |
 | [Hybrid Search](docs/wiki/Hybrid_Search.md) | BM25+RRF, KnowledgeAtom indexing, stable URI scheme (v1.6.0) |
+| [Obsidian Light Mode](docs/wiki/Obsidian_Light_Mode.md) | Markdown-first vault ingest, exact note resolution, dense-note retrieval tuning |
 | [Framework Integrations](docs/wiki/Framework_Integrations.md) | LangChain, LlamaIndex, Haystack, CrewAI adapters |
 | [API Reference](docs/wiki/API_Reference.md) | REST endpoints, payloads, rate limits |
 | [Architecture](docs/wiki/Architecture.md) | How all layers fit together (v1.6.0) |
@@ -556,13 +573,15 @@ Use the links below to jump to the most relevant guide.
 | [Production Deployment](docs/wiki/Production_Deployment.md) | Docker, systemd, reverse proxy, scaling tips |
 | [Troubleshooting](docs/wiki/Troubleshooting.md) | Step-by-step debugging playbook |
 | [Benchmarks](docs/wiki/Benchmarks.md) | Performance measurements and methodology |
+| [Release and Tagging](docs/wiki/Release_and_Tagging.md) | Release checklist, tag policy, and next tag guidance |
 
 These Markdown files live inside the repository so they stay versioned alongside the code. Feel free to contribute improvements via pull requests.
 
 ### Additional Resources
 
 - **[Interactive API Docs](http://localhost:8000/docs)** - OpenAPI/Swagger interface (when server is running)
-- **[CHANGELOG](CHANGELOG.md)** - Version history and breaking changes
+- **[CHANGELOG](CHANGELOG.md)** - Version history and release notes
+- **[Docs Hub](docs/wiki/README.md)** - Versioned documentation index
 - **[CONTRIBUTING](CONTRIBUTING.md)** - How to contribute code
 - **[Examples](examples/)** - Sample integrations and use cases
 
@@ -616,10 +635,10 @@ Built with amazing open source tools:
 
 <div align="center">
 
-**[⭐ Star us on GitHub](https://github.com/flamehaven01/Flamehaven-Filesearch)** • **[📖 Read the Docs](docs/wiki/README.md)** • **[🚀 Deploy Now](#-quick-start)**
+**[⭐ Star us on GitHub](https://github.com/flamehaven01/Flamehaven-Filesearch)** • **[📖 Docs Hub](docs/wiki/README.md)** • **[🚀 Deploy Now](#-quick-start)**
 
 Built with 🔥 by the Flamehaven Core Team
 
-*Last updated: April 23, 2026 • Version 1.6.2*
+*Last updated: May 16, 2026 • Current release tag: v1.6.2 • Working tree: Unreleased*
 
 </div>

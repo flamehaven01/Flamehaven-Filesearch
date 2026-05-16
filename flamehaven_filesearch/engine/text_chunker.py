@@ -94,6 +94,45 @@ def chunk_text(
     return raw_chunks
 
 
+def resplit_chunks_character_windows(
+    chunks: List[Dict[str, Any]],
+    chunk_size_chars: int,
+    chunk_overlap_chars: int,
+) -> List[Dict[str, Any]]:
+    """
+    Re-split long chunk texts into fixed-size character windows with overlap.
+
+    This is a second-pass safety valve for very dense sections that remain large
+    even after heading/paragraph/sentence chunking.
+    """
+    if chunk_size_chars <= 0 or chunk_overlap_chars >= chunk_size_chars:
+        return chunks
+
+    stride = chunk_size_chars - chunk_overlap_chars
+    if stride <= 0:
+        return chunks
+
+    out: List[Dict[str, Any]] = []
+    for chunk in chunks:
+        text = chunk.get("text", "")
+        if not isinstance(text, str) or len(text) <= chunk_size_chars:
+            out.append(dict(chunk))
+            continue
+
+        start = 0
+        while start < len(text):
+            end = min(start + chunk_size_chars, len(text))
+            piece = text[start:end]
+            new_chunk = dict(chunk)
+            new_chunk["text"] = piece
+            new_chunk["span"] = [start, end]
+            out.append(new_chunk)
+            if end >= len(text):
+                break
+            start += stride
+    return out
+
+
 def _split_section(
     body: str,
     headings: List[str],

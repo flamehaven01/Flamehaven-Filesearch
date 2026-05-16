@@ -19,8 +19,9 @@ from .config import Config
 from .engine import ChronosConfig, ChronosGrid, GravitasPacker, IntentRefiner
 from .engine.quality_gate import SearchQualityGate, SearchMetaLearner
 from .engine.llm_providers import AbstractLLMProvider, create_llm_provider
-from .engine.embedding_generator import get_embedding_generator
+from .engine.embedding_generator import create_embedding_provider, get_embedding_generator
 from .multimodal import VisionModal, get_multimodal_processor
+from .persistence import get_persistence, FlamehavenPersistence
 from .storage import MemoryMetadataStore, create_metadata_store
 from .vector_store import create_vector_store
 from ._ingest import IngestMixin
@@ -92,7 +93,22 @@ class FlamehavenFileSearch(IngestMixin, LocalSearchMixin, CloudSearchMixin):
             else:
                 self._metadata_store = MemoryMetadataStore(self._local_store_docs)
 
-        self.embedding_generator = get_embedding_generator()
+        # Persistence layer (opt-in via PERSIST_PATH env var)
+        self._persistence: Optional[FlamehavenPersistence] = get_persistence(
+            getattr(self.config, "persist_path", None)
+        )
+
+        # Use config-driven provider if specified; fall back to env-driven singleton
+        _emb_provider = getattr(self.config, "embedding_provider", "dsp")
+        _emb_model = getattr(self.config, "ollama_embedding_model", "nomic-embed-text")
+        if _emb_provider != "dsp":
+            self.embedding_generator = create_embedding_provider(
+                provider=_emb_provider,
+                ollama_model=_emb_model,
+                ollama_base_url=getattr(self.config, "ollama_base_url", "http://localhost:11434"),
+            )
+        else:
+            self.embedding_generator = get_embedding_generator()
         self.multimodal_processor = get_multimodal_processor(
             self.config, vision_modal=vision_modal
         )
@@ -107,7 +123,14 @@ class FlamehavenFileSearch(IngestMixin, LocalSearchMixin, CloudSearchMixin):
             vector_essence_dimension=self.embedding_generator.vector_dim,
         )
         self.chronos_grid = ChronosGrid(config=chronos_config)
-        self.intent_refiner = IntentRefiner()
+        # Optional non-neural query expansion (DSP recall lever). Off unless
+        # config.query_expansion_path points to a JSON synonym map.
+        from .engine.query_expansion import load_query_expander
+        _expander = load_query_expander(
+            getattr(self.config, "query_expansion_path", None),
+            max_extra=getattr(self.config, "query_expansion_max_extra", 6),
+        )
+        self.intent_refiner = IntentRefiner(expander=_expander)
         self.gravitas_packer = GravitasPacker()
 
         # KnowledgeAtom chunk store: store_name -> {atom_uri -> doc}
@@ -123,6 +146,10 @@ class FlamehavenFileSearch(IngestMixin, LocalSearchMixin, CloudSearchMixin):
 
         if not self._use_native_client and "default" not in self.stores:
             self.create_store("default")
+
+        # Restore persisted stores on startup (if PERSIST_PATH is set)
+        if self._persistence and not self._use_native_client:
+            self._restore_from_persistence()
 
         logger.info(
             "FLAMEHAVEN FileSearch initialized with model: %s (mode=%s)",
@@ -199,8 +226,83 @@ class FlamehavenFileSearch(IngestMixin, LocalSearchMixin, CloudSearchMixin):
         self._local_store_docs.pop(store_name, None)
         if self.vector_store:
             self.vector_store.delete_store(store_name)
+        # Remove persisted snapshot
+        if self._persistence:
+            self._persistence.delete_store(store_name)
         logger.info("Deleted local store: %s", store_name)
         return {"status": "success", "store": store_name}
+
+    # ── Persistence helpers ────────────────────────────────────────────────────
+
+    def _restore_from_persistence(self) -> int:
+        """
+        Load all persisted store snapshots back into memory on startup.
+
+        For each persisted store:
+          1. Restore docs + atoms into _local_store_docs / _atom_store_docs
+          2. Regenerate embeddings from content (DSP <1ms each)
+          3. Re-inject into ChronosGrid and rebuild BM25 index lazily
+
+        Returns total number of documents restored.
+        """
+        if not self._persistence:
+            return 0
+
+        total_restored = 0
+        for store_name in self._persistence.list_persisted_stores():
+            docs, atoms = self._persistence.load_store(store_name)
+            if not docs and not atoms:
+                continue
+
+            # Ensure store exists in registry
+            if store_name not in self.stores:
+                self.create_store(store_name)
+
+            # Restore main docs
+            existing = self._local_store_docs.setdefault(store_name, [])
+            existing_uris = {d.get("uri") for d in existing}
+            for doc in docs:
+                if doc.get("uri") not in existing_uris:
+                    existing.append(doc)
+                    existing_uris.add(doc.get("uri"))
+                    # Re-inject into ChronosGrid
+                    content = (doc.get("content") or "")[:2000]
+                    if content:
+                        vec = self.embedding_generator.generate(content)
+                        uri = doc.get("uri") or doc.get("metadata", {}).get("file_path", "")
+                        if uri:
+                            self.chronos_grid.inject_essence(uri, doc, vec)
+                    total_restored += 1
+
+            # Restore chunk atoms
+            atom_map = self._atom_store_docs.setdefault(store_name, {})
+            for atom_uri, atom in atoms.items():
+                if atom_uri not in atom_map:
+                    atom_map[atom_uri] = atom
+                    content = (atom.get("content") or "")[:2000]
+                    if content:
+                        vec = self.embedding_generator.generate(content)
+                        self.chronos_grid.inject_essence(atom_uri, atom, vec)
+                    total_restored += 1
+
+            # Mark BM25 as dirty — rebuilt lazily on next search
+            self._bm25_dirty.add(store_name)
+
+        if total_restored > 0:
+            logger.info(
+                "[Persist] Restored %d documents across %d stores",
+                total_restored,
+                len(self._persistence.list_persisted_stores()),
+            )
+        return total_restored
+
+    def _snapshot_store(self, store_name: str) -> None:
+        """Persist current state of one store. Called after each upload."""
+        if not self._persistence or self._use_native_client:
+            return
+        docs = self._local_store_docs.get(store_name, [])
+        atoms = self._atom_store_docs.get(store_name, {})
+        self._persistence.save_store(store_name, docs, atoms)
 
     def get_metrics(self) -> Dict[str, Any]:
         """Return metrics from all engine components."""

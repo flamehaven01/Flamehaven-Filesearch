@@ -77,6 +77,14 @@ class Config:
     vision_strategy: str = "fast"
     vision_provider: str = "auto"
 
+    # Obsidian light ingest
+    obsidian_light_mode: bool = False
+    obsidian_chunk_max_tokens: int = 256
+    obsidian_chunk_min_tokens: int = 32
+    obsidian_context_window: int = 1
+    obsidian_resplit_chunk_chars: int = 1200
+    obsidian_resplit_overlap_chars: int = 160
+
     # OAuth2/OIDC configuration
     oauth_enabled: bool = False
     oauth_issuer: Optional[str] = None
@@ -95,6 +103,20 @@ class Config:
     min_answer_length: int = 10
     max_answer_length: int = 4096
     banned_terms: list = field(default_factory=lambda: ["PII-leak"])
+
+    # Persistence (P4 patch) — opt-in, disabled by default
+    # Set PERSIST_PATH=./.flamehaven_data to enable snapshot persistence
+    persist_path: Optional[str] = None
+
+    # Embedding provider (P3 patch)
+    # "dsp" (default, zero-dep) | "ollama" (neural quality)
+    embedding_provider: str = "dsp"
+    ollama_embedding_model: str = "nomic-embed-text"
+
+    # Query expansion (non-neural DSP recall lever) — opt-in, off by default.
+    # Path to a JSON {term: [synonyms]} map. Empty => feature is a no-op.
+    query_expansion_path: Optional[str] = None
+    query_expansion_max_extra: int = 6
 
     _VALID_PROVIDERS = frozenset(
         {
@@ -163,6 +185,17 @@ class Config:
                 "vision_provider must be 'auto', 'pillow', 'tesseract', or 'none'"
             )
 
+        if self.obsidian_chunk_max_tokens <= 0:
+            raise ValueError("obsidian_chunk_max_tokens must be positive")
+        if self.obsidian_chunk_min_tokens <= 0:
+            raise ValueError("obsidian_chunk_min_tokens must be positive")
+        if self.obsidian_context_window < 0:
+            raise ValueError("obsidian_context_window must be >= 0")
+        if self.obsidian_resplit_chunk_chars < 0:
+            raise ValueError("obsidian_resplit_chunk_chars must be >= 0")
+        if self.obsidian_resplit_overlap_chars < 0:
+            raise ValueError("obsidian_resplit_overlap_chars must be >= 0")
+
         return True
 
     def to_dict(self) -> Dict[str, Any]:
@@ -190,6 +223,12 @@ class Config:
             "vision_enabled": self.vision_enabled,
             "vision_strategy": self.vision_strategy,
             "vision_provider": self.vision_provider,
+            "obsidian_light_mode": self.obsidian_light_mode,
+            "obsidian_chunk_max_tokens": self.obsidian_chunk_max_tokens,
+            "obsidian_chunk_min_tokens": self.obsidian_chunk_min_tokens,
+            "obsidian_context_window": self.obsidian_context_window,
+            "obsidian_resplit_chunk_chars": self.obsidian_resplit_chunk_chars,
+            "obsidian_resplit_overlap_chars": self.obsidian_resplit_overlap_chars,
             "oauth_enabled": self.oauth_enabled,
             "oauth_issuer": self.oauth_issuer,
             "oauth_audience": self.oauth_audience,
@@ -200,6 +239,11 @@ class Config:
             "postgres_enabled": self.postgres_enabled,
             "postgres_dsn": "***" if self.postgres_dsn else None,
             "postgres_schema": self.postgres_schema,
+            "persist_path": self.persist_path or None,
+            "embedding_provider": self.embedding_provider,
+            "ollama_embedding_model": self.ollama_embedding_model,
+            "query_expansion_path": self.query_expansion_path or None,
+            "query_expansion_max_extra": self.query_expansion_max_extra,
         }
 
     def create_search_cache(self) -> "AbstractSearchCache":
@@ -283,6 +327,23 @@ class Config:
             in {"1", "true", "yes", "on"},
             vision_strategy=os.getenv("VISION_STRATEGY", "fast").strip().lower(),
             vision_provider=os.getenv("VISION_PROVIDER", "auto").strip().lower(),
+            obsidian_light_mode=os.getenv("OBSIDIAN_LIGHT_MODE", "false").lower()
+            in {"1", "true", "yes", "on"},
+            obsidian_chunk_max_tokens=int(
+                os.getenv("OBSIDIAN_CHUNK_MAX_TOKENS", "256")
+            ),
+            obsidian_chunk_min_tokens=int(
+                os.getenv("OBSIDIAN_CHUNK_MIN_TOKENS", "32")
+            ),
+            obsidian_context_window=int(
+                os.getenv("OBSIDIAN_CONTEXT_WINDOW", "1")
+            ),
+            obsidian_resplit_chunk_chars=int(
+                os.getenv("OBSIDIAN_RESPLIT_CHUNK_CHARS", "1200")
+            ),
+            obsidian_resplit_overlap_chars=int(
+                os.getenv("OBSIDIAN_RESPLIT_OVERLAP_CHARS", "160")
+            ),
             oauth_enabled=os.getenv("OAUTH_ENABLED", "false").lower()
             in {"1", "true", "yes", "on"},
             oauth_issuer=os.getenv("OAUTH_ISSUER"),
@@ -299,4 +360,12 @@ class Config:
             in {"1", "true", "yes", "on"},
             postgres_dsn=os.getenv("POSTGRES_DSN"),
             postgres_schema=os.getenv("POSTGRES_SCHEMA", "public"),
+            # P4: persistence
+            persist_path=os.getenv("PERSIST_PATH") or None,
+            # P3: embedding provider
+            embedding_provider=os.getenv("EMBEDDING_PROVIDER", "dsp").strip().lower(),
+            ollama_embedding_model=os.getenv("OLLAMA_EMBEDDING_MODEL", "nomic-embed-text"),
+            # #2 mitigation: optional query expansion
+            query_expansion_path=os.getenv("QUERY_EXPANSION_PATH") or None,
+            query_expansion_max_extra=int(os.getenv("QUERY_EXPANSION_MAX_EXTRA", "6")),
         )

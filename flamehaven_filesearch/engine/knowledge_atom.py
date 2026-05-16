@@ -29,6 +29,68 @@ class KnowledgeAtom:
     metadata: Dict[str, Any]
 
 
+def inject_chunks(
+    chunks: List[Dict[str, Any]],
+    file_abs_path: str,
+    store_name: str,
+    stable_uri: str,
+    chronos_grid: Any,
+    embedding_generator: Any,
+    atom_store: Dict[str, Any],
+    min_chunk_chars: int = 80,
+) -> int:
+    """Inject a prepared list of chunks into ChronosGrid + atom_store."""
+    base_title = os.path.basename(file_abs_path)
+    injected = 0
+
+    for idx, chunk_info in enumerate(chunks, start=1):
+        chunk = chunk_info.get("text", "")
+        if len(chunk.strip()) < min_chunk_chars:
+            continue
+
+        frag = f"c{idx:04d}"
+        atom_glyph = f"{file_abs_path}#{frag}"
+        atom_uri = f"{stable_uri}#{frag}"
+        atom_title = f"{base_title}#{frag}"
+
+        try:
+            vec = embedding_generator.generate(chunk)
+            meta: Dict[str, Any] = {
+                "atom_kind": "chunk",
+                "parent_glyph": file_abs_path,
+                "file_name": base_title,
+                "file_path": file_abs_path,
+                "store": store_name,
+                "uri": atom_uri,
+                "chunk_index": idx,
+                "timestamp": time.time(),
+            }
+            if "span" in chunk_info:
+                meta["span"] = chunk_info["span"]
+            if chunk_info.get("headings"):
+                meta["headings"] = chunk_info["headings"]
+            if chunk_info.get("context"):
+                meta["context"] = chunk_info["context"]
+            meta.update(chunk_info.get("metadata", {}))
+            chronos_grid.inject_essence(
+                glyph=atom_glyph,
+                essence=meta,
+                vector_essence=vec,
+            )
+            atom_store[atom_uri] = {
+                "title": atom_title,
+                "uri": atom_uri,
+                "content": chunk,
+                "metadata": meta,
+            }
+            injected += 1
+        except Exception as exc:
+            logger.debug("Atom injection failed for %s: %s", atom_title, exc)
+
+    logger.debug("KnowledgeAtom: %d atoms injected for %s", injected, base_title)
+    return injected
+
+
 def _chunk_text(
     text: str,
     max_chars: int = 800,
@@ -84,46 +146,17 @@ def chunk_and_inject(
     Returns:
         Number of atoms injected.
     """
-    chunks = _chunk_text(content, max_chars=max_chars, overlap=overlap)
-    base_title = os.path.basename(file_abs_path)
-    injected = 0
-
-    for idx, (s, e, chunk) in enumerate(chunks, start=1):
-        if len(chunk.strip()) < min_chunk_chars:
-            continue
-
-        frag = f"c{idx:04d}"
-        atom_glyph = f"{file_abs_path}#{frag}"
-        atom_uri = f"{stable_uri}#{frag}"
-        atom_title = f"{base_title}#{frag}"
-
-        try:
-            vec = embedding_generator.generate(chunk)
-            meta: Dict[str, Any] = {
-                "atom_kind": "chunk",
-                "parent_glyph": file_abs_path,
-                "file_name": base_title,
-                "file_path": file_abs_path,
-                "store": store_name,
-                "uri": atom_uri,
-                "span": [s, e],
-                "chunk_index": idx,
-                "timestamp": time.time(),
-            }
-            chronos_grid.inject_essence(
-                glyph=atom_glyph,
-                essence=meta,
-                vector_essence=vec,
-            )
-            atom_store[atom_uri] = {
-                "title": atom_title,
-                "uri": atom_uri,
-                "content": chunk,
-                "metadata": meta,
-            }
-            injected += 1
-        except Exception as exc:
-            logger.debug("Atom injection failed for %s: %s", atom_title, exc)
-
-    logger.debug("KnowledgeAtom: %d atoms injected for %s", injected, base_title)
-    return injected
+    prepared = [
+        {"text": chunk, "span": [s, e]}
+        for s, e, chunk in _chunk_text(content, max_chars=max_chars, overlap=overlap)
+    ]
+    return inject_chunks(
+        chunks=prepared,
+        file_abs_path=file_abs_path,
+        store_name=store_name,
+        stable_uri=stable_uri,
+        chronos_grid=chronos_grid,
+        embedding_generator=embedding_generator,
+        atom_store=atom_store,
+        min_chunk_chars=min_chunk_chars,
+    )

@@ -147,6 +147,10 @@ api_key.txt
 data/
 */data/
 
+# Snapshot persistence (P4) — runtime state, deployment-specific, never commit
+.flamehaven_data/
+*/.flamehaven_data/
+
 # Internal development files
 patches.txt
 *.patch

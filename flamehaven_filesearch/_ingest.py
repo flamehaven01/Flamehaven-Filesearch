@@ -6,13 +6,16 @@ Extracted from core.py to maintain < 250L per file.
 import logging
 import os
 import time
+import hashlib
+import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from urllib.parse import quote
 
-from .engine.knowledge_atom import chunk_and_inject
+from .engine.knowledge_atom import chunk_and_inject, inject_chunks
 
 logger = logging.getLogger(__name__)
+_FILENAME_ALIAS_SPLIT_RE = re.compile(r"[\s._\-]+")
 
 _SUPPORTED_EXTS = {
     ".pdf",
@@ -32,6 +35,127 @@ _SUPPORTED_EXTS = {
 
 class IngestMixin:
     """Mixin providing upload_file, upload_files, _local_upload."""
+
+    @staticmethod
+    def _normalize_alias_text(value: str) -> str:
+        lowered = (value or "").strip().lower()
+        lowered = _FILENAME_ALIAS_SPLIT_RE.sub(" ", lowered)
+        lowered = " ".join(lowered.split())
+        return lowered
+
+    def _filename_aliases(
+        self,
+        file_path: str,
+        *,
+        obsidian_note: Optional[Any] = None,
+        embedded_title: Optional[str] = None,
+    ) -> List[str]:
+        path = Path(file_path)
+        values = [path.name, path.stem]
+        if embedded_title:
+            values.append(embedded_title)
+        if obsidian_note is not None:
+            values.extend(getattr(obsidian_note, "aliases", []) or [])
+            fm = getattr(obsidian_note, "frontmatter", {}) or {}
+            title = fm.get("title")
+            if isinstance(title, str) and title.strip():
+                values.append(title.strip())
+
+        aliases: List[str] = []
+        seen = set()
+        for value in values:
+            normalized = self._normalize_alias_text(str(value))
+            if not normalized or normalized in seen:
+                continue
+            seen.add(normalized)
+            aliases.append(normalized)
+            collapsed = normalized.replace(" ", "")
+            if collapsed and collapsed not in seen:
+                seen.add(collapsed)
+                aliases.append(collapsed)
+        return aliases
+
+    @staticmethod
+    def _content_fingerprint(content: str) -> str:
+        normalized = (content or "").replace("\r\n", "\n").strip()
+        payload = normalized.encode("utf-8", errors="ignore")
+        return hashlib.sha1(payload).hexdigest()
+
+    def _find_duplicate_upload(
+        self,
+        store_name: str,
+        *,
+        file_abs_path: str,
+        file_name: str,
+        content: str,
+        obsidian_note: Optional[Any] = None,
+    ) -> Optional[Dict[str, Any]]:
+        docs = (
+            self._metadata_store.get_docs(store_name)
+            if self._metadata_store
+            else self._local_store_docs.get(store_name, [])
+        )
+        if not docs or not content:
+            return None
+
+        candidate_aliases = set(
+            self._filename_aliases(file_name, obsidian_note=obsidian_note)
+        )
+        if not candidate_aliases:
+            candidate_aliases = set(self._filename_aliases(file_abs_path))
+        fingerprint = self._content_fingerprint(content)
+        file_path_lower = file_abs_path.lower()
+
+        for existing in docs:
+            metadata = existing.get("metadata") or {}
+            existing_path = str(metadata.get("file_path") or "")
+            if existing_path and existing_path.lower() == file_path_lower:
+                return None
+
+            existing_fingerprint = str(metadata.get("content_fingerprint") or "")
+            if fingerprint and existing_fingerprint and existing_fingerprint != fingerprint:
+                continue
+
+            existing_aliases = set(
+                self._filename_aliases(
+                    existing_path or str(existing.get("title") or ""),
+                    obsidian_note=None,
+                    embedded_title=str(existing.get("title") or ""),
+                )
+            )
+            existing_obsidian = metadata.get("obsidian") or {}
+            if isinstance(existing_obsidian, dict):
+                for alias in existing_obsidian.get("aliases") or []:
+                    normalized = self._normalize_alias_text(str(alias))
+                    if normalized:
+                        existing_aliases.add(normalized)
+
+            if candidate_aliases & existing_aliases and (
+                fingerprint == existing_fingerprint or not existing_fingerprint
+            ):
+                return existing
+        return None
+
+    def _store_local_doc(self, store_name: str, doc: Dict[str, Any]) -> None:
+        if isinstance(self._metadata_store, type(None)):
+            docs = self._local_store_docs.setdefault(store_name, [])
+            for idx, existing in enumerate(docs):
+                if existing.get("uri") == doc.get("uri"):
+                    docs[idx] = doc
+                    return
+            docs.append(doc)
+            return
+
+        if hasattr(self._metadata_store, "_stores"):
+            docs = self._local_store_docs.setdefault(store_name, [])
+            for idx, existing in enumerate(docs):
+                if existing.get("uri") == doc.get("uri"):
+                    docs[idx] = doc
+                    return
+            docs.append(doc)
+            return
+
+        self._metadata_store.add_doc(store_name, doc)
 
     @staticmethod
     def _image_extensions() -> set:
@@ -79,6 +203,36 @@ class IngestMixin:
             file_path, ext, file_metadata
         )
 
+        extracted_content = file_metadata.pop("_extracted_content", None)
+        obsidian_note = file_metadata.pop("_obsidian_note", None)
+        duplicate = self._find_duplicate_upload(
+            store_name,
+            file_abs_path=file_abs_path,
+            file_name=Path(file_path).name,
+            content=(
+                getattr(obsidian_note, "body", "") if obsidian_note is not None else ""
+            )
+            or extracted_content
+            or vision_text
+            or "",
+            obsidian_note=obsidian_note,
+        )
+        if duplicate is not None:
+            logger.info(
+                "Skipped duplicate upload by filename/content alias: %s -> %s",
+                file_path,
+                duplicate.get("uri"),
+            )
+            return {
+                "status": "success",
+                "store": store_name,
+                "file": file_path,
+                "size_mb": round(size_mb, 2),
+                "indexed": False,
+                "deduplicated": True,
+                "existing_uri": duplicate.get("uri"),
+            }
+
         if self.vector_store:
             try:
                 self.vector_store.add_vector(
@@ -125,7 +279,8 @@ class IngestMixin:
             store_name,
             size_mb,
             vision_text=vision_text,
-            extracted_content=file_metadata.pop("_extracted_content", None),
+            extracted_content=extracted_content,
+            obsidian_note=obsidian_note,
         )
 
     def _generate_file_vector(
@@ -158,6 +313,16 @@ class IngestMixin:
             from .engine.file_parser import extract_text as _extract_text
 
             content = _extract_text(file_path)
+            if ext == ".md" and self.config.obsidian_light_mode:
+                from .engine.obsidian_lite import (
+                    build_obsidian_embedding_text,
+                    parse_obsidian_markdown,
+                )
+
+                note = parse_obsidian_markdown(content)
+                file_metadata["obsidian"] = note.to_metadata()
+                file_metadata["_obsidian_note"] = note
+                content = build_obsidian_embedding_text(note)
             embed_text = (
                 content[:2000]
                 if content.strip()
@@ -191,6 +356,7 @@ class IngestMixin:
         size_mb: float,
         vision_text: str = "",
         extracted_content: Optional[str] = None,
+        obsidian_note: Optional[Any] = None,
     ) -> Dict[str, Any]:
         """Store doc locally, inject chunk atoms, mark BM25 dirty."""
         ext = Path(file_path).suffix.lower()
@@ -203,11 +369,21 @@ class IngestMixin:
 
             content = extract_text(file_path)
 
-        metadata: Dict[str, Any] = {"file_type": ext}
+        abs_path = str(Path(file_path).resolve())
+        metadata: Dict[str, Any] = {
+            "file_type": ext,
+            "file_path": abs_path,
+            "content_fingerprint": self._content_fingerprint(
+                getattr(obsidian_note, "body", "") if obsidian_note is not None else content
+            )
+            if content
+            else "",
+        }
         if vision_text:
             metadata["vision_text"] = vision_text
+        if obsidian_note is not None:
+            metadata["obsidian"] = obsidian_note.to_metadata()
 
-        abs_path = str(Path(file_path).resolve())
         stable_uri = f"local://{store_name}/{quote(abs_path, safe='')}"
         doc = {
             "title": Path(file_path).name,
@@ -215,24 +391,46 @@ class IngestMixin:
             "content": content,
             "metadata": metadata,
         }
-        if self._metadata_store:
-            self._metadata_store.add_doc(store_name, doc)
-        else:
-            self._local_store_docs.setdefault(store_name, []).append(doc)
+        self._store_local_doc(store_name, doc)
         logger.info("Stored file locally: %s", file_path)
 
         if content:
             self._atom_store_docs.setdefault(store_name, {})
-            chunk_and_inject(
-                content=content,
-                file_abs_path=abs_path,
-                store_name=store_name,
-                stable_uri=stable_uri,
-                chronos_grid=self.chronos_grid,
-                embedding_generator=self.embedding_generator,
-                atom_store=self._atom_store_docs[store_name],
-            )
+            if ext == ".md" and obsidian_note is not None and self.config.obsidian_light_mode:
+                from .engine.obsidian_lite import build_obsidian_chunks
+
+                chunks = build_obsidian_chunks(
+                    obsidian_note,
+                    max_tokens=self.config.obsidian_chunk_max_tokens,
+                    min_tokens=self.config.obsidian_chunk_min_tokens,
+                    context_window=self.config.obsidian_context_window,
+                    resplit_chunk_chars=self.config.obsidian_resplit_chunk_chars,
+                    resplit_overlap_chars=self.config.obsidian_resplit_overlap_chars,
+                )
+                inject_chunks(
+                    chunks=chunks,
+                    file_abs_path=abs_path,
+                    store_name=store_name,
+                    stable_uri=stable_uri,
+                    chronos_grid=self.chronos_grid,
+                    embedding_generator=self.embedding_generator,
+                    atom_store=self._atom_store_docs[store_name],
+                )
+            else:
+                chunk_and_inject(
+                    content=content,
+                    file_abs_path=abs_path,
+                    store_name=store_name,
+                    stable_uri=stable_uri,
+                    chronos_grid=self.chronos_grid,
+                    embedding_generator=self.embedding_generator,
+                    atom_store=self._atom_store_docs[store_name],
+                )
         self._bm25_dirty.add(store_name)
+
+        # Persist snapshot so the store survives server restarts
+        if hasattr(self, "_snapshot_store"):
+            self._snapshot_store(store_name)
 
         return {
             "status": "success",

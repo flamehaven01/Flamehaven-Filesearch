@@ -106,6 +106,12 @@ def rate_limit_key(request: Request) -> str:
 # Initialize rate limiter
 limiter = Limiter(key_func=rate_limit_key)
 
+# Configurable rate limits — override via env to loosen during bulk ingest
+# e.g. UPLOAD_RATE_LIMIT=60/minute for batch operations
+_UPLOAD_SINGLE_RATE: str = os.getenv("UPLOAD_RATE_LIMIT", "10/minute")
+_UPLOAD_MULTI_RATE: str = os.getenv("UPLOAD_MULTI_RATE_LIMIT", "5/minute")
+_SEARCH_RATE: str = os.getenv("SEARCH_RATE_LIMIT", "100/minute")
+
 
 def _metrics_enabled() -> bool:
     value = os.getenv("FLAMEHAVEN_METRICS_ENABLED", "")
@@ -293,6 +299,11 @@ class SearchResponse(BaseModel):
     search_intent: Optional[dict] = None
     semantic_results: Optional[List] = None
     multimodal: Optional[dict] = None
+
+    # Quality-gate fields (P1 fix: previously stripped by Pydantic)
+    search_confidence: Optional[float] = None
+    exact_note_match: Optional[bool] = None
+    low_confidence: Optional[bool] = None
 
 
 class UploadResponse(BaseModel):
@@ -510,7 +521,7 @@ async def health_check(request: Request):
 
 # Upload endpoints
 @app.post("/api/upload/single", response_model=UploadResponse, tags=["Files"])
-@limiter.limit("10/minute")
+@limiter.limit(_UPLOAD_SINGLE_RATE)
 async def upload_single_file(
     request: Request,
     file: UploadFile = File(..., description="File to upload"),
@@ -630,7 +641,7 @@ def _save_upload_file(file, temp_dir: str, config, request_id: str):
 
 
 @app.post("/upload", response_model=UploadResponse, include_in_schema=False)
-@limiter.limit("10/minute")
+@limiter.limit(_UPLOAD_SINGLE_RATE)
 async def upload_single_file_legacy(
     request: Request,
     file: UploadFile = File(..., description="File to upload"),
@@ -642,7 +653,7 @@ async def upload_single_file_legacy(
 
 
 @app.post("/api/upload/multiple", response_model=MultipleUploadResponse, tags=["Files"])
-@limiter.limit("5/minute")
+@limiter.limit(_UPLOAD_MULTI_RATE)
 async def upload_multiple_files(
     request: Request,
     files: List[UploadFile] = File(..., description="Files to upload"),
@@ -718,7 +729,7 @@ async def upload_multiple_files(
     response_model=MultipleUploadResponse,
     include_in_schema=False,
 )
-@limiter.limit("5/minute")
+@limiter.limit(_UPLOAD_MULTI_RATE)
 async def upload_multiple_files_legacy(
     request: Request,
     files: List[UploadFile] = File(..., description="Files to upload"),
@@ -731,7 +742,7 @@ async def upload_multiple_files_legacy(
 
 # Search endpoints
 @app.post("/api/search", response_model=SearchResponse, tags=["Search"])
-@limiter.limit("100/minute")
+@limiter.limit(_SEARCH_RATE)
 async def search(
     request: Request,
     search_request: SearchRequest,
@@ -989,7 +1000,7 @@ async def search_multimodal(
 
 
 @app.get("/api/search", response_model=SearchResponse, tags=["Search"])
-@limiter.limit("100/minute")
+@limiter.limit(_SEARCH_RATE)
 async def search_get(
     request: Request,
     q: str = Query(..., description="Search query", min_length=1),
@@ -1021,7 +1032,7 @@ async def search_get(
 
 
 @app.post("/search", response_model=SearchResponse, include_in_schema=False)
-@limiter.limit("100/minute")
+@limiter.limit(_SEARCH_RATE)
 async def search_post_legacy(
     request: Request,
     search_request: SearchRequest,
@@ -1032,7 +1043,7 @@ async def search_post_legacy(
 
 
 @app.get("/search", response_model=SearchResponse, include_in_schema=False)
-@limiter.limit("100/minute")
+@limiter.limit(_SEARCH_RATE)
 async def search_get_legacy(
     request: Request,
     q: str = Query(..., description="Search query", min_length=1),

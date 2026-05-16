@@ -25,23 +25,22 @@ class TestComputeSearchConfidence:
         bm25 = {"a", "b"}
         sem = {"c", "d"}
         confidence = compute_search_confidence(1.0, bm25, sem)
-        assert confidence == 0.0
+        assert confidence == pytest.approx(0.25, abs=1e-4)
 
     def test_partial_overlap(self):
         bm25 = {"a", "b", "c", "d"}
         sem = {"c", "d", "e", "f"}
-        # intersection=2, union=6, jaccard=1/3, divergence=2/3
-        # div_gate=0.5, divergence>=gate -> factor=max(0, 1-4/3)=0 -> confidence=0
-        confidence = compute_search_confidence(1.0, bm25, sem)
-        assert confidence == 0.0
-
-    def test_low_divergence_partial_penalty(self):
-        # divergence = 0.25 -> factor = 1 - 0.25/0.5 = 0.5
-        bm25 = {"a", "b", "c"}
-        sem = {"a", "b", "c", "d"}
-        # intersection=3, union=4, jaccard=0.75, divergence=0.25
+        # intersection=2, smaller=4, larger=4 -> overlap=0.5, coverage=0.5
+        # agreement=0.5, floor=0.25 -> confidence=0.5
         confidence = compute_search_confidence(1.0, bm25, sem)
         assert confidence == pytest.approx(0.5, abs=1e-4)
+
+    def test_low_divergence_partial_penalty(self):
+        bm25 = {"a", "b", "c"}
+        sem = {"a", "b", "c", "d"}
+        # overlap=1.0, coverage=0.75 -> agreement=0.875
+        confidence = compute_search_confidence(1.0, bm25, sem)
+        assert confidence == pytest.approx(0.875, abs=1e-4)
 
     def test_empty_both_returns_raw(self):
         confidence = compute_search_confidence(0.6, set(), set())

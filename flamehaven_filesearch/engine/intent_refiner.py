@@ -75,11 +75,14 @@ class IntentRefiner:
         "csv",
     }
 
-    def __init__(self):
+    def __init__(self, expander=None):
+        # Optional QueryExpander (non-neural DSP recall lever). None => no-op.
+        self.expander = expander
         self.stats = {
             "total_queries": 0,
             "corrected_queries": 0,
             "keywords_extracted": 0,
+            "expanded_queries": 0,
         }
 
     def refine_intent(self, query: str) -> SearchIntent:
@@ -126,6 +129,16 @@ class IntentRefiner:
 
         # Extract metadata filters
         metadata_filters = self._extract_filters(normalized)
+
+        # Optional query expansion (non-neural DSP recall lever).
+        # Appending synonyms that occur in target docs injects overlapping
+        # hash features (DSP) and matching BM25 terms — bridges zero-overlap
+        # semantic gaps. Deterministic; strict no-op when no expander.
+        if self.expander is not None:
+            extra = self.expander.expand(corrected_keywords, full_query=normalized)
+            if extra:
+                corrected_keywords = corrected_keywords + extra
+                self.stats["expanded_queries"] += 1
 
         # Build refined query
         refined = " ".join(corrected_keywords)
@@ -199,14 +212,7 @@ class IntentRefiner:
                 corrected.append(corrected_word)
                 suggestions.append(f"{word} -> {corrected_word}")
             else:
-                # Check for similar words (levenshtein distance)
-                similar = self._find_similar(word)
-                if similar and similar in self.TYPO_CORRECTIONS:
-                    corrected_word = self.TYPO_CORRECTIONS[similar]
-                    corrected.append(corrected_word)
-                    suggestions.append(f"{word} -> {corrected_word}")
-                else:
-                    corrected.append(word)
+                corrected.append(word)
 
         return corrected, suggestions
 

@@ -16,7 +16,7 @@ import statistics
 from typing import Dict, List, Set, Tuple
 
 # -- Tuning constants (analogous to LOGOS jsd_gate=0.06, LEDA theta_low/high) --
-_DIV_GATE: float = 0.50  # Jaccard divergence at which confidence halves
+_DIV_GATE: float = 0.50  # Legacy agreement-floor tuning knob
 _THETA_PASS: float = 0.75  # confidence above this -> PASS
 _THETA_FORGE: float = 0.45  # confidence above this (but <= PASS) -> FORGE
 _ADAPT_EVERY: int = 100  # queries between MetaLearner adaptation cycles
@@ -30,40 +30,50 @@ def compute_search_confidence(
     div_gate: float = _DIV_GATE,
 ) -> float:
     """
-    Rank-divergence-gated confidence score.
+    Agreement-aware confidence score for hybrid retrieval.
 
-    Adapted from LOGOS bridge/omega_scorer.py::compute_logos_omega().
-    Replaces scipy Jensen-Shannon Divergence with Jaccard rank divergence,
-    keeping the same gate-collapse shape — zero new dependencies.
+    `raw_score` is expected to be a normalised fusion strength in [0, 1].
+    The URI sets provide a second signal: whether BM25 and semantic retrieval
+    are converging on the same underlying documents.
+
+    Unlike the earlier hard-collapse Jaccard gate, this keeps a small residual
+    confidence when the two paths disagree completely. In practice that matters
+    for real vaults where one path may hit file-level docs while the other hits
+    chunk-level atoms from the same source.
 
     Formula:
-        divergence  = 1 - |bm25 ∩ semantic| / |bm25 ∪ semantic|   (Jaccard)
-        confidence  = raw_score * max(0, 1 - divergence / div_gate)
-
-    Behaviour:
-        divergence=0.00 (full overlap)   -> factor=1.00  (no penalty)
-        divergence=0.25                  -> factor=0.50
-        divergence>=div_gate (no overlap)-> factor=0.00  (collapse)
+        overlap   = |bm25 ∩ semantic| / min(|bm25|, |semantic|)
+        coverage  = |bm25 ∩ semantic| / max(|bm25|, |semantic|)
+        agreement = (overlap + coverage) / 2
+        floor     = clamp(div_gate / 2, 0, 0.5)
+        factor    = max(floor, agreement)
+        confidence = raw_score * factor
 
     Args:
         raw_score:      Top-result normalised score [0, 1]
         bm25_uris:      Top-k URI set from BM25 path
         semantic_uris:  Top-k URI set from semantic path
-        div_gate:       Divergence threshold for collapse (default 0.5)
+        div_gate:       Legacy tuning knob that controls the disagreement floor.
 
     Returns:
         confidence [0, 1]
     """
     raw_score = max(0.0, min(1.0, float(raw_score)))
-    union = bm25_uris | semantic_uris
-    if not union:
-        return raw_score  # single-path: trust raw score directly
+    if not bm25_uris and not semantic_uris:
+        return raw_score
 
-    jaccard = len(bm25_uris & semantic_uris) / len(union)
-    divergence = 1.0 - jaccard
+    if not bm25_uris or not semantic_uris:
+        factor = max(0.0, min(0.5, float(div_gate) / 2.0))
+        return round(raw_score * factor, 4)
 
-    gate = max(div_gate, 1e-9)
-    factor = max(0.0, 1.0 - divergence / gate)
+    intersection = len(bm25_uris & semantic_uris)
+    smaller = min(len(bm25_uris), len(semantic_uris))
+    larger = max(len(bm25_uris), len(semantic_uris))
+    overlap = intersection / smaller if smaller else 0.0
+    coverage = intersection / larger if larger else 0.0
+    agreement = (overlap + coverage) / 2.0
+    floor = max(0.0, min(0.5, float(div_gate) / 2.0))
+    factor = max(floor, agreement)
     return round(raw_score * factor, 4)
 
 
