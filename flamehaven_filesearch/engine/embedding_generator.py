@@ -343,6 +343,7 @@ class OllamaEmbeddingProvider:
         # Import requests lazily so missing dep doesn't break DSP path
         try:
             import requests as _req  # noqa: F401
+
             self._requests_available = True
         except ImportError:
             self._requests_available = False
@@ -357,6 +358,7 @@ class OllamaEmbeddingProvider:
             return False
         try:
             import requests
+
             r = requests.get(f"{self._base_url}/api/tags", timeout=3)
             if r.status_code != 200:
                 return False
@@ -381,6 +383,7 @@ class OllamaEmbeddingProvider:
         if not self._requests_available:
             return None
         import requests
+
         try:
             r = requests.post(
                 f"{self._base_url}/api/embeddings",
@@ -388,13 +391,16 @@ class OllamaEmbeddingProvider:
                 timeout=30,
             )
             if r.status_code != 200:
-                logger.warning("[OllamaEmbed] API error %s: %s", r.status_code, r.text[:120])
+                logger.warning(
+                    "[OllamaEmbed] API error %s: %s", r.status_code, r.text[:120]
+                )
                 return None
             embedding = r.json().get("embedding")
             if not embedding:
                 return None
             if NUMPY_AVAILABLE:
                 import numpy as np
+
                 vec = np.array(embedding, dtype=np.float32)
                 norm = np.linalg.norm(vec)
                 if norm > 1e-10:
@@ -418,9 +424,7 @@ class OllamaEmbeddingProvider:
             if test_vec is not None:
                 dim = len(test_vec) if not NUMPY_AVAILABLE else int(test_vec.shape[0])
                 self._vector_dim = dim
-                logger.info(
-                    "[OllamaEmbed] Model '%s' ready — dim=%d", self._model, dim
-                )
+                logger.info("[OllamaEmbed] Model '%s' ready — dim=%d", self._model, dim)
                 return self._vector_dim
         # Fall back to DSP dimension
         self._vector_dim = self._fallback.vector_dim
@@ -492,7 +496,9 @@ class OllamaEmbeddingProvider:
         image_weight: float,
     ) -> Any:
         """Multimodal embedding (neural text + DSP image hash blend)."""
-        return self._fallback.generate_multimodal(text, image_bytes, text_weight, image_weight)
+        return self._fallback.generate_multimodal(
+            text, image_bytes, text_weight, image_weight
+        )
 
     def batch_generate(self, texts: List[str]) -> List[Any]:
         return [self.generate(t) for t in texts]
@@ -524,6 +530,7 @@ class OllamaEmbeddingProvider:
 
 
 # ── Factory + Singleton ────────────────────────────────────────────────────────
+
 
 def create_embedding_provider(
     provider: str = "dsp",

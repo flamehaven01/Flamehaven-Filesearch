@@ -335,7 +335,9 @@ class APIKeyManager:
     @staticmethod
     def _row_to_key_info(row: tuple) -> "APIKeyInfo":
         """Convert a DB row from list_keys query to an APIKeyInfo instance."""
-        key_id, name, user, created_at, last_used, is_active, rate_limit, perms_json = row
+        key_id, name, user, created_at, last_used, is_active, rate_limit, perms_json = (
+            row
+        )
         return APIKeyInfo(
             key_id=key_id,
             name=encryption_service.decrypt(name) or name,

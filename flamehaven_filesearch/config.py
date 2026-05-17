@@ -332,12 +332,8 @@ class Config:
             obsidian_chunk_max_tokens=int(
                 os.getenv("OBSIDIAN_CHUNK_MAX_TOKENS", "256")
             ),
-            obsidian_chunk_min_tokens=int(
-                os.getenv("OBSIDIAN_CHUNK_MIN_TOKENS", "32")
-            ),
-            obsidian_context_window=int(
-                os.getenv("OBSIDIAN_CONTEXT_WINDOW", "1")
-            ),
+            obsidian_chunk_min_tokens=int(os.getenv("OBSIDIAN_CHUNK_MIN_TOKENS", "32")),
+            obsidian_context_window=int(os.getenv("OBSIDIAN_CONTEXT_WINDOW", "1")),
             obsidian_resplit_chunk_chars=int(
                 os.getenv("OBSIDIAN_RESPLIT_CHUNK_CHARS", "1200")
             ),
@@ -364,7 +360,9 @@ class Config:
             persist_path=os.getenv("PERSIST_PATH") or None,
             # P3: embedding provider
             embedding_provider=os.getenv("EMBEDDING_PROVIDER", "dsp").strip().lower(),
-            ollama_embedding_model=os.getenv("OLLAMA_EMBEDDING_MODEL", "nomic-embed-text"),
+            ollama_embedding_model=os.getenv(
+                "OLLAMA_EMBEDDING_MODEL", "nomic-embed-text"
+            ),
             # #2 mitigation: optional query expansion
             query_expansion_path=os.getenv("QUERY_EXPANSION_PATH") or None,
             query_expansion_max_extra=int(os.getenv("QUERY_EXPANSION_MAX_EXTRA", "6")),

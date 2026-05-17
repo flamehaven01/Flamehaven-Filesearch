@@ -19,7 +19,10 @@ from .config import Config
 from .engine import ChronosConfig, ChronosGrid, GravitasPacker, IntentRefiner
 from .engine.quality_gate import SearchQualityGate, SearchMetaLearner
 from .engine.llm_providers import AbstractLLMProvider, create_llm_provider
-from .engine.embedding_generator import create_embedding_provider, get_embedding_generator
+from .engine.embedding_generator import (
+    create_embedding_provider,
+    get_embedding_generator,
+)
 from .multimodal import VisionModal, get_multimodal_processor
 from .persistence import get_persistence, FlamehavenPersistence
 from .storage import MemoryMetadataStore, create_metadata_store
@@ -105,7 +108,9 @@ class FlamehavenFileSearch(IngestMixin, LocalSearchMixin, CloudSearchMixin):
             self.embedding_generator = create_embedding_provider(
                 provider=_emb_provider,
                 ollama_model=_emb_model,
-                ollama_base_url=getattr(self.config, "ollama_base_url", "http://localhost:11434"),
+                ollama_base_url=getattr(
+                    self.config, "ollama_base_url", "http://localhost:11434"
+                ),
             )
         else:
             self.embedding_generator = get_embedding_generator()
@@ -126,6 +131,7 @@ class FlamehavenFileSearch(IngestMixin, LocalSearchMixin, CloudSearchMixin):
         # Optional non-neural query expansion (DSP recall lever). Off unless
         # config.query_expansion_path points to a JSON synonym map.
         from .engine.query_expansion import load_query_expander
+
         _expander = load_query_expander(
             getattr(self.config, "query_expansion_path", None),
             max_extra=getattr(self.config, "query_expansion_max_extra", 6),
@@ -246,9 +252,7 @@ class FlamehavenFileSearch(IngestMixin, LocalSearchMixin, CloudSearchMixin):
         if uri:
             self.chronos_grid.inject_essence(uri, doc, vec)
 
-    def _restore_store_docs(
-        self, store_name: str, docs: List[Dict[str, Any]]
-    ) -> int:
+    def _restore_store_docs(self, store_name: str, docs: List[Dict[str, Any]]) -> int:
         """Merge persisted docs into _local_store_docs; return count added."""
         existing = self._local_store_docs.setdefault(store_name, [])
         existing_uris = {d.get("uri") for d in existing}
@@ -263,9 +267,7 @@ class FlamehavenFileSearch(IngestMixin, LocalSearchMixin, CloudSearchMixin):
                 added += 1
         return added
 
-    def _restore_store_atoms(
-        self, store_name: str, atoms: Dict[str, Any]
-    ) -> int:
+    def _restore_store_atoms(self, store_name: str, atoms: Dict[str, Any]) -> int:
         """Merge persisted atoms into _atom_store_docs; return count added."""
         atom_map = self._atom_store_docs.setdefault(store_name, {})
         added = 0

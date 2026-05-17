@@ -113,7 +113,11 @@ class IngestMixin:
                 return None
 
             existing_fingerprint = str(metadata.get("content_fingerprint") or "")
-            if fingerprint and existing_fingerprint and existing_fingerprint != fingerprint:
+            if (
+                fingerprint
+                and existing_fingerprint
+                and existing_fingerprint != fingerprint
+            ):
                 continue
 
             existing_aliases = set(
@@ -373,11 +377,15 @@ class IngestMixin:
         metadata: Dict[str, Any] = {
             "file_type": ext,
             "file_path": abs_path,
-            "content_fingerprint": self._content_fingerprint(
-                getattr(obsidian_note, "body", "") if obsidian_note is not None else content
-            )
-            if content
-            else "",
+            "content_fingerprint": (
+                self._content_fingerprint(
+                    getattr(obsidian_note, "body", "")
+                    if obsidian_note is not None
+                    else content
+                )
+                if content
+                else ""
+            ),
         }
         if vision_text:
             metadata["vision_text"] = vision_text
@@ -396,7 +404,11 @@ class IngestMixin:
 
         if content:
             self._atom_store_docs.setdefault(store_name, {})
-            if ext == ".md" and obsidian_note is not None and self.config.obsidian_light_mode:
+            if (
+                ext == ".md"
+                and obsidian_note is not None
+                and self.config.obsidian_light_mode
+            ):
                 from .engine.obsidian_lite import build_obsidian_chunks
 
                 chunks = build_obsidian_chunks(

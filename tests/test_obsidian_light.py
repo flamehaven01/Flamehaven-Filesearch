@@ -192,9 +192,7 @@ def test_provider_rag_prompt_includes_contextual_chunk_text(
     assert "Precise semantic target" in prompt
 
 
-def test_bm25_ranked_uses_filename_lexical_signal(
-    offline_obsidian_searcher, tmp_path
-):
+def test_bm25_ranked_uses_filename_lexical_signal(offline_obsidian_searcher, tmp_path):
     note_path = tmp_path / "Collatz and Consciousness.md"
     note_path.write_text(
         "## Recursive Identity\n"
@@ -237,12 +235,8 @@ def test_semantic_rerank_penalizes_external_reference_folder(
     offline_obsidian_searcher.upload_file(str(internal_path), store_name="vault")
     offline_obsidian_searcher.upload_file(str(external_path), store_name="vault")
 
-    internal_uri = (
-        f"local://vault/{quote(str(internal_path.resolve()), safe='')}"
-    )
-    external_uri = (
-        f"local://vault/{quote(str(external_path.resolve()), safe='')}"
-    )
+    internal_uri = f"local://vault/{quote(str(internal_path.resolve()), safe='')}"
+    external_uri = f"local://vault/{quote(str(external_path.resolve()), safe='')}"
 
     offline_obsidian_searcher._active_query_for_semantic_rerank = (
         "AI identity experiment"
@@ -264,8 +258,7 @@ def test_keyword_search_uses_lexical_backstop_for_title_prefix(
 ):
     note_path = tmp_path / "Collatz and Consciousness.md"
     note_path.write_text(
-        "## Recursive Identity\n"
-        "This body avoids restating the title verbatim.\n",
+        "## Recursive Identity\n" "This body avoids restating the title verbatim.\n",
         encoding="utf-8",
     )
 
@@ -287,8 +280,7 @@ def test_exact_file_post_filter_prefers_exact_note_cluster(
     target_path = tmp_path / "Collatz and Consciousness.md"
     distractor_path = tmp_path / "Noise.md"
     target_path.write_text(
-        "# Collatz and Consciousness\n"
-        "Internal note about recursive cognition.\n",
+        "# Collatz and Consciousness\n" "Internal note about recursive cognition.\n",
         encoding="utf-8",
     )
     distractor_path.write_text(
@@ -347,13 +339,11 @@ def test_hybrid_search_promotes_exact_note_resolution(
     target_path = tmp_path / "Collatz and Consciousness.md"
     secondary_path = tmp_path / "Recursive Cognition Companion.md"
     target_path.write_text(
-        "# Collatz and Consciousness\n"
-        "Primary exact note for this lookup.\n",
+        "# Collatz and Consciousness\n" "Primary exact note for this lookup.\n",
         encoding="utf-8",
     )
     secondary_path.write_text(
-        "# Companion\n"
-        "Related recursive cognition material.\n",
+        "# Companion\n" "Related recursive cognition material.\n",
         encoding="utf-8",
     )
 
@@ -379,8 +369,7 @@ def test_exact_note_resolution_arbitrates_between_multiple_title_candidates(
     exact_path = tmp_path / "Collatz and Consciousness.md"
     extended_path = tmp_path / "Collatz and Consciousness A Flame-Based Exploration.md"
     exact_path.write_text(
-        "# Collatz and Consciousness\n"
-        "Short canonical note.\n",
+        "# Collatz and Consciousness\n" "Short canonical note.\n",
         encoding="utf-8",
     )
     extended_path.write_text(

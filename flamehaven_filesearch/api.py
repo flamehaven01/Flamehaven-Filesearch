@@ -460,6 +460,7 @@ def initialize_services(force: bool = False) -> None:
     fas_key = os.getenv("FAS_API_KEY", "")
     if fas_key.startswith("sk_live_"):
         from .auth import bootstrap_api_key
+
         bootstrap_api_key(fas_key)
 
 

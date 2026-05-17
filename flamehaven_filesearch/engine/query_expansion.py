@@ -101,9 +101,7 @@ def load_query_expander(
             logger.warning("[QueryExpansion] JSON root must be an object; disabled")
             return None
         exp = QueryExpander(data, max_extra=max_extra)
-        logger.info(
-            "[QueryExpansion] enabled — %d terms from %s", len(exp._map), p
-        )
+        logger.info("[QueryExpansion] enabled — %d terms from %s", len(exp._map), p)
         return exp if exp.active else None
     except Exception as e:  # pragma: no cover
         logger.warning("[QueryExpansion] failed to load %s: %s", p, e)

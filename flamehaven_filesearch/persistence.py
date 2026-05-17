@@ -171,6 +171,7 @@ def _json_default(obj: Any) -> Any:
     """JSON serializer for numpy types and non-serializable objects."""
     try:
         import numpy as np
+
         if isinstance(obj, (np.integer,)):
             return int(obj)
         if isinstance(obj, (np.floating,)):
@@ -183,7 +184,9 @@ def _json_default(obj: Any) -> Any:
     return str(obj)
 
 
-def get_persistence(persist_path: Optional[str] = None) -> Optional[FlamehavenPersistence]:
+def get_persistence(
+    persist_path: Optional[str] = None,
+) -> Optional[FlamehavenPersistence]:
     """
     Factory — returns a FlamehavenPersistence if PERSIST_PATH is configured,
     otherwise None (persistence disabled).

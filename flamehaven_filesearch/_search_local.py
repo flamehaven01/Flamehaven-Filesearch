@@ -79,9 +79,7 @@ class LocalSearchMixin:
                     adjusted -= self._external_reference_penalty(doc, query)
                 ranked.append({"id": uri, "score": adjusted})
         ranked.sort(key=lambda x: x["score"], reverse=True)
-        return self._cluster_ranked_entries(
-            store_name, ranked, max_per_cluster=2
-        )
+        return self._cluster_ranked_entries(store_name, ranked, max_per_cluster=2)
 
     def _resolve_fused_docs(
         self, store_name: str, fused: List[Dict[str, Any]]
@@ -199,9 +197,13 @@ class LocalSearchMixin:
         folder_text = " ".join(part for part in Path(path_text).parts[:-1] if part)
         folder_hits = self._lexical_token_hits(folder_text, query_terms)
         boost = 0.12 * folder_hits
-        if query_text and self._normalize_lookup_text(folder_text).find(
-            self._normalize_lookup_text(query_text)
-        ) != -1:
+        if (
+            query_text
+            and self._normalize_lookup_text(folder_text).find(
+                self._normalize_lookup_text(query_text)
+            )
+            != -1
+        ):
             boost += 0.35
         return boost
 
@@ -229,10 +231,16 @@ class LocalSearchMixin:
             score = max(score, 4.0)
         if normalized_query in body_text:
             score = max(score, 3.0)
-        if query_terms and title_text and all(term in title_text for term in query_terms):
+        if (
+            query_terms
+            and title_text
+            and all(term in title_text for term in query_terms)
+        ):
             score = max(score, 4.5)
-        if query_terms and heading_text and all(
-            term in heading_text for term in query_terms
+        if (
+            query_terms
+            and heading_text
+            and all(term in heading_text for term in query_terms)
         ):
             score = max(score, 3.5)
         return score
@@ -261,7 +269,9 @@ class LocalSearchMixin:
                 score = max(score, 7.0)
             if normalized_query in normalized_candidate:
                 score = max(score, 6.0)
-            if query_terms and all(term in normalized_candidate for term in query_terms):
+            if query_terms and all(
+                term in normalized_candidate for term in query_terms
+            ):
                 score = max(score, 5.2)
             score += 1.2 * self._match_phrase_prefix_score(
                 normalized_candidate, query_terms
@@ -294,7 +304,11 @@ class LocalSearchMixin:
 
         exact_equal = int(bool(title_text and title_text == normalized_query))
         prefix_equal = int(
-            bool(title_text and normalized_query and title_text.startswith(normalized_query))
+            bool(
+                title_text
+                and normalized_query
+                and title_text.startswith(normalized_query)
+            )
         )
         heading_prefix = int(
             bool(
@@ -353,7 +367,10 @@ class LocalSearchMixin:
                 continue
             cluster_scores[cluster] = max(cluster_scores.get(cluster, 0.0), score)
             arbitration = self._title_arbitration_tuple(doc, query)
-            if cluster not in cluster_arbitration or arbitration > cluster_arbitration[cluster]:
+            if (
+                cluster not in cluster_arbitration
+                or arbitration > cluster_arbitration[cluster]
+            ):
                 cluster_arbitration[cluster] = arbitration
             cluster_docs.setdefault(cluster, []).append(doc)
 
@@ -383,9 +400,8 @@ class LocalSearchMixin:
             if second_arb is not None and best_arb <= second_arb:
                 return None
             if second_arb is not None:
-                extra_margin = (
-                    best_arb[1:] > second_arb[1:]
-                    and (best_arb[4] - second_arb[4] >= 1 or best_arb[5] - second_arb[5] >= 8)
+                extra_margin = best_arb[1:] > second_arb[1:] and (
+                    best_arb[4] - second_arb[4] >= 1 or best_arb[5] - second_arb[5] >= 8
                 )
                 if not extra_margin:
                     return None
@@ -520,9 +536,13 @@ class LocalSearchMixin:
         boost += 0.75 * self._lexical_token_hits(title, query_terms)
         boost += 0.35 * self._lexical_token_hits(heading_text, query_terms)
         if isinstance(tags, list):
-            boost += 0.2 * self._lexical_token_hits(" ".join(map(str, tags)), query_terms)
+            boost += 0.2 * self._lexical_token_hits(
+                " ".join(map(str, tags)), query_terms
+            )
         if isinstance(links, list):
-            boost += 0.15 * self._lexical_token_hits(" ".join(map(str, links)), query_terms)
+            boost += 0.15 * self._lexical_token_hits(
+                " ".join(map(str, links)), query_terms
+            )
         return boost
 
     def _external_reference_penalty(self, doc: Dict[str, Any], query: str) -> float:
@@ -631,9 +651,7 @@ class LocalSearchMixin:
                 adjusted -= 0.25 * self._external_reference_penalty(doc, query)
             ranked.append({"id": uri, "score": adjusted})
         ranked.sort(key=lambda x: x["score"], reverse=True)
-        return self._cluster_ranked_entries(
-            store_name, ranked, max_per_cluster=2
-        )
+        return self._cluster_ranked_entries(store_name, ranked, max_per_cluster=2)
 
     def _contextual_doc_text(
         self,
@@ -860,16 +878,12 @@ class LocalSearchMixin:
                     sources_docs = backstop_docs[: self.config.max_sources]
                     if exact_note and backstop_docs == exact_note[0]:
                         used_exact_note = True
-                sources = [
-                    {"title": d["title"], "uri": d["uri"]}
-                    for d in sources_docs
-                ]
+                sources = [{"title": d["title"], "uri": d["uri"]} for d in sources_docs]
                 if verdict == "FORGE":
                     sources = self._forge_augment_sources(sources, docs, query)
 
                 snippets = [
-                    self._build_semantic_excerpt(d, query)
-                    for d in answer_docs[:5]
+                    self._build_semantic_excerpt(d, query) for d in answer_docs[:5]
                 ]
                 answer = (
                     " ".join(s for s in snippets if s)
@@ -915,10 +929,13 @@ class LocalSearchMixin:
             if backstop_docs:
                 if exact_note:
                     backstop_docs = exact_note[0]
-                answer = " ".join(
-                    self._build_semantic_excerpt(doc, query)
-                    for doc in backstop_docs[:5]
-                ).strip() or "Found related content via lexical backstop."
+                answer = (
+                    " ".join(
+                        self._build_semantic_excerpt(doc, query)
+                        for doc in backstop_docs[:5]
+                    ).strip()
+                    or "Found related content via lexical backstop."
+                )
                 sources = [
                     {"title": doc["title"], "uri": doc["uri"]}
                     for doc in backstop_docs[: self.config.max_sources]
