@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "flamehaven-filesearch"
-version = "1.6.4"
+version = "1.6.5"
 description = "FLAMEHAVEN FileSearch - Open source semantic document search with multi-provider LLM support (Gemini, OpenAI, Claude, Ollama)"
 readme = "README.md"
 requires-python = ">=3.8"

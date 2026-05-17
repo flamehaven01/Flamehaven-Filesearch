@@ -6,7 +6,7 @@ Open source semantic document search powered by Google Gemini
 Fast, simple, and transparent file search for developers
 """
 
-__version__ = "1.6.4"
+__version__ = "1.6.5"
 __author__ = "FLAMEHAVEN"
 __license__ = "MIT"
 

@@ -9,6 +9,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.6.5] - 2026-05-17
+
+### Fixed
+
+- **`api.py` version drift** — Replaced 7 hardcoded `"1.4.2"` strings with
+  `_VERSION` (imported from `__version__`). `/health` and root `GET /`
+  responses now return the correct version automatically on every release.
+  FastAPI OpenAPI title description also uses `_VERSION`.
+
+### Changed
+
+- **Frontend version badges** — All 6 dashboard pages (`landing`, `search`,
+  `upload`, `admin`, `cache`, `metrics`) updated from `v1.6.1` to `v1.6.5`.
+
+### Added
+
+- **Multimodal search UI** (`frontend/dashboard/search.html`): "Add Image"
+  toggle below the query textarea. Supports drag-and-drop or file picker
+  (JPEG/PNG/WEBP/GIF), shows inline preview with filename and size. When an
+  image is attached, POST switches to `/api/search/multimodal` (FormData);
+  without image, existing `/api/search` (JSON) path is unchanged. Requires
+  `MULTIMODAL_ENABLED=1` server-side — a note is shown in the drop zone.
+
+- **Prometheus endpoint info card** (`frontend/dashboard/metrics.html`):
+  Card below the raw JSON panel explains `GET /prometheus` (Prometheus text
+  format for Grafana/scraping), notes `FLAMEHAVEN_METRICS_ENABLED=1`
+  requirement, and provides a direct `/prometheus` link.
+
 ### Tests
 
 - **Comprehensive test suite expansion** — 10 new test files covering previously
