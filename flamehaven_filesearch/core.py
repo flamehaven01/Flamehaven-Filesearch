@@ -237,14 +237,47 @@ class FlamehavenFileSearch(IngestMixin, LocalSearchMixin, CloudSearchMixin):
 
     # ── Persistence helpers ────────────────────────────────────────────────────
 
-    def _restore_from_persistence(self) -> int:
-        """
-        Load all persisted store snapshots back into memory on startup.
+    def _inject_into_chronos(self, uri: str, doc: Dict[str, Any]) -> None:
+        """Generate embedding for doc content and inject into ChronosGrid."""
+        content = (doc.get("content") or "")[:2000]
+        if not content:
+            return
+        vec = self.embedding_generator.generate(content)
+        if uri:
+            self.chronos_grid.inject_essence(uri, doc, vec)
 
-        For each persisted store:
-          1. Restore docs + atoms into _local_store_docs / _atom_store_docs
-          2. Regenerate embeddings from content (DSP <1ms each)
-          3. Re-inject into ChronosGrid and rebuild BM25 index lazily
+    def _restore_store_docs(
+        self, store_name: str, docs: List[Dict[str, Any]]
+    ) -> int:
+        """Merge persisted docs into _local_store_docs; return count added."""
+        existing = self._local_store_docs.setdefault(store_name, [])
+        existing_uris = {d.get("uri") for d in existing}
+        added = 0
+        for doc in docs:
+            uri = doc.get("uri")
+            if uri not in existing_uris:
+                existing.append(doc)
+                existing_uris.add(uri)
+                resolved_uri = uri or doc.get("metadata", {}).get("file_path", "")
+                self._inject_into_chronos(resolved_uri, doc)
+                added += 1
+        return added
+
+    def _restore_store_atoms(
+        self, store_name: str, atoms: Dict[str, Any]
+    ) -> int:
+        """Merge persisted atoms into _atom_store_docs; return count added."""
+        atom_map = self._atom_store_docs.setdefault(store_name, {})
+        added = 0
+        for atom_uri, atom in atoms.items():
+            if atom_uri not in atom_map:
+                atom_map[atom_uri] = atom
+                self._inject_into_chronos(atom_uri, atom)
+                added += 1
+        return added
+
+    def _restore_from_persistence(self) -> int:
+        """Load all persisted store snapshots back into memory on startup.
 
         Returns total number of documents restored.
         """
@@ -257,38 +290,11 @@ class FlamehavenFileSearch(IngestMixin, LocalSearchMixin, CloudSearchMixin):
             if not docs and not atoms:
                 continue
 
-            # Ensure store exists in registry
             if store_name not in self.stores:
                 self.create_store(store_name)
 
-            # Restore main docs
-            existing = self._local_store_docs.setdefault(store_name, [])
-            existing_uris = {d.get("uri") for d in existing}
-            for doc in docs:
-                if doc.get("uri") not in existing_uris:
-                    existing.append(doc)
-                    existing_uris.add(doc.get("uri"))
-                    # Re-inject into ChronosGrid
-                    content = (doc.get("content") or "")[:2000]
-                    if content:
-                        vec = self.embedding_generator.generate(content)
-                        uri = doc.get("uri") or doc.get("metadata", {}).get("file_path", "")
-                        if uri:
-                            self.chronos_grid.inject_essence(uri, doc, vec)
-                    total_restored += 1
-
-            # Restore chunk atoms
-            atom_map = self._atom_store_docs.setdefault(store_name, {})
-            for atom_uri, atom in atoms.items():
-                if atom_uri not in atom_map:
-                    atom_map[atom_uri] = atom
-                    content = (atom.get("content") or "")[:2000]
-                    if content:
-                        vec = self.embedding_generator.generate(content)
-                        self.chronos_grid.inject_essence(atom_uri, atom, vec)
-                    total_restored += 1
-
-            # Mark BM25 as dirty — rebuilt lazily on next search
+            total_restored += self._restore_store_docs(store_name, docs)
+            total_restored += self._restore_store_atoms(store_name, atoms)
             self._bm25_dirty.add(store_name)
 
         if total_restored > 0:

@@ -1,8 +1,6 @@
 # Release and Tagging
 
-This project already has a public tag history through `v1.6.2`.
-
-The current Obsidian-light and exact-note work is not tagged yet. Treat it as `Unreleased` until release notes, docs, and smoke validation are complete.
+This project has a public tag history through `v1.6.3`. The current working tree is `v1.6.4` (internal refactoring — no public API change).
 
 ## Current Rule
 
@@ -33,15 +31,15 @@ Use semantic versioning:
 
 ## Candidate Next Tag
 
-If the current working tree is released after review, the most natural next tag is:
+The current working tree is ready to tag as:
 
-`v1.6.3`
+`v1.6.4`
 
 Reason:
 
-- Search quality changed materially
-- Obsidian light mode is now documented and operational
-- No public breaking API change has been introduced
+- Pure internal refactoring: `_restore_from_persistence`, `list_keys`, `_init_searcher` decomposed
+- Depth/CC metrics reduced; no public API or behavior change
+- All 71 tests pass
 
 ## Tag Hygiene
 
@@ -53,8 +51,8 @@ Reason:
 Example:
 
 ```bash
-git tag -a v1.6.3 -m "release: v1.6.3 obsidian light retrieval hardening"
-git push origin v1.6.3
+git tag -a v1.6.4 -m "refactor: v1.6.4 persistence/auth/api complexity reduction"
+git push origin v1.6.4
 ```
 
 ## Release Checklist

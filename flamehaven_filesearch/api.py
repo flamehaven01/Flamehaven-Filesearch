@@ -381,25 +381,30 @@ class ErrorResponse(BaseModel):
     timestamp: str
 
 
+def _seed_default_store(fs: "FlamehavenFileSearch") -> None:
+    """Create the default store and insert a bootstrap doc if the store is empty."""
+    try:
+        fs.create_store("default")
+        if not getattr(fs, "_use_native_client", False):
+            docs = fs._local_store_docs.setdefault("default", [])
+            if not docs:
+                docs.append(
+                    {
+                        "title": "bootstrap.txt",
+                        "uri": "local://bootstrap.txt",
+                        "content": "Flamehaven Filesearch default store bootstrap document.",
+                    }
+                )
+    except Exception as exc:  # pragma: no cover
+        logger.warning("Unable to create default store: %s", exc)
+
+
 def _init_searcher(config: Config) -> "Optional[FlamehavenFileSearch]":
     """Create FlamehavenFileSearch, seed the default store, and wire sub-routers."""
     try:
         fs = FlamehavenFileSearch(config=config, allow_offline=True)
         logger.info("FLAMEHAVEN FileSearch v1.4.0 initialized successfully")
-        try:
-            fs.create_store("default")
-            if not getattr(fs, "_use_native_client", False):
-                docs = fs._local_store_docs.setdefault("default", [])
-                if not docs:
-                    docs.append(
-                        {
-                            "title": "bootstrap.txt",
-                            "uri": "local://bootstrap.txt",
-                            "content": "Flamehaven Filesearch default store bootstrap document.",
-                        }
-                    )
-        except Exception as exc:  # pragma: no cover
-            logger.warning("Unable to create default store: %s", exc)
+        _seed_default_store(fs)
         batch_routes.set_searcher(fs)
         _ws_routes.set_searcher(fs)
         return fs

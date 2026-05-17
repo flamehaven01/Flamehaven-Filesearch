@@ -11,6 +11,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.6.4] - 2026-05-17
+
+### Changed
+
+- **Refactor — `_restore_from_persistence` decomposition** (`core.py`): Extracted three
+  focused helpers to eliminate depth-5 / CC-17 function composite.
+  `_inject_into_chronos(uri, doc)` — embedding generation + ChronosGrid injection (shared
+  by docs and atoms); `_restore_store_docs(store_name, docs)` — deduplication + doc
+  restore loop (depth 5 → 3); `_restore_store_atoms(store_name, atoms)` — atom restore
+  loop. `_restore_from_persistence` is now 18 lines. No behavior change.
+
+- **Refactor — `list_keys` row-parse extraction** (`auth.py`): Two static helpers replace
+  the inline nested try/except (depth 4 → 2). `_decode_permissions(perms_json)` handles
+  decrypt + JSON parse with raw fallback; `_row_to_key_info(row)` maps a DB tuple to
+  `APIKeyInfo`. `list_keys` body is now a single list-comprehension over `cursor.fetchall()`.
+
+- **Refactor — `_init_searcher` store-seed extraction** (`api.py`): Extracted
+  `_seed_default_store(fs)` to hold the nested inner-try that creates the default store
+  and inserts the bootstrap doc. `_init_searcher` depth 4 → 2, CC 5 → 2.
+
+---
+
 ## [1.6.3] - 2026-05-16
 
 ### Fixed — post-patch bugfixes

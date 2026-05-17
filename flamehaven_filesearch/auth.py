@@ -324,6 +324,29 @@ class APIKeyManager:
             logger.error("Database error revoking key: %s", e)
             return False
 
+    @staticmethod
+    def _decode_permissions(perms_json: Optional[str]) -> List[str]:
+        """Decrypt + parse permissions JSON; fallback to raw parse on decrypt failure."""
+        try:
+            return json.loads(encryption_service.decrypt(perms_json) or perms_json)
+        except Exception:
+            return json.loads(perms_json) if perms_json else []
+
+    @staticmethod
+    def _row_to_key_info(row: tuple) -> "APIKeyInfo":
+        """Convert a DB row from list_keys query to an APIKeyInfo instance."""
+        key_id, name, user, created_at, last_used, is_active, rate_limit, perms_json = row
+        return APIKeyInfo(
+            key_id=key_id,
+            name=encryption_service.decrypt(name) or name,
+            user_id=encryption_service.decrypt(user) or user,
+            created_at=created_at,
+            last_used=last_used,
+            is_active=bool(is_active),
+            rate_limit_per_minute=rate_limit,
+            permissions=APIKeyManager._decode_permissions(perms_json),
+        )
+
     def list_keys(self, user_id: str) -> List[APIKeyInfo]:
         """List all keys for user (without secret)"""
         try:
@@ -339,41 +362,7 @@ class APIKeyManager:
                     """,
                     (user_id,),
                 )
-
-                keys = []
-                for row in cursor.fetchall():
-                    (
-                        key_id,
-                        name,
-                        user,
-                        created_at,
-                        last_used,
-                        is_active,
-                        rate_limit,
-                        perms_json,
-                    ) = row
-                    is_active = bool(is_active)
-                    try:
-                        permissions = json.loads(
-                            encryption_service.decrypt(perms_json) or perms_json
-                        )
-                    except Exception:
-                        permissions = json.loads(perms_json) if perms_json else []
-
-                    keys.append(
-                        APIKeyInfo(
-                            key_id=key_id,
-                            name=encryption_service.decrypt(name) or name,
-                            user_id=encryption_service.decrypt(user) or user,
-                            created_at=created_at,
-                            last_used=last_used,
-                            is_active=is_active,
-                            rate_limit_per_minute=rate_limit,
-                            permissions=permissions,
-                        )
-                    )
-
-                return keys
+                return [self._row_to_key_info(row) for row in cursor.fetchall()]
 
         except sqlite3.Error as e:
             logger.error("Database error listing keys: %s", e)

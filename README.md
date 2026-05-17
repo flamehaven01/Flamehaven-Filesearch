@@ -27,7 +27,7 @@ Stop sending your sensitive documents to third-party services. FLAMEHAVEN FileSe
 
 ```bash
 # Gemini (cloud) — one command, three minutes
-docker run -d -p 8000:8000 -e GEMINI_API_KEY="your_key" flamehaven-filesearch:1.6.1
+docker run -d -p 8000:8000 -e GEMINI_API_KEY="your_key" flamehaven-filesearch:1.6.4
 
 # Ollama — fully local, zero API cost (Gemma, Llama, Mistral, Qwen, Phi …)
 # Step 1: pull a model  →  ollama pull gemma4:27b
@@ -35,7 +35,7 @@ docker run -d -p 8000:8000 \
   -e LLM_PROVIDER=ollama \
   -e LOCAL_MODEL=gemma4:27b \
   -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
-  flamehaven-filesearch:1.6.1
+  flamehaven-filesearch:1.6.4
 ```
 
 <table>
@@ -97,7 +97,7 @@ docker run -d \
   -e GEMINI_API_KEY="your_gemini_api_key" \
   -e FLAMEHAVEN_ADMIN_KEY="secure_admin_password" \
   -v $(pwd)/data:/app/data \
-  flamehaven-filesearch:1.6.1
+  flamehaven-filesearch:1.6.4
 ```
 
 ✅ Server running at `http://localhost:8000`
@@ -181,7 +181,7 @@ pip install flamehaven-filesearch[all]
 # Build from source
 git clone https://github.com/flamehaven01/Flamehaven-Filesearch.git
 cd Flamehaven-Filesearch
-docker build -t flamehaven-filesearch:1.6.1 .
+docker build -t flamehaven-filesearch:1.6.4 .
 ```
 
 ### Framework Integrations
@@ -484,6 +484,20 @@ Full roadmap: [ROADMAP.md](ROADMAP.md)
 - [x] BM25 pool size self-adapts via meta-learner alpha (keyword-dominant → larger pool)
 - [x] 25 tests, 99% coverage on `quality_gate.py`
 
+### v1.6.3 (Completed)
+- [x] P4 — Snapshot persistence (`persistence.py`, `core.py`): atomic JSON snapshots, cold-start restore
+- [x] P3 — Embedding provider abstraction: `OllamaEmbeddingProvider` + DSP fallback (`EMBEDDING_PROVIDER=ollama|dsp`)
+- [x] P6 — Non-neural query expansion (`engine/query_expansion.py`): optional synonym map, zero-ML recall lever
+- [x] P5 — Auto re-ingest watcher (`tools/watch_ingest.py`): content-fingerprint dedup, stdlib polling fallback
+- [x] P1 — `search_confidence` in REST response: `_provider_search` now computes confidence signal
+- [x] P2 — Configurable rate limits via env vars (`UPLOAD_RATE_LIMIT`, `SEARCH_RATE_LIMIT`)
+- [x] P0 bugfixes: live→file typo overcorrection, exact_note_match suppressed by query expansion
+
+### v1.6.4 (Completed)
+- [x] Refactor: `_restore_from_persistence` decomposed into `_inject_into_chronos`, `_restore_store_docs`, `_restore_store_atoms` — depth 5 → 3, CC 17 → 5 (`core.py`)
+- [x] Refactor: `list_keys` inner try/except extracted to `_decode_permissions` + `_row_to_key_info` static helpers — depth 4 → 2 (`auth.py`)
+- [x] Refactor: `_init_searcher` nested store-seed extracted to `_seed_default_store` — depth 4 → 2 (`api.py`)
+
 ### v2.0.0 (Q3 2026)
 - [ ] Multi-language support (15+ languages) — multilingual stopwords + jieba
 - [ ] Kubernetes Helm charts
@@ -639,6 +653,6 @@ Built with amazing open source tools:
 
 Built with 🔥 by the Flamehaven Core Team
 
-*Last updated: May 16, 2026 • Current release tag: v1.6.2 • Working tree: Unreleased*
+*Last updated: May 17, 2026 • Current release tag: v1.6.4 • Working tree: clean*
 
 </div>
