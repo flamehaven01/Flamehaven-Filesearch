@@ -56,7 +56,7 @@
           </div>
           <div class="flex flex-col">
             <span class="text-text-main-dark text-base font-bold">Filesearch Ops</span>
-            <span class="text-text-secondary-dark text-xs">v1.6.1</span>
+            <span class="text-text-secondary-dark text-xs">v1.6.4</span>
           </div>
         </div>
         <nav class="flex flex-col gap-1 mt-2">
@@ -138,6 +138,31 @@
         <div class="mb-4">
           <label class="text-text-secondary-dark text-xs font-semibold uppercase tracking-wider block mb-1.5">Query</label>
           <textarea id="query" rows="4" class="w-full rounded-xl bg-surface-dark border border-border-dark text-white text-sm px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 placeholder:text-text-secondary-dark" placeholder="Ask anything about your documents..."></textarea>
+        </div>
+
+        <!-- Image (Multimodal) -->
+        <div class="mb-4">
+          <button id="btn-toggle-image" type="button" class="flex items-center gap-1.5 text-text-secondary-dark text-xs font-semibold hover:text-text-main-dark transition-colors select-none">
+            <span class="material-symbols-outlined text-base">add_photo_alternate</span>
+            <span id="toggle-image-label">Add Image (multimodal)</span>
+          </button>
+          <div id="image-section" class="hidden mt-3">
+            <div id="image-drop-zone" class="relative flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border-dark bg-surface-dark/50 p-5 cursor-pointer hover:border-primary/50 transition-colors">
+              <input id="image-input" type="file" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
+              <span class="material-symbols-outlined text-3xl text-border-dark">image</span>
+              <p id="image-label" class="text-text-secondary-dark text-xs text-center">Drop an image or click to browse<br/><span class="text-text-secondary-dark/60">JPEG, PNG, WEBP, GIF — requires <code class="font-mono">MULTIMODAL_ENABLED=1</code></span></p>
+            </div>
+            <div id="image-preview-row" class="hidden mt-2 flex items-center gap-3">
+              <img id="image-preview" src="" alt="preview" class="h-14 w-14 object-cover rounded-lg border border-border-dark flex-shrink-0" />
+              <div class="flex-1 min-w-0">
+                <p id="image-filename" class="text-text-main-dark text-xs font-mono truncate"></p>
+                <p id="image-filesize" class="text-text-secondary-dark text-xs"></p>
+              </div>
+              <button id="btn-remove-image" type="button" class="text-text-secondary-dark hover:text-error transition-colors flex-shrink-0">
+                <span class="material-symbols-outlined text-base">close</span>
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- Advanced Options (collapsible) -->
@@ -301,6 +326,52 @@
       };
       checkAPIStatus();
 
+      // --- Image / multimodal wiring ---
+      let imageFile = null;
+
+      const imageSection = document.getElementById("image-section");
+      const imageInput = document.getElementById("image-input");
+      const imagePreviewRow = document.getElementById("image-preview-row");
+      const imagePreview = document.getElementById("image-preview");
+      const imageFilename = document.getElementById("image-filename");
+      const imageFilesize = document.getElementById("image-filesize");
+      const toggleLabel = document.getElementById("toggle-image-label");
+
+      document.getElementById("btn-toggle-image")?.addEventListener("click", () => {
+        const hidden = imageSection.classList.toggle("hidden");
+        toggleLabel.textContent = hidden ? "Add Image (multimodal)" : "Remove Image section";
+        if (hidden) { imageFile = null; imageInput.value = ""; imagePreviewRow.classList.add("hidden"); }
+      });
+
+      const setImageFile = (file) => {
+        if (!file) return;
+        imageFile = file;
+        imageFilename.textContent = file.name;
+        imageFilesize.textContent = (file.size / 1024).toFixed(1) + " KB";
+        const reader = new FileReader();
+        reader.onload = (e) => { imagePreview.src = e.target.result; };
+        reader.readAsDataURL(file);
+        imagePreviewRow.classList.remove("hidden");
+        document.getElementById("image-drop-zone").classList.add("border-primary/50");
+      };
+
+      imageInput?.addEventListener("change", () => setImageFile(imageInput.files[0]));
+
+      document.getElementById("btn-remove-image")?.addEventListener("click", () => {
+        imageFile = null;
+        imageInput.value = "";
+        imagePreview.src = "";
+        imagePreviewRow.classList.add("hidden");
+        document.getElementById("image-drop-zone").classList.remove("border-primary/50");
+      });
+
+      // Drag-and-drop on image zone
+      const dropZone = document.getElementById("image-drop-zone");
+      dropZone?.addEventListener("dragover", (e) => { e.preventDefault(); dropZone.classList.add("border-primary/50"); });
+      dropZone?.addEventListener("dragleave", () => { if (!imageFile) dropZone.classList.remove("border-primary/50"); });
+      dropZone?.addEventListener("drop", (e) => { e.preventDefault(); setImageFile(e.dataTransfer.files[0]); });
+      // --- end image wiring ---
+
       const btn = document.getElementById("btn-run");
       const queryEl = document.getElementById("query");
       const modelEl = document.getElementById("model");
@@ -374,14 +445,30 @@
         };
 
         try {
-          const resp = await fetch("/api/search", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              ...(tokenEl?.value ? { Authorization: `Bearer ${tokenEl.value}` } : {}),
-            },
-            body: JSON.stringify(payload),
-          });
+          let resp;
+          if (imageFile) {
+            const fd = new FormData();
+            fd.append("query", payload.query);
+            fd.append("store_name", payload.store_name);
+            if (payload.model) fd.append("model", payload.model);
+            fd.append("temperature", String(payload.temperature));
+            fd.append("max_tokens", String(payload.max_tokens));
+            fd.append("image", imageFile, imageFile.name);
+            resp = await fetch("/api/search/multimodal", {
+              method: "POST",
+              headers: { ...(tokenEl?.value ? { Authorization: `Bearer ${tokenEl.value}` } : {}) },
+              body: fd,
+            });
+          } else {
+            resp = await fetch("/api/search", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                ...(tokenEl?.value ? { Authorization: `Bearer ${tokenEl.value}` } : {}),
+              },
+              body: JSON.stringify(payload),
+            });
+          }
 
           const data = await resp.json();
           if (!resp.ok) {

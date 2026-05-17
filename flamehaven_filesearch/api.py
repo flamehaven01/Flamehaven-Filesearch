@@ -1,5 +1,5 @@
 """
-FastAPI server for FLAMEHAVEN FileSearch v1.4.2
+FastAPI server for FLAMEHAVEN FileSearch.
 
 FastAPI server with:
 - Rate limiting
@@ -11,8 +11,8 @@ FastAPI server with:
 - LRU caching with TTL
 - Prometheus metrics
 - Structured JSON logging
-- Usage tracking and quota management (v1.4.2)
-- pgvector maintenance operations (v1.4.2)
+- Usage tracking and quota management
+- pgvector maintenance operations
 """
 
 import ipaddress
@@ -74,6 +74,7 @@ from .middlewares import (
     get_request_id,
 )
 from .security import get_current_api_key, optional_api_key
+from . import __version__ as _VERSION
 from .usage_middleware import UsageTrackingMiddleware
 from .validators import (
     FileSizeValidator,
@@ -189,9 +190,10 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="FLAMEHAVEN FileSearch API",
     description=(
-        "Open source semantic document search powered by Google Gemini " "- v1.4.2"
+        "Open source semantic document search powered by Google Gemini "
+        f"- v{_VERSION}"
     ),
-    version="1.4.2",
+    version=_VERSION,
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan,
@@ -219,7 +221,7 @@ app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RequestIDMiddleware)
 app.add_middleware(CORSHeadersMiddleware)
 
-# Add usage tracking middleware (v1.4.2)
+# Add usage tracking middleware
 # Enabled by default, can be disabled via USAGE_TRACKING_ENABLED=false
 usage_tracking_enabled = os.getenv("USAGE_TRACKING_ENABLED", "true").lower() in {
     "1",
@@ -523,7 +525,7 @@ async def health_check(request: Request):
 
     return {
         "status": "healthy" if searcher else "unhealthy",
-        "version": "1.4.2",
+        "version": _VERSION,
         "uptime_seconds": round(uptime, 2),
         "uptime_formatted": format_uptime(uptime),
         "uptime": format_uptime(uptime),
@@ -1287,7 +1289,7 @@ async def root():
     """
     return {
         "name": "FLAMEHAVEN FileSearch API",
-        "version": "1.4.2",
+        "version": _VERSION,
         "description": "Open source semantic document search powered by Google Gemini",
         "docs": "/docs",
         "health": "/health",
