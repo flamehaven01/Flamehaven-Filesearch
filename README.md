@@ -322,7 +322,7 @@ security:
 </tr>
 <tr>
 <td>Test Suite</td>
-<td><code>476 tests</code></td>
+<td><code>1200 tests, 81% coverage</code></td>
 <td>All passing (pytest)</td>
 </tr>
 <tr>

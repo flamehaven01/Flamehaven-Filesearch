@@ -1,6 +1,6 @@
 # Release and Tagging
 
-This project has a public tag history through `v1.6.3`. The current working tree is `v1.6.4` (internal refactoring — no public API change).
+This project has a public tag history through `v1.6.4`. The current working tree is clean post-v1.6.4 with test suite expansion (1200 tests, 81% coverage).
 
 ## Current Rule
 
@@ -33,13 +33,13 @@ Use semantic versioning:
 
 The current working tree is ready to tag as:
 
-`v1.6.4`
+`v1.6.5`
 
 Reason:
 
-- Pure internal refactoring: `_restore_from_persistence`, `list_keys`, `_init_searcher` decomposed
-- Depth/CC metrics reduced; no public API or behavior change
-- All 71 tests pass
+- Test suite expansion: 10 new test files, coverage 73.57% → 81%
+- 1200 tests pass, 20 skipped
+- No public API or behavior change
 
 ## Tag Hygiene
 
@@ -51,8 +51,8 @@ Reason:
 Example:
 
 ```bash
-git tag -a v1.6.4 -m "refactor: v1.6.4 persistence/auth/api complexity reduction"
-git push origin v1.6.4
+git tag -a v1.6.5 -m "tests: v1.6.5 test suite expansion, coverage 73% -> 81%"
+git push origin v1.6.5
 ```
 
 ## Release Checklist

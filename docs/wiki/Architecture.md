@@ -1,7 +1,7 @@
 # Architecture Overview
 
 Flamehaven FileSearch balances simplicity with production-grade safeguards. This
-document describes the moving parts as of **v1.6.1**, featuring:
+document describes the moving parts as of **v1.6.4**, featuring:
 - **Gravitas DSP Engine** (v1.3.1+)
 - **Multimodal Search** (v1.4.0+)
 - **pgvector with HNSW** (v1.4.0+)
@@ -14,6 +14,8 @@ document describes the moving parts as of **v1.6.1**, featuring:
 - **BM25+RRF Hybrid Search, KnowledgeAtom, Mixin Architecture** (v1.6.0)
 - **CC reduction, GravitasPacker dispatch table, `/health` provider exposure, frontend E2E** (v1.6.1)
 - **Quality Gate + Meta-Learner: confidence-scored hybrid, FORGE/INHIBIT verdicts, EMA alpha** (v1.6.2)
+- **Snapshot persistence, OllamaEmbeddingProvider, query expansion, auto re-ingest watcher** (v1.6.3)
+- **Persistence/auth/api complexity decomposition: depth-5 CC-17 → 3 focused helpers** (v1.6.4)
 
 ---
 

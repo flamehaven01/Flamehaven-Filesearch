@@ -14,18 +14,20 @@ pressure reduction before expanding surface area.
 - [x] Stable URI scheme — `local://<store>/<quote(abs_path)>`, collision-free.
 - [x] core.py mixin segmentation — 1258 → 221 lines; 3 focused mixin modules.
 - [x] Fix: `search_stream` double intent-refine bug.
-- [x] 443 tests pass, 13 skipped; AI-Slop-Detector: CLEAN.
+- [x] 443 tests pass, 13 skipped at release; AI-Slop-Detector: CLEAN.
 
-## Next Steps (Now)
+## Current State (v1.6.4, 2026-05-17)
+
+- [x] Full test suite: **1200 tests pass, 20 skipped, 81% coverage** (up from 73.57%)
+- [x] All 10 major modules covered: core, admin_routes, multimodal, persistence,
+      storage/oauth/security, usage_middleware, llm_providers, integrations, engine, misc
+
+## Next Steps
 
 - [ ] Cache + cost improvements (cache hit tracking by search mode/backend,
       tighter invalidation, and default safe limits).
 - [ ] Multi-language full support (15+ languages beyond current stopword sets).
 - [ ] Kubernetes Helm charts.
-- [x] Usage-budget controls (per-key quotas, alerts, and admin usage reporting).
-- [x] pgvector reliability (health checks, retry/backoff, and index tuning guidance).
-- [x] Multimodal stability (vision provider selection, size/timeouts, clearer errors).
-- [x] Performance baseline (stabilize benchmarks and document expected ranges).
 
 ## v1.4.0 (Released: 2025-12-28)
 

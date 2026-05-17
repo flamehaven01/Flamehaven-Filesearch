@@ -9,6 +9,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Tests
+
+- **Comprehensive test suite expansion** — 10 new test files covering previously
+  untested modules:
+  - `test_core_comprehensive.py` — init paths, store management, persistence helpers,
+    `_resolve_vector_backend`, `get_metrics`
+  - `test_admin_routes_comprehensive.py` — `_parse_bearer_token`, `_try_oauth_admin`,
+    `_resolve_key_admin`, Pydantic models, FastAPI route integration
+  - `test_multimodal_comprehensive.py` — `timeout_context`, `VisionStrategy`,
+    `NoopVisionModal`, `PillowVisionModal`, `MultimodalProcessor`, `_parse_strategy`,
+    `_select_vision_modal`, `get_multimodal_processor`
+  - `test_persistence_comprehensive.py` — `FlamehavenPersistence` (save/load/delete),
+    wrong schema version, invalid JSON, `get_persistence` singleton, `_json_default`
+  - `test_storage_oauth_security_comprehensive.py` — `MemoryMetadataStore`,
+    `create_metadata_store`, OAuth JWT paths, `RequestContext.has_permission`,
+    `_oauth_to_api_key_info`
+  - `test_usage_middleware_comprehensive.py` — `_collect_exceeded_quotas`,
+    `UsageTrackingMiddleware` (disabled/non-api/no-key paths)
+  - `test_llm_providers_comprehensive.py` — all 5 providers (Gemini, OpenAI,
+    Anthropic, Ollama, compatible), `create_llm_provider` factory, streaming paths
+  - `test_integrations_comprehensive.py` — `FlamehavenCrewAITool`,
+    `FlamehavenLangChainLoader`, `FlamehavenLlamaIndexReader`,
+    `FlamehavenHaystackConverter` with mocked SDK imports
+  - `test_engine_extra_coverage.py` — ChronosGrid, GravitasPacker, IntentRefiner,
+    format backends, EmbeddingGenerator, ws_routes helpers, lang_processor
+  - `test_misc_coverage.py` — quantizer, logging_config, exceptions, validators,
+    config extras
+
+- **Coverage**: 73.57% → **81%** (+7.43%, 1200 tests pass, 20 skipped)
+
 ---
 
 ## [1.6.4] - 2026-05-17

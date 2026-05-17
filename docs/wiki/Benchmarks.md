@@ -1,6 +1,6 @@
-# Benchmark Report (v1.6.0)
+# Benchmark Report (v1.6.4)
 
-Performance metrics for **Flamehaven FileSearch v1.6.0** featuring the **Gravitas DSP Engine**, **BM25+RRF Hybrid Search**, and **KnowledgeAtom** chunk indexing.
+Performance metrics for **Flamehaven FileSearch v1.6.4** featuring the **Gravitas DSP Engine**, **BM25+RRF Hybrid Search**, and **KnowledgeAtom** chunk indexing.
 
 > **For comprehensive performance baselines, see:** [`docs/PERFORMANCE_BASELINE.md`](../PERFORMANCE_BASELINE.md)
 > This document provides detailed benchmarks, monitoring guidelines, and historical performance data.
@@ -16,7 +16,7 @@ Performance metrics for **Flamehaven FileSearch v1.6.0** featuring the **Gravita
 | Backend | **Gravitas DSP v2.0** (Zero ML dependency) |
 | Vector Store | **Chronos-Grid** (Quantized int8) |
 | Hybrid Search | **BM25 + RRF** (k1=1.5, b=0.75, k=60) |
-| Test Suite | `pytest tests/` — 443 tests pass, 13 skipped |
+| Test Suite | `pytest tests/` — 1200 tests pass, 20 skipped (81% coverage) |
 
 ---
 
